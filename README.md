@@ -69,7 +69,7 @@
 
   <br />
 
-  <img src="assets/screenshots/add-modal.png" alt="Add Knife Modal" width="80%" />
+  <img src="assets/screenshots/add.png" alt="Add Knife" width="80%" />
   <p><sub>Quick Add — scrape a product URL or enter details manually</sub></p>
 
 </div>

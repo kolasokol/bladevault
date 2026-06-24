@@ -7,7 +7,7 @@ coverage/
 .DS_Store
 *.log
 .idea/
-
+.omo/
 # Environment secrets
 .env*
 !.env.example
