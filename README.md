@@ -8,9 +8,9 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/Next.js_15-000000?logo=nextdotjs&logoColor=white&style=flat-square" alt="Next.js 15" />
+    <img src="https://img.shields.io/badge/Next.js_16-000000?logo=nextdotjs&logoColor=white&style=flat-square" alt="Next.js 16" />
     <img src="https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=black&style=flat-square" alt="React 19" />
-    <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&style=flat-square" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/TypeScript_6-3178C6?logo=typescript&logoColor=white&style=flat-square" alt="TypeScript 6" />
     <img src="https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square" alt="Tailwind CSS 4" />
     <img src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white&style=flat-square" alt="SQLite" />
     <img src="https://img.shields.io/badge/Cloudflare-F38020?logo=cloudflare&logoColor=white&style=flat-square" alt="Cloudflare" />
@@ -80,24 +80,24 @@
 
 | Layer | Technology |
 |-------|------------|
-| Framework | [Next.js 15](https://nextjs.org/) with App Router |
-| UI | [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/) |
-| Styling | [Tailwind CSS 4](https://tailwindcss.com/), [Lucide Icons](https://lucide.dev/) |
-| Local Database | [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) |
+| Framework | [Next.js 16](https://nextjs.org/) with App Router |
+| UI | [React 19](https://react.dev/), [TypeScript 6](https://www.typescriptlang.org/) |
+| Styling | [Tailwind CSS 4](https://tailwindcss.com/), [Lucide Icons 1.21](https://lucide.dev/) |
+| Local Database | [better-sqlite3 12](https://github.com/WiseLibs/better-sqlite3) |
 | Remote Database | [Cloudflare D1](https://developers.cloudflare.com/d1/) |
 | Remote Object Storage | [Cloudflare R2](https://developers.cloudflare.com/r2/) |
-| Scraping | [Playwright](https://playwright.dev/) + [Cheerio](https://cheerio.js.org/) |
-| Animations | [Motion](https://motion.dev/) |
+| Scraping | [Playwright 1.61](https://playwright.dev/) + [Cheerio 1.2](https://cheerio.js.org/) |
+| Animations | [Motion 12](https://motion.dev/) |
 
 ---
 
 ## 📦 Installation
 
-> **Prerequisite:** Node.js 20+
+> **Prerequisite:** Node.js 20+ (tested with Node.js 22)
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/bladevault.git
+git clone https://github.com/kolasokol/bladevault.git
 cd bladevault
 
 # 2. Install dependencies
