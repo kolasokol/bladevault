@@ -1,0 +1,27 @@
+# Dependencies & build output
+node_modules/
+.next/
+coverage/
+
+# OS / editor files
+.DS_Store
+*.log
+.idea/
+
+# Environment secrets
+.env*
+!.env.example
+
+# Generated runtime data (DB seeded automatically, images downloaded at runtime)
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+data/images/*/
+!data/.gitkeep
+!data/images/.gitkeep
+
+# Agent instructions (local-only)
+AGENTS.md
+/tsconfig.tsbuildinfo
+/data/images/.gitkeep
+/data/.gitkeep
