@@ -1,8 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ImageIcon, Pin, PinOff, GitCompareArrows } from 'lucide-react';
+import { ImageIcon, GitCompareArrows } from 'lucide-react';
 import { getImageUrl, Knife } from '@/lib/data';
 import { cn } from '@/lib/utils';
+import { BookmarkIcon } from '@/components/bookmark-icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -73,13 +74,13 @@ export function KnifeCard({ knife }: { knife: Knife }) {
             size="icon-xs"
             onClick={handlePinClick}
             className={cn(
-              'absolute right-2 top-2 z-10 rounded-full border bg-white/90 backdrop-blur-sm transition-colors hover:bg-white dark:border-input dark:bg-input/90 dark:hover:bg-input',
-              pinned && 'border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-400 dark:hover:bg-amber-950/70'
+              'absolute right-2 top-2 z-10 rounded-full border bg-white/90 text-black backdrop-blur-sm transition-colors hover:bg-white hover:text-black dark:border-input dark:bg-input/90 dark:text-white dark:hover:bg-input dark:hover:text-white',
+              pinned && 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-950/70 dark:hover:text-emerald-400'
             )}
             aria-label={pinned ? 'Unpin knife' : 'Pin knife'}
             title={pinned ? 'Unpin' : 'Pin'}
           >
-            {pinned ? <Pin className="h-3 w-3 fill-current" /> : <PinOff className="h-3 w-3" />}
+            <BookmarkIcon active={pinned} />
           </Button>
         </div>
         <CardContent className="pt-0">

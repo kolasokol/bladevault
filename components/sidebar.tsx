@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { StorageMode } from '@/lib/settings';
+import { BookmarkIcon } from '@/components/bookmark-icon';
 import {
   LayoutDashboard,
   Library,
@@ -14,7 +15,6 @@ import {
   Sun,
   Moon,
   ChevronRight,
-  Pin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useKnives } from '@/components/providers/knives-provider';
@@ -197,11 +197,11 @@ export function Sidebar() {
                         className={cn(
                           'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
                           isKnifeActive
-                            ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
                             : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                         )}
                       >
-                        <Pin className="h-3 w-3 shrink-0 fill-amber-400 text-amber-500" />
+                        <BookmarkIcon active className="size-3 shrink-0" />
                         <span className="truncate">
                           <span className="text-muted-foreground">{knife.brand}</span>
                           <span className="mx-1 text-muted-foreground/50">·</span>

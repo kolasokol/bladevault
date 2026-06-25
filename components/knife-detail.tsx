@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Pencil, Trash2, Loader2, AlertCircle, ExternalLink, Pin, PinOff, GitCompareArrows } from 'lucide-react';
+import { Pencil, Trash2, Loader2, AlertCircle, ExternalLink, GitCompareArrows } from 'lucide-react';
+import { BookmarkIcon } from '@/components/bookmark-icon';
 import { useKnives } from '@/components/providers/knives-provider';
 import { Knife, KnifeUpdates } from '@/lib/data';
 import { knifeToFormData, KnifeScrapeEditor } from '@/components/knife-form';
@@ -163,16 +164,15 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 onClick={handleTogglePin}
                 disabled={isSaving || isTogglingPin}
                 className={cn(
+                  'text-black hover:text-black dark:text-white dark:hover:text-white',
                   pinned &&
-                    'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50'
+                    'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400'
                 )}
               >
                 {isTogglingPin ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : pinned ? (
-                  <Pin className="h-3.5 w-3.5 fill-current" />
                 ) : (
-                  <PinOff className="h-3.5 w-3.5" />
+                  <BookmarkIcon active={pinned} />
                 )}
                 {pinned ? 'Pinned' : 'Pin'}
               </Button>
@@ -234,16 +234,15 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               onClick={handleTogglePin}
               disabled={isTogglingPin}
               className={cn(
+                'text-black hover:text-black dark:text-white dark:hover:text-white',
                 pinned &&
-                  'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50'
+                  'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400'
               )}
             >
               {isTogglingPin ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : pinned ? (
-                <Pin className="h-3.5 w-3.5 fill-current" />
               ) : (
-                <PinOff className="h-3.5 w-3.5" />
+                <BookmarkIcon active={pinned} />
               )}
               {pinned ? 'Pinned' : 'Pin'}
             </Button>
