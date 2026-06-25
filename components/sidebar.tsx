@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useKnives } from '@/components/providers/knives-provider';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -99,35 +100,46 @@ export function Sidebar() {
         </div>
 
         <div className="px-4 pb-2">
-          <span
+          <div
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider transition-colors',
+              'inline-flex w-fit items-center justify-center rounded-full p-px',
               storageMode === 'remote'
-                ? 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/40 dark:bg-purple-950/30 dark:text-purple-400'
+                ? 'bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 [background-size:130%] bg-[position:12%_50%]'
                 : storageMode === 'local'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-400'
-                  : 'border-border bg-muted/40 text-muted-foreground'
+                  ? 'bg-gradient-to-r from-lime-300 via-lime-400 to-emerald-600 [background-size:130%] bg-[position:12%_50%]'
+                  : 'border border-border bg-transparent p-0'
             )}
-            title={
-              storageMode === 'remote'
-                ? 'Connected to Cloudflare D1 + R2'
-                : storageMode === 'local'
-                  ? 'Connected to local SQLite + filesystem'
-                  : 'Loading connection state'
-            }
           >
-            <span
+            <Badge
               className={cn(
-                'h-1.5 w-1.5 rounded-full',
+                'h-auto gap-1.25 rounded-full border-0 bg-card px-3 py-[0.22rem] text-[9px] font-semibold uppercase tracking-[0.16em] shadow-none',
                 storageMode === 'remote'
-                  ? 'bg-purple-500'
+                  ? 'text-purple-700 dark:text-purple-300'
                   : storageMode === 'local'
-                    ? 'bg-emerald-500'
-                    : 'bg-muted-foreground/50'
+                    ? 'text-emerald-700 dark:text-emerald-300'
+                    : 'text-muted-foreground'
               )}
-            />
-            {storageMode === 'remote' ? 'Remote' : storageMode === 'local' ? 'Local' : '···'}
-          </span>
+              title={
+                storageMode === 'remote'
+                  ? 'Connected to Cloudflare D1 + R2'
+                  : storageMode === 'local'
+                    ? 'Connected to local SQLite + filesystem'
+                    : 'Loading connection state'
+              }
+            >
+              <span
+                className={cn(
+                  'size-1.25 rounded-full',
+                  storageMode === 'remote'
+                    ? 'bg-purple-500'
+                  : storageMode === 'local'
+                      ? 'bg-emerald-500'
+                      : 'bg-muted-foreground/50'
+                )}
+              />
+              {storageMode === 'remote' ? 'Remote' : storageMode === 'local' ? 'Local' : '···'}
+            </Badge>
+          </div>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
