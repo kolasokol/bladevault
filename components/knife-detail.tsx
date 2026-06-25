@@ -23,6 +23,13 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
   const knife = knives.find((k) => k.id === initialKnife.id) ?? initialKnife;
   const pinned = knife.pinned;
   const inCompare = compareIds.includes(knife.id);
+  const knifeBreadcrumbs = [
+    { label: 'Collection', href: '/collection' },
+    ...(knife.brand
+      ? [{ label: knife.brand, href: `/collection?brand=${encodeURIComponent(knife.brand)}` }]
+      : []),
+    { label: knife.name },
+  ];
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -126,7 +133,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
           initialData={knifeToFormData(knife)}
           title="Edit Knife"
           description="Edit knife details manually. Scrape loads a page preview without changing fields."
-          breadcrumbs={[{ label: 'Collection', href: '/collection' }, { label: knife.name }]}
+          breadcrumbs={knifeBreadcrumbs}
           onSave={handleSave}
           onCancel={handleCancel}
           isSaving={isSaving}
@@ -201,7 +208,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
       <PageHeader
         title={knife.name}
         description={knife.brand}
-        breadcrumbs={[{ label: 'Collection', href: '/collection' }, { label: knife.name }]}
+        breadcrumbs={knifeBreadcrumbs}
         actions={
           <>
             <Button

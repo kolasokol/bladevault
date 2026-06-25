@@ -1,13 +1,5 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { Home } from 'lucide-react';
-import Link from 'next/link';
+import { FileTextIcon, FolderIcon, HomeIcon } from 'lucide-react';
+import Breadcrumb3, { type BreadcrumbSegment } from '@/components/ui/breadcrumb-3';
 
 export type BreadcrumbItemData = {
   label: string;
@@ -22,34 +14,23 @@ type PageHeaderProps = {
 };
 
 export function PageHeader({ title, description, breadcrumbs = [], actions }: PageHeaderProps) {
+  const segments: BreadcrumbSegment[] = breadcrumbs.map((item, index) => {
+    const isLast = index === breadcrumbs.length - 1;
+
+    if (isLast || !item.href) {
+      return { label: item.label, icon: FileTextIcon, current: true };
+    }
+
+    return { label: item.label, href: item.href, icon: FolderIcon };
+  });
+
   return (
     <div className="mb-8">
       {breadcrumbs.length > 0 && (
-        <Breadcrumb className="mb-4">
-          <BreadcrumbList className="text-xs">
-            <BreadcrumbItem>
-              <BreadcrumbLink render={<Link href="/" className="flex items-center gap-1" />}>
-                <Home className="h-3 w-3" />
-                <span className="sr-only">Home</span>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator className="[&>svg]:size-3" />
-            {breadcrumbs.map((item, index) => {
-              const isLast = index === breadcrumbs.length - 1;
-              return (
-                <BreadcrumbItem key={item.label}>
-                  {isLast || !item.href ? (
-                    <BreadcrumbPage className="text-xs">{item.label}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink render={<Link href={item.href} className="text-xs" />}>
-                      {item.label}
-                    </BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-              );
-            })}
-          </BreadcrumbList>
-        </Breadcrumb>
+        <Breadcrumb3
+          className="mb-4"
+          segments={[{ label: 'Home', href: '/', icon: HomeIcon }, ...segments]}
+        />
       )}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
