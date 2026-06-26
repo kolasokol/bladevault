@@ -314,7 +314,8 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       const response = await fetch(`${baseUrl}/api/auth/sign-out`, {
         method: 'POST',
         credentials: 'include',
-        headers: createCloudBackupHeaders(),
+        headers: createCloudBackupHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
