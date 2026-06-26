@@ -54,11 +54,6 @@
 
   <br />
 
-  <img src="assets/screenshots/collection.png" alt="Collection Library" width="80%" />
-  <p><sub>Collection Library — browse and filter your entire inventory</sub></p>
-
-  <br />
-
   <img src="assets/screenshots/detail.png" alt="Knife Detail" width="80%" />
   <p><sub>Knife Detail — specs, description, and image gallery</sub></p>
 
@@ -76,21 +71,73 @@
 
 ---
 
-## 🚀 Tech Stack
+## 📥 Install BladeVault
 
-| Layer | Technology |
-|-------|------------|
-| Framework | [Next.js 16](https://nextjs.org/) with App Router |
-| UI | [React 19](https://react.dev/), [TypeScript 6](https://www.typescriptlang.org/) |
-| Styling | [Tailwind CSS 4](https://tailwindcss.com/), [Lucide Icons 1.21](https://lucide.dev/) |
-| Local Database | [better-sqlite3 12](https://github.com/WiseLibs/better-sqlite3) |
-| Cloud Backup Backend | Cloudflare Workers + D1 + R2 |
-| Scraping | [Playwright 1.61](https://playwright.dev/) + [Cheerio 1.2](https://cheerio.js.org/) |
-| Animations | [Motion 12](https://motion.dev/) |
+Choose the setup that fits you:
+
+- **Docker** — the quickest way to run BladeVault with persistent local storage.
+- **Source** — best if you want to develop, customize, or run the app locally with Node.js.
 
 ---
 
-## 📦 Installation
+## 🐳 Install in Docker
+
+### Run the published image
+
+For macOS / Linux:
+
+```bash
+docker run -d \
+  --name bladevault \
+  --restart unless-stopped \
+  -p 5500:3000 \
+  -v "$HOME/BladeVault/data:/app/data" \
+  ghcr.io/kolasokol/bladevault:latest
+```
+
+This creates a persistent `BladeVault/data` folder in your home directory for the SQLite database and downloaded images.
+
+For Windows (PowerShell):
+
+```powershell
+docker run -d `
+  --name bladevault `
+  --restart unless-stopped `
+  -p 5500:3000 `
+  -v "${env:USERPROFILE}\BladeVault\data:/app/data" `
+  ghcr.io/kolasokol/bladevault:latest
+```
+
+Open [http://localhost:5500](http://localhost:5500) after the container starts.
+
+### Build your own Docker image
+
+```bash
+git clone https://github.com/kolasokol/bladevault.git
+cd bladevault
+
+# Build the image
+docker build --no-cache -t bladevault .
+
+# Run with a persistent data volume
+docker run -p 5500:3000 -d \
+  --name bladevault \
+  --restart unless-stopped \
+  -v $(pwd)/data:/app/data \
+  bladevault
+```
+
+The `-v $(pwd)/data:/app/data` mount preserves the SQLite database and downloaded images between runs.
+
+You can also use Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+---
+
+## 📦 Run from Source
 
 > **Prerequisite:** Node.js 20+ (tested with Node.js 22)
 
@@ -111,56 +158,33 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Optional environment variables for Cloud Backup:
-
-```bash
-NEXT_PUBLIC_BLADEVAULT_BACKEND_URL=https://api-staging.tkweb.site
-```
-
-- `NEXT_PUBLIC_BLADEVAULT_BACKEND_URL` sets the Cloud Backup API base URL.
-- Google sign-in returns the browser to the same frontend origin that started the backup login flow, so local Docker ports work without extra frontend callback config.
-
 ---
 
-## 🐳 Run with Docker
+## ℹ️ Other Stuff
 
-A Dockerfile is included with Playwright browsers pre-installed.
+### 🚀 Tech Stack
 
-```bash
-# Build the image
-docker build --no-cache -t bladevault .
+| Layer                | Technology                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| Framework            | [Next.js 16](https://nextjs.org/) with App Router                                    |
+| UI                   | [React 19](https://react.dev/), [TypeScript 6](https://www.typescriptlang.org/)      |
+| Styling              | [Tailwind CSS 4](https://tailwindcss.com/), [Lucide Icons 1.21](https://lucide.dev/) |
+| Local Database       | [better-sqlite3 12](https://github.com/WiseLibs/better-sqlite3)                      |
+| Cloud Backup Backend | Cloudflare Workers + D1 + R2                                                         |
+| Scraping             | [Playwright 1.61](https://playwright.dev/) + [Cheerio 1.2](https://cheerio.js.org/)  |
+| Animations           | [Motion 12](https://motion.dev/)                                                     |
 
-# Run with persistent data volume
-docker run -p 5500:3000 -d \
-  --name bladevault \
-  --restart unless-stopped \
-  -v $(pwd)/data:/app/data \
-  bladevault
-```
+### 🛠 Available Scripts
 
-The `-v $(pwd)/data:/app/data` mount preserves the SQLite database and downloaded images between runs.
+| Command         | Description                        |
+| --------------- | ---------------------------------- |
+| `npm run dev`   | Start the local development server |
+| `npm run build` | Create a production build          |
+| `npm run start` | Serve the production build         |
+| `npm run lint`  | Run ESLint across the repo         |
+| `npm run clean` | Clear Next.js build artifacts      |
 
-Or use Docker Compose for a cleaner one-command setup:
-
-```bash
-docker compose up -d
-```
-
----
-
-## 🛠 Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start the local development server |
-| `npm run build` | Create a production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | Run ESLint across the repo |
-| `npm run clean` | Clear Next.js build artifacts |
-
----
-
-## 📁 Project Structure
+### 📁 Project Structure
 
 ```
 bladevault/
@@ -192,9 +216,7 @@ bladevault/
 └── tsconfig.json
 ```
 
----
-
-## 💾 Data Storage
+### 💾 Data Storage
 
 ### Local mode (default)
 
@@ -205,7 +227,9 @@ BladeVault stores everything locally:
 
 No cloud accounts or API keys required. Keep the `data/` folder backed up to preserve your collection.
 
-### Cloud Backup
+### Cloud Backup Beta (optional by invite)
+
+( not sure i will run it perma if you interested in it, DM me)
 
 Open **Settings** from the sidebar and use the **Cloud Backup** tab to:
 
