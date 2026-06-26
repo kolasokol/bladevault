@@ -123,10 +123,15 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setSessionMessage('Checking cloud session...');
 
     try {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 8000);
+
       const response = await fetch(`${baseUrl}/api/auth/get-session`, {
         credentials: 'include',
         headers: createCloudBackupHeaders(),
+        signal: controller.signal,
       });
+      window.clearTimeout(timeout);
 
       if (!response.ok) {
         throw new Error(await parseApiError(response));
@@ -173,7 +178,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
 
         if (cancelled) return;
         setSettings(nextSettings);
-        await refreshCloudSession(nextSettings.cloudBackupUrl, cancelled);
+        void refreshCloudSession(nextSettings.cloudBackupUrl, cancelled);
       } catch (error) {
         if (!cancelled) {
           setLoadError(error instanceof Error ? error.message : 'Failed to load settings');
