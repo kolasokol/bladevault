@@ -353,6 +353,79 @@ export class LocalStorage implements Storage {
     getDb().prepare('DELETE FROM compare_list').run();
   }
 
+  async migrateKnife(knife: Knife, images: string[]): Promise<void> {
+    getDb()
+      .prepare(
+        `INSERT OR REPLACE INTO knives (id, name, brand, steel, blade_style, handle_material, images, specs, description, added_at, source_url, pinned)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        knife.id,
+        knife.name,
+        knife.brand,
+        '',
+        knife.bladeStyle,
+        knife.handleMaterial,
+        JSON.stringify(images),
+        JSON.stringify(knife.specs),
+        knife.description,
+        knife.addedAt,
+        knife.sourceUrl,
+        knife.pinned ? 1 : 0
+      );
+  }
+
+  async migrateCompareList(ids: string[]): Promise<void> {
+    for (const id of ids) {
+      try {
+        await this.addToCompare(id);
+      } catch {
+        // ignore invalid compare ids during bulk restore
+      }
+    }
+  }
+
+  async replaceAllWithSnapshot(knives: Knife[], compareIds: string[]): Promise<void> {
+    const current = await this.getAllKnives();
+
+    for (const knife of current) {
+      await this.deleteKnife(knife.id);
+    }
+
+    for (const knife of knives) {
+      const importedImages: string[] = [];
+
+      for (let index = 0; index < knife.images.length; index += 1) {
+        const image = knife.images[index];
+
+        if (image.startsWith('data:image')) {
+          try {
+            importedImages.push(await this.saveDataUrl(image, knife.id, index));
+          } catch {
+            // ignore broken embedded images during restore
+          }
+          continue;
+        }
+
+        if (image.startsWith('http://') || image.startsWith('https://')) {
+          try {
+            importedImages.push(await this.downloadImage(image, knife.id, index));
+          } catch {
+            importedImages.push(image);
+          }
+          continue;
+        }
+
+        importedImages.push(image);
+      }
+
+      await this.migrateKnife(knife, importedImages);
+    }
+
+    await this.clearCompareList();
+    await this.migrateCompareList(compareIds);
+  }
+
   async getImage(relativePath: string): Promise<ImageData> {
     const filePath = path.join(IMAGES_DIR, relativePath);
     const resolved = path.resolve(filePath);

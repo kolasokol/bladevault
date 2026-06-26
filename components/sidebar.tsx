@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { StorageMode } from '@/lib/settings';
+import { useMemo, useState } from 'react';
 import { BookmarkIcon } from '@/components/bookmark-icon';
 import {
   LayoutDashboard,
@@ -47,26 +46,6 @@ export function Sidebar() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [brandsOpen, setBrandsOpen] = useState(true);
   const [pinnedOpen, setPinnedOpen] = useState(true);
-  const [storageMode, setStorageMode] = useState<StorageMode | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const response = await fetch('/api/settings');
-        const data = await response.json();
-        if (!cancelled && data.settings?.storageMode) {
-          setStorageMode(data.settings.storageMode);
-        }
-      } catch {
-        // ignore - keep unknown state
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const brands = useMemo(
     () => Array.from(new Set(knives.map((knife) => knife.brand))).sort(),
@@ -103,41 +82,18 @@ export function Sidebar() {
           <div
             className={cn(
               'inline-flex w-fit items-center justify-center rounded-full p-px',
-              storageMode === 'remote'
-                ? 'bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500 [background-size:130%] bg-[position:12%_50%]'
-                : storageMode === 'local'
-                  ? 'bg-gradient-to-r from-lime-300 via-lime-400 to-emerald-600 [background-size:130%] bg-[position:12%_50%]'
-                  : 'border border-border bg-transparent p-0'
+              'bg-gradient-to-r from-lime-300 via-lime-400 to-emerald-600 [background-size:130%] bg-[position:12%_50%]'
             )}
           >
             <Badge
               className={cn(
                 'h-auto gap-1.25 rounded-full border-0 bg-card px-3 py-[0.22rem] text-[9px] font-semibold uppercase tracking-[0.16em] shadow-none',
-                storageMode === 'remote'
-                  ? 'text-purple-700 dark:text-purple-300'
-                  : storageMode === 'local'
-                    ? 'text-emerald-700 dark:text-emerald-300'
-                    : 'text-muted-foreground'
+                'text-emerald-700 dark:text-emerald-300'
               )}
-              title={
-                storageMode === 'remote'
-                  ? 'Connected to Cloudflare D1 + R2'
-                  : storageMode === 'local'
-                    ? 'Connected to local SQLite + filesystem'
-                    : 'Loading connection state'
-              }
+              title="Your vault stays local first. Use Cloud Backup in settings to sync a copy."
             >
-              <span
-                className={cn(
-                  'size-1.25 rounded-full',
-                  storageMode === 'remote'
-                    ? 'bg-purple-500'
-                  : storageMode === 'local'
-                      ? 'bg-emerald-500'
-                      : 'bg-muted-foreground/50'
-                )}
-              />
-              {storageMode === 'remote' ? 'Remote' : storageMode === 'local' ? 'Local' : '···'}
+              <span className="size-1.25 rounded-full bg-emerald-500" />
+              Local First
             </Badge>
           </div>
         </div>

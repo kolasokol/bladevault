@@ -1,7 +1,6 @@
 import type {Metadata} from 'next';
-import { Suspense } from 'react';
 import './globals.css';
-import { Sidebar } from '@/components/sidebar';
+import { SidebarShell } from '@/components/sidebar-shell';
 import { KnivesProvider } from '@/components/providers/knives-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Geist, Geist_Mono } from 'next/font/google';
@@ -21,9 +20,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
       <body className="bg-background text-foreground font-sans h-screen w-full flex overflow-hidden" suppressHydrationWarning>
         <KnivesProvider>
           <TooltipProvider>
-            <Suspense fallback={<aside className="h-screen w-60 flex-shrink-0 border-r bg-card" />}>
-              <Sidebar />
-            </Suspense>
+            <SidebarShell />
             <main className="flex-1 flex flex-col overflow-y-auto">
               {children}
             </main>

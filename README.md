@@ -38,10 +38,10 @@
   - Includes special handling for **Shopify** stores via their `.json` product endpoint.
   - Uses **Playwright** for JavaScript-rendered pages.
 - **Manual Entry** — Add knives by hand with a clean, structured form.
-- **Image Management** — Downloaded images are stored locally or uploaded to Cloudflare R2; fallback placeholders keep the UI tidy.
+- **Image Management** — Downloaded images are stored locally; cloud backup can sync them to the BladeVault backend when you want an off-device copy.
 - **Dark & Light Mode** — Toggle themes instantly from the sidebar.
 - **Local-First Storage** — SQLite database + local image folder. Your data stays on your machine by default.
-- **Optional Cloudflare Sync** — Switch to remote mode to store knives in **Cloudflare D1** and images in **Cloudflare R2**.
+- **Optional Cloud Backup** — Sign in to your BladeVault cloud account and sync a backup copy through the staging backend.
 
 ---
 
@@ -84,8 +84,7 @@
 | UI | [React 19](https://react.dev/), [TypeScript 6](https://www.typescriptlang.org/) |
 | Styling | [Tailwind CSS 4](https://tailwindcss.com/), [Lucide Icons 1.21](https://lucide.dev/) |
 | Local Database | [better-sqlite3 12](https://github.com/WiseLibs/better-sqlite3) |
-| Remote Database | [Cloudflare D1](https://developers.cloudflare.com/d1/) |
-| Remote Object Storage | [Cloudflare R2](https://developers.cloudflare.com/r2/) |
+| Cloud Backup Backend | Cloudflare Workers + D1 + R2 |
 | Scraping | [Playwright 1.61](https://playwright.dev/) + [Cheerio 1.2](https://cheerio.js.org/) |
 | Animations | [Motion 12](https://motion.dev/) |
 
@@ -111,6 +110,15 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+Optional environment variables for Cloud Backup:
+
+```bash
+NEXT_PUBLIC_BLADEVAULT_BACKEND_URL=https://api-staging.tkweb.site
+```
+
+- `NEXT_PUBLIC_BLADEVAULT_BACKEND_URL` sets the Cloud Backup API base URL.
+- Google sign-in returns the browser to the same frontend origin that started the backup login flow, so local Docker ports work without extra frontend callback config.
 
 ---
 
@@ -171,8 +179,8 @@ bladevault/
 │   └── sidebar.tsx
 ├── lib/                  # Utilities, storage backends, and scrapers
 │   ├── local-db.ts       # Local SQLite connection
-│   ├── settings.ts       # App settings + Cloudflare credential storage
-│   ├── storage/          # Storage abstraction (local + Cloudflare remote)
+│   ├── settings.ts       # App settings + cloud backup preferences
+│   ├── storage/          # Storage abstraction (local-first)
 │   ├── scrape.ts
 │   ├── scrape-playwright.ts
 │   └── data.ts           # Shared types
@@ -197,36 +205,17 @@ BladeVault stores everything locally:
 
 No cloud accounts or API keys required. Keep the `data/` folder backed up to preserve your collection.
 
-### Remote mode (Cloudflare)
+### Cloud Backup
 
-Open **Settings** from the sidebar and switch to **Remote**. Knives and images will be stored in:
+Open **Settings** from the sidebar and use the **Cloud Backup** tab to:
 
-- **Cloudflare D1** — serverless SQL database for knife records.
-- **Cloudflare R2** — S3-compatible object storage for images.
+1. Create a BladeVault cloud account or sign in.
+2. Run **Backup Local → Cloud** to upload a copy of your collection.
+3. Run **Restore Cloud → Local** if you want to replace the current device vault with the latest cloud backup.
 
-Required Cloudflare resources:
+Cloud Backup uses Google sign-in right now. The first Google login creates the backup account automatically.
 
-1. A D1 database and its **Database ID**.
-2. A public R2 bucket and its **public bucket URL**.
-3. Your Cloudflare **Account ID**.
-4. An API token with `Account → D1 → Edit` permission.
-5. An R2 API token with `Object Read & Write` permission for your bucket.
-
-After entering credentials, use **Test D1** / **Test R2** to verify the connection, then click **Migrate Local → Remote** to copy existing local knives and images to Cloudflare. Your local data is preserved.
-
----
-
-## ☁️ Cloudflare Setup Checklist
-
-If you plan to use BladeVault with Cloudflare remote storage, make sure you have the following resources ready before switching to Remote mode in Settings:
-
-1. **D1 Database** — Create a D1 database and copy its **Database ID**.
-2. **R2 Bucket** — Create an R2 bucket, make it **public**, and copy the public bucket URL.
-3. **Account ID** — Copy your Cloudflare **Account ID**.
-4. **D1 API Token** — Create an API token with **Account → D1 → Edit** permission.
-5. **R2 API Token** — Create an R2 API token with **Object Read & Write** permission for your bucket.
-
-After entering credentials in Settings, use **Test D1** / **Test R2** to verify the connection, then click **Migrate Local → Remote** to copy existing local knives and images to Cloudflare. Your local data is preserved.
+The app remains local-first. Cloud backup keeps an off-device copy without asking the user for raw Cloudflare credentials inside the app.
 
 ---
 
