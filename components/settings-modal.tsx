@@ -27,6 +27,7 @@ import {
   setCloudBackupAuthToken,
 } from '@/lib/cloud-backup';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,26 +46,26 @@ function StatusPill({ status, message }: { status: StatusTone; message?: string 
 
   if (status === 'loading') {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+      <span className="inline-flex max-w-full items-start gap-1.5 text-xs text-muted-foreground">
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        {message || 'Working...'}
+        <span className="min-w-0 break-words">{message || 'Working...'}</span>
       </span>
     );
   }
 
   if (status === 'success') {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex max-w-full items-start gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
         <CheckCircle2 className="h-3.5 w-3.5" />
-        {message || 'Done'}
+        <span className="min-w-0 break-words">{message || 'Done'}</span>
       </span>
     );
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-destructive">
+    <span className="inline-flex max-w-full items-start gap-1.5 text-xs text-destructive">
       <AlertCircle className="h-3.5 w-3.5" />
-      {message || 'Something went wrong'}
+      <span className="min-w-0 break-words">{message || 'Something went wrong'}</span>
     </span>
   );
 }
@@ -498,8 +499,8 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b bg-muted/30">
+      <DialogContent className="max-h-[90vh] w-[min(96vw,72rem)] max-w-[72rem] sm:max-w-[72rem] flex flex-col overflow-hidden rounded-2xl p-0 shadow-2xl">
+        <DialogHeader className="border-b bg-muted/20 px-7 py-5">
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
 
@@ -508,17 +509,25 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <Tabs defaultValue="general" className="flex flex-col overflow-hidden">
-            <div className="px-6 pt-4 border-b">
-              <TabsList>
+          <Tabs defaultValue="general" className="flex w-full flex-col overflow-hidden">
+            <div className="border-b px-7 pt-4">
+              <TabsList className="h-auto flex-wrap gap-1.5 rounded-xl bg-muted/70 p-1">
                 <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="cloud-backup">Cloud Backup</TabsTrigger>
+                <TabsTrigger value="cloud-backup" className="gap-2">
+                  <span>Cloud Backup</span>
+                  <Badge
+                    variant="outline"
+                    className="h-4 rounded-full border-amber-300 bg-amber-100 px-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-800"
+                  >
+                    Beta
+                  </Badge>
+                </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <TabsContent value="general" className="mt-0 space-y-6">
-                <Card size="sm">
+            <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-7">
+              <TabsContent value="general" className="mt-0 w-full space-y-6">
+                <Card size="sm" className="w-full rounded-2xl">
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg border bg-card">
@@ -545,189 +554,211 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                 </Card>
               </TabsContent>
 
-              <TabsContent value="cloud-backup" className="mt-0 space-y-6">
-                <Card size="sm">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg border bg-card">
-                        <Cloud className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm">Cloud Backup Service</CardTitle>
-                        <CardDescription>
-                          Sign in to sync your local vault with BladeVault Cloud.
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                        Backup API
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input value={settings.cloudBackupUrl} readOnly />
-                        <Button
-                          variant="outline"
-                          size="icon-sm"
-                          onClick={() => copyToClipboard(settings.cloudBackupUrl, 'cloudBackupUrl')}
-                        >
-                          {copied === 'cloudBackupUrl' ? (
-                            <Check className="h-4 w-4" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-3 text-xs text-muted-foreground sm:grid-cols-3">
-                      <div className="rounded-lg border bg-card px-3 py-2">
-                        <div className="text-[10px] uppercase tracking-wider">Session</div>
-                        <div className="mt-1 font-medium text-foreground">
-                          {cloudSession ? 'Connected' : 'Not signed in'}
-                        </div>
-                      </div>
-                      <div className="rounded-lg border bg-card px-3 py-2">
-                        <div className="text-[10px] uppercase tracking-wider">Email</div>
-                        <div className="mt-1 font-medium text-foreground">
-                          {cloudSession?.user.email || '—'}
-                        </div>
-                      </div>
-                      <div className="rounded-lg border bg-card px-3 py-2">
-                        <div className="text-[10px] uppercase tracking-wider">Last Sync</div>
-                        <div className="mt-1 font-medium text-foreground">
-                          {formatSyncTime(settings.cloudBackupLastSyncedAt)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <StatusPill status={sessionStatus} message={sessionMessage} />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => refreshCloudSession(settings.cloudBackupUrl)}
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                        Refresh Session
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {cloudSession ? (
-                  <>
-                    <Card size="sm">
+              <TabsContent value="cloud-backup" className="mt-0 w-full space-y-6">
+                <div className="grid w-full gap-6 2xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)] 2xl:items-start">
+                  <div className="min-w-0 space-y-6">
+                    <Card size="sm" className="w-full rounded-2xl">
                       <CardHeader>
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-lg border bg-card">
-                            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                            <Cloud className="h-4 w-4 text-muted-foreground" />
                           </div>
                           <div>
-                            <CardTitle className="text-sm">Account</CardTitle>
+                            <CardTitle className="text-sm">Cloud Backup Service</CardTitle>
                             <CardDescription>
-                              Signed in as {cloudSession.user.name || cloudSession.user.email}
+                              Sign in to sync your local vault with BladeVault Cloud.
                             </CardDescription>
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="flex items-center justify-between gap-3">
-                        <div className="text-xs text-muted-foreground">
-                          Backups run under your BladeVault account on the staging backend.
+                      <CardContent className="space-y-5">
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            Backup API
+                          </Label>
+                          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                            <Input
+                              value={settings.cloudBackupUrl}
+                              readOnly
+                              className="h-10 min-w-0 flex-1 rounded-xl px-3 text-xs sm:text-sm"
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon-sm"
+                              className="h-10 w-10 shrink-0 self-start rounded-xl sm:self-auto"
+                              onClick={() => copyToClipboard(settings.cloudBackupUrl, 'cloudBackupUrl')}
+                            >
+                              {copied === 'cloudBackupUrl' ? (
+                                <Check className="h-4 w-4" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </div>
-                        <Button variant="outline" size="sm" onClick={handleLogout}>
-                          <LogOut className="h-3.5 w-3.5" />
-                          Sign Out
-                        </Button>
-                      </CardContent>
-                    </Card>
 
-                    <Card size="sm">
-                      <CardHeader>
-                        <CardTitle className="text-sm">Sync Actions</CardTitle>
-                        <CardDescription>
-                          Push your local vault to the cloud or restore the latest cloud copy.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-400">
-                          Cloud backup does not change where BladeVault stores your everyday data.
-                          It keeps a synced copy on your account so you can restore later.
+                        <div className="grid gap-3 text-xs text-muted-foreground md:grid-cols-2 lg:grid-cols-3">
+                          <div className="min-h-24 rounded-xl border bg-card px-4 py-3">
+                            <div className="text-[10px] uppercase tracking-wider">Session</div>
+                            <div className="mt-2 text-base font-medium text-foreground">
+                              {cloudSession ? 'Connected' : 'Not signed in'}
+                            </div>
+                          </div>
+                          <div className="min-h-24 rounded-xl border bg-card px-4 py-3">
+                            <div className="text-[10px] uppercase tracking-wider">Email</div>
+                            <div className="mt-2 break-all text-base font-medium text-foreground">
+                              {cloudSession?.user.email || '—'}
+                            </div>
+                          </div>
+                          <div className="min-h-24 rounded-xl border bg-card px-4 py-3 md:col-span-2 lg:col-span-1">
+                            <div className="text-[10px] uppercase tracking-wider">Last Sync</div>
+                            <div className="mt-2 text-base font-medium text-foreground">
+                              {formatSyncTime(settings.cloudBackupLastSyncedAt)}
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <Button size="sm" onClick={handleBackup} disabled={backupStatus === 'loading'}>
-                            {backupStatus === 'loading' ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Upload className="h-3.5 w-3.5" />
-                            )}
-                            Backup Local → Cloud
-                          </Button>
+                        <div className="flex flex-col gap-3 rounded-xl border bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                          <StatusPill status={sessionStatus} message={sessionMessage} />
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={handleRestore}
-                            disabled={restoreStatus === 'loading'}
+                            className="self-start rounded-xl sm:self-auto"
+                            onClick={() => refreshCloudSession(settings.cloudBackupUrl)}
                           >
-                            {restoreStatus === 'loading' ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Download className="h-3.5 w-3.5" />
-                            )}
-                            Restore Cloud → Local
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Refresh Session
                           </Button>
-                        </div>
-
-                        <div className="space-y-2">
-                          <StatusPill status={backupStatus} message={backupMessage} />
-                          <StatusPill status={restoreStatus} message={restoreMessage} />
                         </div>
                       </CardContent>
                     </Card>
-                  </>
-                ) : (
-                  <Card size="sm">
-                    <CardHeader>
-                      <CardTitle className="text-sm">Sign In To Cloud Backup</CardTitle>
-                      <CardDescription>
-                        Use Google to create or access your BladeVault Cloud backup account.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="rounded-lg border bg-card px-4 py-3 text-sm text-muted-foreground">
-                        Your first Google sign-in creates the account automatically. No password or
-                        email verification step is needed.
-                      </div>
 
-                      <Button size="sm" onClick={handleGoogleSignIn}>
-                        <FcGoogle className="h-4 w-4" />
-                        Continue With Google
-                      </Button>
+                    {cloudSession && (
+                      <Card size="sm" className="w-full rounded-2xl">
+                        <CardHeader>
+                          <CardTitle className="text-sm">Sync Actions</CardTitle>
+                          <CardDescription>
+                            Push your local vault to the cloud or restore the latest cloud copy.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid gap-3 lg:grid-cols-2">
+                            <Button
+                              size="sm"
+                              className="h-11 rounded-xl text-sm"
+                              onClick={handleBackup}
+                              disabled={backupStatus === 'loading'}
+                            >
+                              {backupStatus === 'loading' ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Upload className="h-3.5 w-3.5" />
+                              )}
+                              Backup Local → Cloud
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-11 rounded-xl text-sm"
+                              onClick={handleRestore}
+                              disabled={restoreStatus === 'loading'}
+                            >
+                              {restoreStatus === 'loading' ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Download className="h-3.5 w-3.5" />
+                              )}
+                              Restore Cloud → Local
+                            </Button>
+                          </div>
 
-                      <div className="space-y-2">
-                        <StatusPill status={authStatus} message={authMessage} />
-                        <p className="text-xs text-muted-foreground">
-                          After Google returns to BladeVault, open Cloud Backup again to confirm
-                          the session is connected.
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                          <div className="space-y-2 rounded-xl border bg-muted/20 px-4 py-3">
+                            <StatusPill status={backupStatus} message={backupMessage} />
+                            <StatusPill status={restoreStatus} message={restoreMessage} />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 space-y-6">
+                    {cloudSession ? (
+                      <Card size="sm" className="w-full rounded-2xl xl:sticky xl:top-0">
+                        <CardHeader>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border bg-card">
+                            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="min-w-0">
+                            <CardTitle className="text-sm">Account</CardTitle>
+                            <CardDescription className="break-all">
+                              Signed in as {cloudSession.user.name || cloudSession.user.email}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="rounded-xl border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                            Cloud backups are tied to this BladeVault account.
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-10 w-full rounded-xl"
+                            onClick={handleLogout}
+                          >
+                            <LogOut className="h-3.5 w-3.5" />
+                            Sign Out
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Card size="sm" className="w-full rounded-2xl xl:sticky xl:top-0">
+                        <CardHeader>
+                          <CardTitle className="text-sm">Sign In To Cloud Backup</CardTitle>
+                          <CardDescription>
+                            Use Google to create or access your BladeVault Cloud backup account.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
+                            Your first Google sign-in creates the account automatically. No password or
+                            email verification step is needed.
+                          </div>
+
+                          <Button
+                            size="sm"
+                            className="h-11 w-full rounded-xl text-sm"
+                            onClick={handleGoogleSignIn}
+                          >
+                            <FcGoogle className="h-4 w-4" />
+                            Continue With Google
+                          </Button>
+
+                          <div className="space-y-2 rounded-xl border bg-muted/20 px-4 py-3">
+                            <StatusPill status={authStatus} message={authMessage} />
+                            <p className="text-xs text-muted-foreground">
+                              After Google returns to BladeVault, open Cloud Backup again to confirm
+                              the session is connected.
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </div>
               </TabsContent>
             </div>
 
             {loadError && (
-              <div className="mx-6 mb-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <div className="mx-7 mb-4 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-xs text-destructive">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span>{loadError}</span>
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-2 border-t bg-muted/30 px-6 py-4">
-              <Button variant="outline" size="sm" onClick={onClose}>
+            <div className="flex items-center justify-end gap-2 border-t bg-muted/20 px-7 py-4">
+              <Button variant="outline" size="sm" className="rounded-xl" onClick={onClose}>
                 Close
               </Button>
             </div>
