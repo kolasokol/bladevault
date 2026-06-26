@@ -22,9 +22,11 @@ import {
   clearCloudBackupAuthToken,
   CloudBackupSession,
   createCloudBackupHeaders,
+  dataUrlToBlob,
   getCloudBackupUrl,
   parseApiError,
   setCloudBackupAuthToken,
+  uploadCloudBackupImage,
 } from '@/lib/cloud-backup';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -358,27 +360,13 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
             }
 
             if (image.startsWith('data:image/')) {
-              const imageResponse = await fetch(`${baseUrl}/api/v1/images/data-url`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: createCloudBackupHeaders({ 'Content-Type': 'application/json' }),
-                body: JSON.stringify({
-                  knifeId: knife.id,
-                  dataUrl: image,
-                  filename: 'image-upload',
-                }),
+              const uploadedImage = await uploadCloudBackupImage({
+                baseUrl,
+                file: dataUrlToBlob(image),
+                filename: 'image-upload',
+                knifeId: knife.id,
               });
-
-              if (!imageResponse.ok) {
-                throw new Error(await parseApiError(imageResponse));
-              }
-
-              const imageData = (await imageResponse.json()) as { publicUrl?: string };
-              if (!imageData.publicUrl) {
-                throw new Error('Image upload did not return a public URL.');
-              }
-
-              uploadedImages.push(imageData.publicUrl);
+              uploadedImages.push(uploadedImage.publicUrl);
               continue;
             }
 
@@ -388,28 +376,13 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
             }
 
             const imageBlob = await localImageResponse.blob();
-            const formData = new FormData();
-            formData.append('knifeId', knife.id);
-            formData.append('filename', getFilenameFromImagePath(image));
-            formData.append('file', imageBlob, getFilenameFromImagePath(image));
-
-            const uploadResponse = await fetch(`${baseUrl}/api/v1/images/upload`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: createCloudBackupHeaders(),
-              body: formData,
+            const uploadedImage = await uploadCloudBackupImage({
+              baseUrl,
+              file: imageBlob,
+              filename: getFilenameFromImagePath(image),
+              knifeId: knife.id,
             });
-
-            if (!uploadResponse.ok) {
-              throw new Error(await parseApiError(uploadResponse));
-            }
-
-            const uploadData = (await uploadResponse.json()) as { publicUrl?: string };
-            if (!uploadData.publicUrl) {
-              throw new Error('Image upload did not return a public URL.');
-            }
-
-            uploadedImages.push(uploadData.publicUrl);
+            uploadedImages.push(uploadedImage.publicUrl);
           }
 
           return {

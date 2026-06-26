@@ -16,6 +16,16 @@ export type CloudBackupSession = {
   };
 };
 
+export type SignedCloudImageUpload = {
+  knifeId: string;
+  key: string;
+  method: 'PUT';
+  uploadUrl: string;
+  publicUrl: string;
+  headers?: Record<string, string>;
+  expiresAt: string;
+};
+
 export function normalizeCloudBackupUrl(url: string): string {
   return url.trim().replace(/\/$/, '');
 }
@@ -71,4 +81,83 @@ export async function parseApiError(response: Response): Promise<string> {
   } catch {
     return `Request failed (${response.status})`;
   }
+}
+
+function getContentTypeFromFilename(filename: string): string {
+  const normalized = filename.toLowerCase();
+  if (normalized.endsWith('.jpg') || normalized.endsWith('.jpeg')) return 'image/jpeg';
+  if (normalized.endsWith('.png')) return 'image/png';
+  if (normalized.endsWith('.webp')) return 'image/webp';
+  if (normalized.endsWith('.gif')) return 'image/gif';
+  if (normalized.endsWith('.avif')) return 'image/avif';
+  if (normalized.endsWith('.svg')) return 'image/svg+xml';
+  return 'application/octet-stream';
+}
+
+export function dataUrlToBlob(dataUrl: string): Blob {
+  const parts = dataUrl.split(',', 2);
+  if (parts.length !== 2) {
+    throw new Error('Invalid image data URL');
+  }
+
+  const header = parts[0];
+  const base64 = parts[1];
+  const mimeMatch = header.match(/^data:([^;]+);base64$/i);
+  if (!mimeMatch) {
+    throw new Error('Invalid image data URL');
+  }
+
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new Blob([bytes], { type: mimeMatch[1] });
+}
+
+export async function uploadCloudBackupImage(params: {
+  baseUrl: string;
+  file: Blob;
+  filename: string;
+  knifeId: string;
+}): Promise<{ knifeId: string; publicUrl: string }> {
+  const { baseUrl, file, filename, knifeId } = params;
+  const contentType = file.type || getContentTypeFromFilename(filename);
+
+  const signResponse = await fetch(`${baseUrl}/api/v1/images/sign-upload`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: createCloudBackupHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      knifeId,
+      filename,
+      contentType,
+    }),
+  });
+
+  if (!signResponse.ok) {
+    throw new Error(await parseApiError(signResponse));
+  }
+
+  const signedUpload = (await signResponse.json()) as Partial<SignedCloudImageUpload>;
+  if (!signedUpload.uploadUrl || !signedUpload.publicUrl || !signedUpload.method) {
+    throw new Error('Signed upload response was incomplete.');
+  }
+
+  const uploadResponse = await fetch(signedUpload.uploadUrl, {
+    method: signedUpload.method,
+    headers: signedUpload.headers,
+    body: file,
+  });
+
+  if (!uploadResponse.ok) {
+    const details = await uploadResponse.text().catch(() => '');
+    throw new Error(details || `Direct image upload failed (${uploadResponse.status})`);
+  }
+
+  return {
+    knifeId: signedUpload.knifeId || knifeId,
+    publicUrl: signedUpload.publicUrl,
+  };
 }
