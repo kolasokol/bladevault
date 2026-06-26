@@ -84,7 +84,7 @@ Choose the setup that fits you:
 
 ### Run the published image
 
-For macOS / Linux:
+For macOS / Linux Docker:
 
 ```bash
 docker run -d \
@@ -95,9 +95,22 @@ docker run -d \
   ghcr.io/kolasokol/bladevault:latest
 ```
 
+or Podman:
+
+```bash
+mkdir -p "$HOME/BladeVault/data"
+
+podman run -d \
+  --name bladevault \
+  --restart unless-stopped \
+  -p 5500:3000 \
+  -v "$HOME/BladeVault/data:/app/data" \
+  ghcr.io/kolasokol/bladevault:latest
+```
+
 This creates a persistent `BladeVault/data` folder in your home directory for the SQLite database and downloaded images.
 
-For Windows (PowerShell):
+For Windows (PowerShell) Docker:
 
 ```powershell
 docker run -d `
@@ -106,6 +119,21 @@ docker run -d `
   -p 5500:3000 `
   -v "${env:USERPROFILE}\BladeVault\data:/app/data" `
   ghcr.io/kolasokol/bladevault:latest
+
+```
+
+or Podman:
+
+```powershell
+$path = "$env:USERPROFILE\BladeVault\data"
+New-Item -ItemType Directory -Force $path | Out-Null
+
+podman run -d `
+  --name bladevault `
+  -p 5500:3000 `
+  -v "${path}:/app/data" `
+  ghcr.io/kolasokol/bladevault:latest
+
 ```
 
 Open [http://localhost:5500](http://localhost:5500) after the container starts.
@@ -218,7 +246,7 @@ bladevault/
 
 ### 💾 Data Storage
 
-### Local mode (default)
+#### Local mode (default)
 
 BladeVault stores everything locally:
 
@@ -227,7 +255,7 @@ BladeVault stores everything locally:
 
 No cloud accounts or API keys required. Keep the `data/` folder backed up to preserve your collection.
 
-### Cloud Backup Beta (optional by invite)
+#### Cloud Backup Beta (optional by invite)
 
 ( not sure i will run it perma if you interested in it, DM me)
 
