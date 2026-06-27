@@ -10,5 +10,7 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - NODE_ENV=production
-      - PORT=3000
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_BLADEVAULT_AUTH_URL: ${NEXT_PUBLIC_BLADEVAULT_AUTH_URL:-}
+      NEXT_PUBLIC_BLADEVAULT_BACKUP_URL: ${NEXT_PUBLIC_BLADEVAULT_BACKUP_URL:-}

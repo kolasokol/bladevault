@@ -22,11 +22,12 @@ import {
   CloudAuthErrorMessage,
   CloudAuthState,
   CloudAuthSuccessMessage,
+  CloudRuntimeConfig,
   CloudBackupSession,
   createCloudAuthHeaders,
   getCloudAuthState,
-  getCloudAuthUrl,
-  getCloudBackupUrl,
+  getCloudRuntimeConfig,
+  loadCloudRuntimeConfig,
   parseApiError,
   refreshCloudBackupAccessToken,
   setCloudAuthState,
@@ -101,6 +102,7 @@ function formatCloudBackupError(error: unknown, baseUrl: string) {
 export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [cloudSession, setCloudSession] = useState<CloudBackupSession | null>(null);
+  const [cloudConfig, setCloudConfig] = useState<CloudRuntimeConfig>(() => getCloudRuntimeConfig());
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -114,8 +116,8 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
   const [restoreMessage, setRestoreMessage] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
 
-  const authUrl = getCloudAuthUrl();
-  const backupUrl = getCloudBackupUrl();
+  const authUrl = cloudConfig.authUrl;
+  const backupUrl = cloudConfig.backupUrl;
   const authOrigin = authUrl ? new URL(authUrl).origin : '';
   const cloudConfigError = [
     !authUrl ? 'NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.' : null,
@@ -123,6 +125,12 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
   ]
     .filter(Boolean)
     .join(' ');
+
+  const refreshCloudConfig = useCallback(async (force = false) => {
+    const nextConfig = await loadCloudRuntimeConfig(force);
+    setCloudConfig(nextConfig);
+    return nextConfig;
+  }, []);
 
   const refreshCloudSession = useCallback(async (cancelled = false) => {
     const state = getCloudAuthState();
@@ -139,14 +147,15 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setSessionMessage('Checking cloud session...');
 
     try {
-      if (!authUrl) {
+      const nextConfig = await refreshCloudConfig();
+      if (!nextConfig.authUrl) {
         throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
       }
 
       const controller = new AbortController();
       const timeout = window.setTimeout(() => controller.abort(), 8000);
 
-      const response = await fetch(`${authUrl}/api/me`, {
+      const response = await fetch(`${nextConfig.authUrl}/api/me`, {
         headers: createCloudAuthHeaders(),
         signal: controller.signal,
       });
@@ -181,10 +190,10 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       if (!cancelled) {
         setCloudSession(null);
         setSessionStatus('error');
-        setSessionMessage(formatCloudBackupError(error, authUrl));
+        setSessionMessage(formatCloudBackupError(error, getCloudRuntimeConfig().authUrl));
       }
     }
-  }, [authUrl]);
+  }, [refreshCloudConfig]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -196,7 +205,10 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       setLoadError(null);
 
       try {
-        const response = await fetch('/api/settings');
+        const [response, nextCloudConfig] = await Promise.all([
+          fetch('/api/settings'),
+          refreshCloudConfig(true),
+        ]);
         const data = await response.json();
         if (!response.ok) {
           throw new Error(data.error || 'Failed to load settings');
@@ -206,6 +218,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
 
         if (cancelled) return;
         setSettings(nextSettings);
+        setCloudConfig(nextCloudConfig);
         void refreshCloudSession(cancelled);
       } catch (error) {
         if (!cancelled) {
@@ -222,7 +235,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     return () => {
       cancelled = true;
     };
-  }, [isOpen, refreshCloudSession]);
+  }, [isOpen, refreshCloudConfig, refreshCloudSession]);
 
   const updateSyncTime = async (value: string) => {
     const response = await fetch('/api/settings', {
@@ -246,12 +259,14 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setAuthMessage('Opening Google sign-in...');
 
     try {
-      if (!authUrl || !authOrigin) {
+      const nextConfig = await refreshCloudConfig();
+      const nextAuthOrigin = nextConfig.authUrl ? new URL(nextConfig.authUrl).origin : '';
+      if (!nextConfig.authUrl || !nextAuthOrigin) {
         throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
       }
 
       const clientOrigin = typeof window !== 'undefined' ? window.location.origin : '/';
-      const startUrl = new URL('/auth/popup/start', authUrl);
+      const startUrl = new URL('/auth/popup/start', nextConfig.authUrl);
       startUrl.searchParams.set('client_origin', clientOrigin);
 
       const popup = window.open(
@@ -276,7 +291,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
         };
 
         const onMessage = (event: MessageEvent) => {
-          if (event.origin !== authOrigin) return;
+          if (event.origin !== nextAuthOrigin) return;
           const data = event.data as CloudAuthSuccessMessage | CloudAuthErrorMessage;
           if (!data || typeof data !== 'object' || !('type' in data)) return;
 
@@ -323,7 +338,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       setAuthMessage('Signed in. Cloud backup is ready.');
     } catch (error) {
       setAuthStatus('error');
-      setAuthMessage(formatCloudBackupError(error, authUrl));
+      setAuthMessage(formatCloudBackupError(error, getCloudRuntimeConfig().authUrl));
     }
   };
 
@@ -334,11 +349,12 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setSessionMessage('Signing out...');
 
     try {
-      if (!authUrl) {
+      const nextConfig = await refreshCloudConfig();
+      if (!nextConfig.authUrl) {
         throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
       }
 
-      const response = await fetch(`${authUrl}/api/auth/sign-out`, {
+      const response = await fetch(`${nextConfig.authUrl}/api/auth/sign-out`, {
         method: 'POST',
         headers: createCloudAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({}),
@@ -354,7 +370,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       setSessionMessage('Signed out');
     } catch (error) {
       setSessionStatus('error');
-      setSessionMessage(formatCloudBackupError(error, authUrl));
+      setSessionMessage(formatCloudBackupError(error, getCloudRuntimeConfig().authUrl));
     }
   };
 
@@ -362,10 +378,11 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     if (!settings) return;
 
     setBackupStatus('loading');
-      setBackupMessage('Uploading your local data folder...');
+    setBackupMessage('Uploading your local data folder...');
 
     try {
-      if (!backupUrl) {
+      const nextConfig = await refreshCloudConfig();
+      if (!nextConfig.backupUrl) {
         throw new Error('NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.');
       }
 
@@ -379,7 +396,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       }
 
       const archiveBlob = await archiveResponse.blob();
-      const response = await fetch(`${backupUrl}/backup/latest`, {
+      const response = await fetch(`${nextConfig.backupUrl}/backup/latest`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -400,7 +417,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       setBackupMessage('Cloud backup is up to date.');
     } catch (error) {
       setBackupStatus('error');
-      setBackupMessage(formatCloudBackupError(error, backupUrl));
+      setBackupMessage(formatCloudBackupError(error, getCloudRuntimeConfig().backupUrl));
     }
   };
 
@@ -418,13 +435,14 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setRestoreMessage('Downloading your cloud backup...');
 
     try {
-      if (!backupUrl) {
+      const nextConfig = await refreshCloudConfig();
+      if (!nextConfig.backupUrl) {
         throw new Error('NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.');
       }
 
       const accessToken = await refreshCloudBackupAccessToken();
 
-      const response = await fetch(`${backupUrl}/backup/latest`, {
+      const response = await fetch(`${nextConfig.backupUrl}/backup/latest`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -452,7 +470,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       window.setTimeout(() => window.location.reload(), 600);
     } catch (error) {
       setRestoreStatus('error');
-      setRestoreMessage(formatCloudBackupError(error, backupUrl));
+      setRestoreMessage(formatCloudBackupError(error, getCloudRuntimeConfig().backupUrl));
     }
   };
 

@@ -3,6 +3,18 @@ export const DEFAULT_CLOUD_AUTH_URL = process.env.NEXT_PUBLIC_BLADEVAULT_AUTH_UR
 export const DEFAULT_CLOUD_BACKUP_URL =
   process.env.NEXT_PUBLIC_BLADEVAULT_BACKUP_URL?.trim() || '';
 
+export type CloudRuntimeConfig = {
+  authUrl: string;
+  backupUrl: string;
+};
+
+let runtimeCloudConfig: CloudRuntimeConfig = {
+  authUrl: DEFAULT_CLOUD_AUTH_URL ? normalizeCloudUrl(DEFAULT_CLOUD_AUTH_URL) : '',
+  backupUrl: DEFAULT_CLOUD_BACKUP_URL ? normalizeCloudUrl(DEFAULT_CLOUD_BACKUP_URL) : '',
+};
+
+let runtimeCloudConfigPromise: Promise<CloudRuntimeConfig> | null = null;
+
 const CLOUD_AUTH_STATE_KEY = 'bladevault.cloudAuthState';
 
 export type CloudBackupSession = {
@@ -55,11 +67,57 @@ export function normalizeCloudUrl(url: string): string {
 }
 
 export function getCloudAuthUrl(): string {
-  return DEFAULT_CLOUD_AUTH_URL ? normalizeCloudUrl(DEFAULT_CLOUD_AUTH_URL) : '';
+  return runtimeCloudConfig.authUrl;
 }
 
 export function getCloudBackupUrl(): string {
-  return DEFAULT_CLOUD_BACKUP_URL ? normalizeCloudUrl(DEFAULT_CLOUD_BACKUP_URL) : '';
+  return runtimeCloudConfig.backupUrl;
+}
+
+export function getCloudRuntimeConfig(): CloudRuntimeConfig {
+  return { ...runtimeCloudConfig };
+}
+
+export async function loadCloudRuntimeConfig(force = false): Promise<CloudRuntimeConfig> {
+  if (!force && (runtimeCloudConfig.authUrl || runtimeCloudConfig.backupUrl)) {
+    return getCloudRuntimeConfig();
+  }
+
+  if (typeof window === 'undefined') {
+    return getCloudRuntimeConfig();
+  }
+
+  if (!force && runtimeCloudConfigPromise) {
+    return runtimeCloudConfigPromise;
+  }
+
+  runtimeCloudConfigPromise = fetch('/api/runtime-config', {
+    cache: 'no-store',
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(await parseApiError(response));
+      }
+
+      const data = (await response.json()) as Partial<CloudRuntimeConfig>;
+      runtimeCloudConfig = {
+        authUrl:
+          typeof data.authUrl === 'string' && data.authUrl.trim()
+            ? normalizeCloudUrl(data.authUrl)
+            : '',
+        backupUrl:
+          typeof data.backupUrl === 'string' && data.backupUrl.trim()
+            ? normalizeCloudUrl(data.backupUrl)
+            : '',
+      };
+
+      return getCloudRuntimeConfig();
+    })
+    .finally(() => {
+      runtimeCloudConfigPromise = null;
+    });
+
+  return runtimeCloudConfigPromise;
 }
 
 export function getCloudAuthState(): CloudAuthState | null {
@@ -132,7 +190,7 @@ export async function refreshCloudBackupAccessToken(): Promise<string> {
     throw new Error('Sign in before requesting a backup token.');
   }
 
-  const authUrl = getCloudAuthUrl();
+  const { authUrl } = await loadCloudRuntimeConfig();
   if (!authUrl) {
     throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
   }

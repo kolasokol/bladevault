@@ -91,6 +91,8 @@ docker run -d \
   --name bladevault \
   --restart unless-stopped \
   -p 5500:3000 \
+  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site \
+  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site \
   -v "$HOME/BladeVault/data:/app/data" \
   ghcr.io/kolasokol/bladevault:latest
 ```
@@ -104,6 +106,8 @@ podman run -d \
   --name bladevault \
   --restart unless-stopped \
   -p 5500:3000 \
+  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site \
+  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site \
   -v "$HOME/BladeVault/data:/app/data" \
   ghcr.io/kolasokol/bladevault:latest
 ```
@@ -117,6 +121,8 @@ docker run -d `
   --name bladevault `
   --restart unless-stopped `
   -p 5500:3000 `
+  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site `
+  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site `
   -v "${env:USERPROFILE}\BladeVault\data:/app/data" `
   ghcr.io/kolasokol/bladevault:latest
 
@@ -131,6 +137,8 @@ New-Item -ItemType Directory -Force $path | Out-Null
 podman run -d `
   --name bladevault `
   -p 5500:3000 `
+  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site `
+  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site `
   -v "${path}:/app/data" `
   ghcr.io/kolasokol/bladevault:latest
 
@@ -151,6 +159,8 @@ docker build --no-cache -t bladevault .
 docker run -p 5500:3000 -d \
   --name bladevault \
   --restart unless-stopped \
+  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site \
+  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site \
   -v $(pwd)/data:/app/data \
   bladevault
 ```
@@ -161,6 +171,13 @@ You can also use Docker Compose:
 
 ```bash
 docker compose up -d
+```
+
+If you use Docker Compose, put these in the same folder in a `.env` file:
+
+```env
+NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site
+NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site
 ```
 
 ---
