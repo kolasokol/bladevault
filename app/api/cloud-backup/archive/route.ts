@@ -25,6 +25,49 @@ async function extractArchive(archivePath: string, outputDir: string) {
   await execFileAsync('tar', ['-xzf', archivePath, '-C', outputDir]);
 }
 
+async function ensureDirectory(dirPath: string) {
+  await fs.mkdir(dirPath, { recursive: true });
+}
+
+async function listDirectoryEntries(dirPath: string) {
+  return await fs.readdir(dirPath, { withFileTypes: true });
+}
+
+async function moveDirectoryContents(sourceDir: string, targetDir: string) {
+  await ensureDirectory(targetDir);
+  const entries = await listDirectoryEntries(sourceDir);
+
+  for (const entry of entries) {
+    await fs.rename(
+      path.join(sourceDir, entry.name),
+      path.join(targetDir, entry.name),
+    );
+  }
+}
+
+async function copyDirectoryContents(sourceDir: string, targetDir: string) {
+  await ensureDirectory(targetDir);
+  const entries = await listDirectoryEntries(sourceDir);
+
+  for (const entry of entries) {
+    await fs.cp(path.join(sourceDir, entry.name), path.join(targetDir, entry.name), {
+      recursive: true,
+      force: true,
+    });
+  }
+}
+
+async function removeDirectoryContents(dirPath: string) {
+  const entries = await listDirectoryEntries(dirPath);
+
+  for (const entry of entries) {
+    await fs.rm(path.join(dirPath, entry.name), {
+      recursive: true,
+      force: true,
+    });
+  }
+}
+
 export async function GET() {
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'bladevault-backup-export-'));
   const archivePath = path.join(tempRoot, 'bladevault-data.tar.gz');
@@ -89,13 +132,29 @@ export async function PUT(request: Request) {
 
     try {
       await fs.rm(backupDataDir, { recursive: true, force: true });
-      await fs.rename(currentDataDir, backupDataDir);
-    } catch {
-      // Ignore if the current data directory does not exist yet.
+      await ensureDirectory(currentDataDir);
+      await moveDirectoryContents(currentDataDir, backupDataDir);
+    } catch (error) {
+      if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) {
+        throw error;
+      }
     }
 
     await fs.mkdir(path.dirname(currentDataDir), { recursive: true });
-    await fs.rename(extractedDataDir, currentDataDir);
+
+    try {
+      await copyDirectoryContents(extractedDataDir, currentDataDir);
+    } catch (error) {
+      await removeDirectoryContents(currentDataDir);
+
+      try {
+        await moveDirectoryContents(backupDataDir, currentDataDir);
+      } catch {
+        // Best effort rollback if the restore copy fails.
+      }
+
+      throw error;
+    }
 
     return NextResponse.json({
       ok: true,
