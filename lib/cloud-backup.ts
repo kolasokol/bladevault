@@ -1,7 +1,11 @@
-export const DEFAULT_CLOUD_AUTH_URL = process.env.NEXT_PUBLIC_BLADEVAULT_AUTH_URL?.trim() || '';
+export const FALLBACK_CLOUD_AUTH_URL = 'https://auth.tkweb.site';
+export const FALLBACK_CLOUD_BACKUP_URL = 'https://backup.tkweb.site';
+
+export const DEFAULT_CLOUD_AUTH_URL =
+  process.env.NEXT_PUBLIC_BLADEVAULT_AUTH_URL?.trim() || FALLBACK_CLOUD_AUTH_URL;
 
 export const DEFAULT_CLOUD_BACKUP_URL =
-  process.env.NEXT_PUBLIC_BLADEVAULT_BACKUP_URL?.trim() || '';
+  process.env.NEXT_PUBLIC_BLADEVAULT_BACKUP_URL?.trim() || FALLBACK_CLOUD_BACKUP_URL;
 
 export type CloudRuntimeConfig = {
   authUrl: string;

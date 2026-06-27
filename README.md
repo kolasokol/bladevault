@@ -84,6 +84,13 @@ Choose the setup that fits you:
 
 ### Run the published image
 
+The published image already defaults to:
+
+- auth: `https://auth.tkweb.site`
+- backup: `https://backup.tkweb.site`
+
+So the simplest deploy is just one command.
+
 For macOS / Linux Docker:
 
 ```bash
@@ -91,8 +98,6 @@ docker run -d \
   --name bladevault \
   --restart unless-stopped \
   -p 5500:3000 \
-  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site \
-  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site \
   -v "$HOME/BladeVault/data:/app/data" \
   ghcr.io/kolasokol/bladevault:latest
 ```
@@ -106,8 +111,6 @@ podman run -d \
   --name bladevault \
   --restart unless-stopped \
   -p 5500:3000 \
-  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site \
-  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site \
   -v "$HOME/BladeVault/data:/app/data" \
   ghcr.io/kolasokol/bladevault:latest
 ```
@@ -121,8 +124,6 @@ docker run -d `
   --name bladevault `
   --restart unless-stopped `
   -p 5500:3000 `
-  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site `
-  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site `
   -v "${env:USERPROFILE}\BladeVault\data:/app/data" `
   ghcr.io/kolasokol/bladevault:latest
 
@@ -137,8 +138,6 @@ New-Item -ItemType Directory -Force $path | Out-Null
 podman run -d `
   --name bladevault `
   -p 5500:3000 `
-  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site `
-  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site `
   -v "${path}:/app/data" `
   ghcr.io/kolasokol/bladevault:latest
 
@@ -159,8 +158,6 @@ docker build --no-cache -t bladevault .
 docker run -p 5500:3000 -d \
   --name bladevault \
   --restart unless-stopped \
-  -e NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site \
-  -e NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site \
   -v $(pwd)/data:/app/data \
   bladevault
 ```
@@ -170,14 +167,25 @@ The `-v $(pwd)/data:/app/data` mount preserves the SQLite database and downloade
 You can also use Docker Compose:
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-If you use Docker Compose, put these in the same folder in a `.env` file:
+Docker Compose also works with no extra env if you want the default hosted auth
+and backup services.
+
+Only create a `.env` file if you want to override those defaults and point the
+container to a different auth or backup server:
 
 ```env
 NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site
 NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site
+```
+
+Typical later update:
+
+```bash
+git pull
+docker compose up -d --build
 ```
 
 ---
@@ -215,7 +223,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | UI                   | [React 19](https://react.dev/), [TypeScript 6](https://www.typescriptlang.org/)      |
 | Styling              | [Tailwind CSS 4](https://tailwindcss.com/), [Lucide Icons 1.21](https://lucide.dev/) |
 | Local Database       | [better-sqlite3 12](https://github.com/WiseLibs/better-sqlite3)                      |
-| Cloud Backup Backend | Cloudflare Workers + D1 + R2                                                         |
+| Cloud Backup Backend | Cloudflare Worker auth + D1 + Ubuntu backup API                                      |
 | Scraping             | [Playwright 1.61](https://playwright.dev/) + [Cheerio 1.2](https://cheerio.js.org/)  |
 | Animations           | [Motion 12](https://motion.dev/)                                                     |
 
