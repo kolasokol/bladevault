@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 
-const DB_PATH = 'data/bladevault.sqlite';
+export const DB_PATH = 'data/bladevault.sqlite';
 
 let db: Database.Database | null = null;
 
@@ -14,6 +14,12 @@ export function getLocalDb(): Database.Database {
     initSchema(db);
   }
   return db;
+}
+
+export function closeLocalDb(): void {
+  if (!db) return;
+  db.close();
+  db = null;
 }
 
 function migrateSchema(database: Database.Database) {

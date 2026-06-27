@@ -16,17 +16,20 @@ import {
   Upload,
 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
-import { getImageUrl, type Knife } from '@/lib/data';
 import { AppSettings } from '@/lib/settings';
 import {
-  clearCloudBackupAuthToken,
+  clearCloudAuthState,
+  CloudAuthErrorMessage,
+  CloudAuthState,
+  CloudAuthSuccessMessage,
   CloudBackupSession,
-  createCloudBackupHeaders,
-  dataUrlToBlob,
+  createCloudAuthHeaders,
+  getCloudAuthState,
+  getCloudAuthUrl,
   getCloudBackupUrl,
   parseApiError,
-  setCloudBackupAuthToken,
-  uploadCloudBackupImage,
+  refreshCloudBackupAccessToken,
+  setCloudAuthState,
 } from '@/lib/cloud-backup';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,15 +98,6 @@ function formatCloudBackupError(error: unknown, baseUrl: string) {
   return message;
 }
 
-function createPopupNonce() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-function getFilenameFromImagePath(image: string) {
-  const parts = image.split('/');
-  return parts[parts.length - 1] || 'image.jpg';
-}
-
 export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [cloudSession, setCloudSession] = useState<CloudBackupSession | null>(null);
@@ -120,18 +114,40 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
   const [restoreMessage, setRestoreMessage] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
 
-  const refreshCloudSession = useCallback(async (cloudBackupUrl?: string, cancelled = false) => {
-    const baseUrl = getCloudBackupUrl(cloudBackupUrl || settings?.cloudBackupUrl);
+  const authUrl = getCloudAuthUrl();
+  const backupUrl = getCloudBackupUrl();
+  const authOrigin = authUrl ? new URL(authUrl).origin : '';
+  const cloudConfigError = [
+    !authUrl ? 'NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.' : null,
+    !backupUrl ? 'NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.' : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const refreshCloudSession = useCallback(async (cancelled = false) => {
+    const state = getCloudAuthState();
+    if (!state?.sessionToken) {
+      if (!cancelled) {
+        setCloudSession(null);
+        setSessionStatus('idle');
+        setSessionMessage('');
+      }
+      return;
+    }
+
     setSessionStatus('loading');
     setSessionMessage('Checking cloud session...');
 
     try {
+      if (!authUrl) {
+        throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
+      }
+
       const controller = new AbortController();
       const timeout = window.setTimeout(() => controller.abort(), 8000);
 
-      const response = await fetch(`${baseUrl}/api/auth/get-session`, {
-        credentials: 'include',
-        headers: createCloudBackupHeaders(),
+      const response = await fetch(`${authUrl}/api/me`, {
+        headers: createCloudAuthHeaders(),
         signal: controller.signal,
       });
       window.clearTimeout(timeout);
@@ -144,6 +160,15 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       if (cancelled) return;
 
       if (data?.user && data?.session) {
+        const existingState = getCloudAuthState();
+        if (existingState) {
+          setCloudAuthState({
+            ...existingState,
+            sessionToken: data.session.token,
+            expiresAt: data.session.expiresAt,
+            user: data.user,
+          });
+        }
         setCloudSession(data);
         setSessionStatus('success');
         setSessionMessage(`Signed in as ${data.user.email}`);
@@ -156,10 +181,10 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       if (!cancelled) {
         setCloudSession(null);
         setSessionStatus('error');
-        setSessionMessage(formatCloudBackupError(error, baseUrl));
+        setSessionMessage(formatCloudBackupError(error, authUrl));
       }
     }
-  }, [settings?.cloudBackupUrl]);
+  }, [authUrl]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -181,7 +206,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
 
         if (cancelled) return;
         setSettings(nextSettings);
-        void refreshCloudSession(nextSettings.cloudBackupUrl, cancelled);
+        void refreshCloudSession(cancelled);
       } catch (error) {
         if (!cancelled) {
           setLoadError(error instanceof Error ? error.message : 'Failed to load settings');
@@ -221,17 +246,13 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setAuthMessage('Opening Google sign-in...');
 
     try {
-      const baseUrl = getCloudBackupUrl(settings.cloudBackupUrl);
-      const callbackURL = typeof window !== 'undefined' ? window.location.origin : '/';
-      const popupOrigin = callbackURL;
-      const popupNonce = createPopupNonce();
-      const startUrl = new URL(`${baseUrl}/api/auth/oauth-popup/start`);
-      startUrl.searchParams.set('provider', 'google');
-      startUrl.searchParams.set('popupOrigin', popupOrigin);
-      startUrl.searchParams.set('popupNonce', popupNonce);
-      startUrl.searchParams.set('callbackURL', callbackURL);
-      startUrl.searchParams.set('errorCallbackURL', callbackURL);
-      startUrl.searchParams.set('newUserCallbackURL', callbackURL);
+      if (!authUrl || !authOrigin) {
+        throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
+      }
+
+      const clientOrigin = typeof window !== 'undefined' ? window.location.origin : '/';
+      const startUrl = new URL('/auth/popup/start', authUrl);
+      startUrl.searchParams.set('client_origin', clientOrigin);
 
       const popup = window.open(
         startUrl.toString(),
@@ -243,7 +264,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
         throw new Error('Popup was blocked. Allow popups and try again.');
       }
 
-      const result = await new Promise<{ token?: string; error?: string }>((resolve) => {
+      const result = await new Promise<CloudAuthSuccessMessage>((resolve, reject) => {
         let settled = false;
 
         const cleanup = () => {
@@ -255,26 +276,25 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
         };
 
         const onMessage = (event: MessageEvent) => {
-          if (event.origin !== baseUrl) return;
-          const data = event.data as {
-            type?: string;
-            nonce?: string;
-            token?: string;
-            error?: { code?: string; description?: string };
-          };
-          if (data?.type !== 'better-auth:oauth-popup' || data?.nonce !== popupNonce) return;
-          cleanup();
-          if (data.error) {
-            resolve({ error: data.error.description || data.error.code || 'Google sign-in failed.' });
+          if (event.origin !== authOrigin) return;
+          const data = event.data as CloudAuthSuccessMessage | CloudAuthErrorMessage;
+          if (!data || typeof data !== 'object' || !('type' in data)) return;
+
+          if (data.type === 'bladevault-auth-error') {
+            cleanup();
+            reject(new Error(data.error.message || 'Google sign-in failed.'));
             return;
           }
-          resolve({ token: data.token });
+          if (data.type !== 'bladevault-auth-success') return;
+
+          cleanup();
+          resolve(data);
         };
 
         const closedPoll = window.setInterval(() => {
           if (popup.closed) {
             cleanup();
-            resolve({ error: 'Google sign-in was closed before completion.' });
+            reject(new Error('Google sign-in was closed before completion.'));
           }
         }, 500);
 
@@ -285,23 +305,25 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
           } catch {
             // ignore
           }
-          resolve({ error: 'Google sign-in timed out. Please try again.' });
+          reject(new Error('Google sign-in timed out. Please try again.'));
         }, 5 * 60 * 1000);
 
         window.addEventListener('message', onMessage);
       });
 
-      if (!result.token) {
-        throw new Error(result.error || 'Google sign-in did not return a session token.');
-      }
-
-      setCloudBackupAuthToken(result.token);
-      await refreshCloudSession(settings.cloudBackupUrl);
+      const nextAuthState: CloudAuthState = {
+        accessToken: result.accessToken,
+        sessionToken: result.sessionToken,
+        expiresAt: result.expiresAt,
+        user: result.user,
+      };
+      setCloudAuthState(nextAuthState);
+      await refreshCloudSession();
       setAuthStatus('success');
       setAuthMessage('Signed in. Cloud backup is ready.');
     } catch (error) {
       setAuthStatus('error');
-      setAuthMessage(formatCloudBackupError(error, getCloudBackupUrl(settings.cloudBackupUrl)));
+      setAuthMessage(formatCloudBackupError(error, authUrl));
     }
   };
 
@@ -312,11 +334,13 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setSessionMessage('Signing out...');
 
     try {
-      const baseUrl = getCloudBackupUrl(settings.cloudBackupUrl);
-      const response = await fetch(`${baseUrl}/api/auth/sign-out`, {
+      if (!authUrl) {
+        throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
+      }
+
+      const response = await fetch(`${authUrl}/api/auth/sign-out`, {
         method: 'POST',
-        credentials: 'include',
-        headers: createCloudBackupHeaders({ 'Content-Type': 'application/json' }),
+        headers: createCloudAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({}),
       });
 
@@ -325,12 +349,12 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       }
 
       setCloudSession(null);
-      clearCloudBackupAuthToken();
+      clearCloudAuthState();
       setSessionStatus('success');
       setSessionMessage('Signed out');
     } catch (error) {
       setSessionStatus('error');
-      setSessionMessage(formatCloudBackupError(error, getCloudBackupUrl(settings.cloudBackupUrl)));
+      setSessionMessage(formatCloudBackupError(error, authUrl));
     }
   };
 
@@ -341,70 +365,33 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setBackupMessage('Uploading your local vault...');
 
     try {
-      const baseUrl = getCloudBackupUrl(settings.cloudBackupUrl);
-      const snapshotResponse = await fetch('/api/cloud-backup/snapshot?inlineImages=false');
-      const snapshotData = await snapshotResponse.json();
-
-      if (!snapshotResponse.ok) {
-        throw new Error(snapshotData.error || 'Failed to read local snapshot');
+      if (!backupUrl) {
+        throw new Error('NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.');
       }
 
-      const normalizedKnives = await Promise.all(
-        ((snapshotData.knives ?? []) as Knife[]).map(async (knife) => {
-          const uploadedImages: string[] = [];
+      const accessToken = await refreshCloudBackupAccessToken();
 
-          for (const image of knife.images ?? []) {
-            if (image.startsWith('http://') || image.startsWith('https://')) {
-              uploadedImages.push(image);
-              continue;
-            }
+      const sqliteResponse = await fetch('/api/cloud-backup/sqlite', {
+        cache: 'no-store',
+      });
+      if (!sqliteResponse.ok) {
+        throw new Error(await parseApiError(sqliteResponse));
+      }
 
-            if (image.startsWith('data:image/')) {
-              const uploadedImage = await uploadCloudBackupImage({
-                baseUrl,
-                file: dataUrlToBlob(image),
-                filename: 'image-upload',
-                knifeId: knife.id,
-              });
-              uploadedImages.push(uploadedImage.publicUrl);
-              continue;
-            }
-
-            const localImageResponse = await fetch(getImageUrl(image));
-            if (!localImageResponse.ok) {
-              throw new Error(`Failed to read local image ${image}`);
-            }
-
-            const imageBlob = await localImageResponse.blob();
-            const uploadedImage = await uploadCloudBackupImage({
-              baseUrl,
-              file: imageBlob,
-              filename: getFilenameFromImagePath(image),
-              knifeId: knife.id,
-            });
-            uploadedImages.push(uploadedImage.publicUrl);
-          }
-
-          return {
-            ...knife,
-            images: uploadedImages,
-          };
-        })
-      );
-
-      const response = await fetch(`${baseUrl}/api/v1/sync/push`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: createCloudBackupHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          knives: normalizedKnives,
-          compareIds: snapshotData.compareIds ?? [],
-          replaceAll: true,
-        }),
+      const sqliteBlob = await sqliteResponse.blob();
+      const response = await fetch(`${backupUrl}/backup/latest`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/octet-stream',
+          'X-Backup-Filename': 'bladevault.sqlite',
+        },
+        body: sqliteBlob,
       });
 
       if (!response.ok) {
-        throw new Error(await parseApiError(response));
+        const details = await response.text().catch(() => '');
+        throw new Error(details || `Backup upload failed (${response.status})`);
       }
 
       const now = new Date().toISOString();
@@ -413,7 +400,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       setBackupMessage('Cloud backup is up to date.');
     } catch (error) {
       setBackupStatus('error');
-      setBackupMessage(formatCloudBackupError(error, getCloudBackupUrl(settings.cloudBackupUrl)));
+      setBackupMessage(formatCloudBackupError(error, backupUrl));
     }
   };
 
@@ -431,24 +418,28 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setRestoreMessage('Downloading your cloud backup...');
 
     try {
-      const baseUrl = getCloudBackupUrl(settings.cloudBackupUrl);
-      const response = await fetch(`${baseUrl}/api/v1/sync/pull`, {
-        credentials: 'include',
-        headers: createCloudBackupHeaders(),
+      if (!backupUrl) {
+        throw new Error('NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.');
+      }
+
+      const accessToken = await refreshCloudBackupAccessToken();
+
+      const response = await fetch(`${backupUrl}/backup/latest`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
 
       if (!response.ok) {
-        throw new Error(await parseApiError(response));
+        const details = await response.text().catch(() => '');
+        throw new Error(details || `Backup download failed (${response.status})`);
       }
 
-      const snapshot = await response.json();
-      const importResponse = await fetch('/api/cloud-backup/snapshot', {
+      const sqliteBlob = await response.blob();
+      const importResponse = await fetch('/api/cloud-backup/sqlite', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          knives: snapshot.knives ?? [],
-          compareIds: snapshot.compareIds ?? [],
-        }),
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: sqliteBlob,
       });
 
       const importData = await importResponse.json();
@@ -461,7 +452,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       window.setTimeout(() => window.location.reload(), 600);
     } catch (error) {
       setRestoreStatus('error');
-      setRestoreMessage(formatCloudBackupError(error, getCloudBackupUrl(settings.cloudBackupUrl)));
+      setRestoreMessage(formatCloudBackupError(error, backupUrl));
     }
   };
 
@@ -522,7 +513,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                     </p>
                     <p>
                       Use the <strong className="text-foreground">Cloud Backup</strong> tab to sign
-                      in and sync a copy of your vault to your BladeVault backend.
+                      in through BladeVault Auth and store an off-device copy of your SQLite vault.
                     </p>
                   </CardContent>
                 </Card>
@@ -540,34 +531,60 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                           <div>
                             <CardTitle className="text-sm">Cloud Backup Service</CardTitle>
                             <CardDescription>
-                              Sign in to sync your local vault with BladeVault Cloud.
+                              Sign in through the auth domain, then send your SQLite backup to the backup server.
                             </CardDescription>
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-5">
-                        <div className="space-y-1.5">
-                          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Backup API
-                          </Label>
-                          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                            <Input
-                              value={settings.cloudBackupUrl}
-                              readOnly
-                              className="h-10 min-w-0 flex-1 rounded-xl px-3 text-xs sm:text-sm"
-                            />
-                            <Button
-                              variant="outline"
-                              size="icon-sm"
-                              className="h-10 w-10 shrink-0 self-start rounded-xl sm:self-auto"
-                              onClick={() => copyToClipboard(settings.cloudBackupUrl, 'cloudBackupUrl')}
-                            >
-                              {copied === 'cloudBackupUrl' ? (
-                                <Check className="h-4 w-4" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </Button>
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Auth API
+                            </Label>
+                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                              <Input
+                                value={authUrl}
+                                readOnly
+                                className="h-10 min-w-0 flex-1 rounded-xl px-3 text-xs sm:text-sm"
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon-sm"
+                                className="h-10 w-10 shrink-0 self-start rounded-xl sm:self-auto"
+                                onClick={() => copyToClipboard(authUrl, 'cloudAuthUrl')}
+                              >
+                                {copied === 'cloudAuthUrl' ? (
+                                  <Check className="h-4 w-4" />
+                                ) : (
+                                  <Copy className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Backup API
+                            </Label>
+                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                              <Input
+                                value={backupUrl}
+                                readOnly
+                                className="h-10 min-w-0 flex-1 rounded-xl px-3 text-xs sm:text-sm"
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon-sm"
+                                className="h-10 w-10 shrink-0 self-start rounded-xl sm:self-auto"
+                                onClick={() => copyToClipboard(backupUrl, 'cloudBackupUrl')}
+                              >
+                                {copied === 'cloudBackupUrl' ? (
+                                  <Check className="h-4 w-4" />
+                                ) : (
+                                  <Copy className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
                         </div>
 
@@ -598,7 +615,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                             variant="outline"
                             size="sm"
                             className="self-start rounded-xl sm:self-auto"
-                            onClick={() => refreshCloudSession(settings.cloudBackupUrl)}
+                            onClick={() => refreshCloudSession()}
                           >
                             <RefreshCw className="h-3.5 w-3.5" />
                             Refresh Session
@@ -612,7 +629,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         <CardHeader>
                           <CardTitle className="text-sm">Sync Actions</CardTitle>
                           <CardDescription>
-                            Push your local vault to the cloud or restore the latest cloud copy.
+                            Upload your local SQLite vault or restore the latest remote SQLite backup.
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -673,7 +690,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="rounded-xl border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
-                            Cloud backups are tied to this BladeVault account.
+                            Cloud backups are tied to this BladeVault account and use the current auth and backup domains shown on the left.
                           </div>
                           <Button
                             variant="outline"
@@ -691,19 +708,25 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         <CardHeader>
                           <CardTitle className="text-sm">Sign In To Cloud Backup</CardTitle>
                           <CardDescription>
-                            Use Google to create or access your BladeVault Cloud backup account.
+                            Use Google on the auth domain, then back up your local SQLite vault to the backup server.
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
-                            Your first Google sign-in creates the account automatically. No password or
-                            email verification step is needed.
+                      <CardContent className="space-y-4">
+                        {cloudConfigError && (
+                          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                            {cloudConfigError}
+                          </div>
+                        )}
+                        <div className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
+                          Your first Google sign-in creates the account automatically. After that,
+                          BladeVault can upload and restore your SQLite backup file.
                           </div>
 
                           <Button
                             size="sm"
                             className="h-11 w-full rounded-xl text-sm"
                             onClick={handleGoogleSignIn}
+                            disabled={Boolean(cloudConfigError)}
                           >
                             <FcGoogle className="h-4 w-4" />
                             Continue With Google
@@ -712,8 +735,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                           <div className="space-y-2 rounded-xl border bg-muted/20 px-4 py-3">
                             <StatusPill status={authStatus} message={authMessage} />
                             <p className="text-xs text-muted-foreground">
-                              After Google returns to BladeVault, open Cloud Backup again to confirm
-                              the session is connected.
+                              The popup returns a session token for the auth API and a JWT for the backup server.
                             </p>
                           </div>
                         </CardContent>
