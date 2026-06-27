@@ -12,6 +12,10 @@ import { closeLocalDb, DATA_DIR } from '@/lib/local-db';
 
 const execFileAsync = promisify(execFile);
 
+function shouldIgnoreBackupEntry(name: string): boolean {
+  return name === '.DS_Store' || name === '__MACOSX' || name.startsWith('._');
+}
+
 function resolveDataDir(): string {
   return path.resolve(DATA_DIR);
 }
@@ -21,7 +25,16 @@ function isTarGzipFile(buffer: Buffer): boolean {
 }
 
 async function createArchive(sourceDir: string, outputPath: string) {
-  await execFileAsync('tar', ['-czf', outputPath, '-C', path.dirname(sourceDir), path.basename(sourceDir)]);
+  await execFileAsync('tar', [
+    '--exclude=.DS_Store',
+    '--exclude=__MACOSX',
+    '--exclude=._*',
+    '-czf',
+    outputPath,
+    '-C',
+    path.dirname(sourceDir),
+    path.basename(sourceDir),
+  ]);
 }
 
 async function extractArchive(archivePath: string, outputDir: string) {
@@ -42,7 +55,7 @@ async function listDirectoryEntries(dirPath: string) {
 
 async function moveDirectoryContents(sourceDir: string, targetDir: string) {
   await ensureDirectory(targetDir);
-  const entries = await listDirectoryEntries(sourceDir);
+  const entries = (await listDirectoryEntries(sourceDir)).filter((entry) => !shouldIgnoreBackupEntry(entry.name));
 
   for (const entry of entries) {
     const sourcePath = path.join(sourceDir, entry.name);
@@ -69,7 +82,7 @@ async function moveDirectoryContents(sourceDir: string, targetDir: string) {
 
 async function copyDirectoryContents(sourceDir: string, targetDir: string) {
   await ensureDirectory(targetDir);
-  const entries = await listDirectoryEntries(sourceDir);
+  const entries = (await listDirectoryEntries(sourceDir)).filter((entry) => !shouldIgnoreBackupEntry(entry.name));
 
   for (const entry of entries) {
     await fs.cp(path.join(sourceDir, entry.name), path.join(targetDir, entry.name), {
@@ -80,7 +93,7 @@ async function copyDirectoryContents(sourceDir: string, targetDir: string) {
 }
 
 async function removeDirectoryContents(dirPath: string) {
-  const entries = await listDirectoryEntries(dirPath);
+  const entries = (await listDirectoryEntries(dirPath)).filter((entry) => !shouldIgnoreBackupEntry(entry.name));
 
   for (const entry of entries) {
     await fs.rm(path.join(dirPath, entry.name), {
