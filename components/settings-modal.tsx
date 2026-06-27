@@ -362,7 +362,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     if (!settings) return;
 
     setBackupStatus('loading');
-    setBackupMessage('Uploading your local vault...');
+      setBackupMessage('Uploading your local data folder...');
 
     try {
       if (!backupUrl) {
@@ -371,22 +371,22 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
 
       const accessToken = await refreshCloudBackupAccessToken();
 
-      const sqliteResponse = await fetch('/api/cloud-backup/sqlite', {
+      const archiveResponse = await fetch('/api/cloud-backup/archive', {
         cache: 'no-store',
       });
-      if (!sqliteResponse.ok) {
-        throw new Error(await parseApiError(sqliteResponse));
+      if (!archiveResponse.ok) {
+        throw new Error(await parseApiError(archiveResponse));
       }
 
-      const sqliteBlob = await sqliteResponse.blob();
+      const archiveBlob = await archiveResponse.blob();
       const response = await fetch(`${backupUrl}/backup/latest`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/octet-stream',
-          'X-Backup-Filename': 'bladevault.sqlite',
+          'Content-Type': 'application/gzip',
+          'X-Backup-Filename': 'bladevault-data.tar.gz',
         },
-        body: sqliteBlob,
+        body: archiveBlob,
       });
 
       if (!response.ok) {
@@ -435,16 +435,16 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
         throw new Error(details || `Backup download failed (${response.status})`);
       }
 
-      const sqliteBlob = await response.blob();
-      const importResponse = await fetch('/api/cloud-backup/sqlite', {
+      const archiveBlob = await response.blob();
+      const importResponse = await fetch('/api/cloud-backup/archive', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/octet-stream' },
-        body: sqliteBlob,
+        headers: { 'Content-Type': 'application/gzip' },
+        body: archiveBlob,
       });
 
       const importData = await importResponse.json();
       if (!importResponse.ok) {
-        throw new Error(importData.error || 'Failed to restore cloud snapshot locally');
+        throw new Error(importData.error || 'Failed to restore cloud backup locally');
       }
 
       setRestoreStatus('success');
@@ -508,12 +508,14 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-muted-foreground">
                     <p>
-                      Knives, compare picks, and downloaded images are saved to your local SQLite
-                      database and image folder by default.
+                      Knives, compare picks, and downloaded images are saved in your local
+                      <strong className="text-foreground"> data/ </strong>
+                      folder by default.
                     </p>
                     <p>
                       Use the <strong className="text-foreground">Cloud Backup</strong> tab to sign
-                      in through BladeVault Auth and store an off-device copy of your SQLite vault.
+                      in through BladeVault Auth and store an off-device copy of your full local
+                      data folder.
                     </p>
                   </CardContent>
                 </Card>
@@ -531,7 +533,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                           <div>
                             <CardTitle className="text-sm">Cloud Backup Service</CardTitle>
                             <CardDescription>
-                              Sign in through the auth domain, then send your SQLite backup to the backup server.
+                              Sign in through the auth domain, then send your full local data folder to the backup server.
                             </CardDescription>
                           </div>
                         </div>
@@ -629,7 +631,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         <CardHeader>
                           <CardTitle className="text-sm">Sync Actions</CardTitle>
                           <CardDescription>
-                            Upload your local SQLite vault or restore the latest remote SQLite backup.
+                            Upload your full local data folder or restore the latest remote backup archive.
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -708,7 +710,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         <CardHeader>
                           <CardTitle className="text-sm">Sign In To Cloud Backup</CardTitle>
                           <CardDescription>
-                            Use Google on the auth domain, then back up your local SQLite vault to the backup server.
+                            Use Google on the auth domain, then back up your full local data folder to the backup server.
                           </CardDescription>
                         </CardHeader>
                       <CardContent className="space-y-4">
@@ -719,7 +721,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         )}
                         <div className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
                           Your first Google sign-in creates the account automatically. After that,
-                          BladeVault can upload and restore your SQLite backup file.
+                            BladeVault can upload and restore your full local data folder, including downloaded images.
                           </div>
 
                           <Button

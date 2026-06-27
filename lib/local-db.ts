@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 
+export const DATA_DIR = 'data';
 export const DB_PATH = 'data/bladevault.sqlite';
 
 let db: Database.Database | null = null;
