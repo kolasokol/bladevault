@@ -82,15 +82,6 @@ Choose the setup that fits you:
 
 ## 🐳 Install in Docker
 
-### Run the published image
-
-The published image already defaults to:
-
-- auth: `https://auth.tkweb.site`
-- backup: `https://backup.tkweb.site`
-
-So the simplest deploy is just one command.
-
 For macOS / Linux Docker:
 
 ```bash
