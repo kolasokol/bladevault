@@ -442,22 +442,13 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
 
       const accessToken = await refreshCloudBackupAccessToken();
 
-      const response = await fetch(`${nextConfig.backupUrl}/backup/latest`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        const details = await response.text().catch(() => '');
-        throw new Error(details || `Backup download failed (${response.status})`);
-      }
-
-      const archiveBlob = await response.blob();
       const importResponse = await fetch('/api/cloud-backup/archive', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/gzip' },
-        body: archiveBlob,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          backupUrl: nextConfig.backupUrl,
+          accessToken,
+        }),
       });
 
       const importData = await importResponse.json();
