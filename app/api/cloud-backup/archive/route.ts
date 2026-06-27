@@ -38,10 +38,25 @@ async function moveDirectoryContents(sourceDir: string, targetDir: string) {
   const entries = await listDirectoryEntries(sourceDir);
 
   for (const entry of entries) {
-    await fs.rename(
-      path.join(sourceDir, entry.name),
-      path.join(targetDir, entry.name),
-    );
+    const sourcePath = path.join(sourceDir, entry.name);
+    const targetPath = path.join(targetDir, entry.name);
+
+    try {
+      await fs.rename(sourcePath, targetPath);
+    } catch (error) {
+      if (!(error && typeof error === 'object' && 'code' in error && error.code === 'EXDEV')) {
+        throw error;
+      }
+
+      await fs.cp(sourcePath, targetPath, {
+        recursive: true,
+        force: true,
+      });
+      await fs.rm(sourcePath, {
+        recursive: true,
+        force: true,
+      });
+    }
   }
 }
 
