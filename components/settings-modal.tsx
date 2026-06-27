@@ -3,10 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle,
-  Check,
   CheckCircle2,
   Cloud,
-  Copy,
   Database,
   Download,
   Loader2,
@@ -34,8 +32,6 @@ import {
 } from '@/lib/cloud-backup';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -114,7 +110,6 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
   const [backupMessage, setBackupMessage] = useState('');
   const [restoreStatus, setRestoreStatus] = useState<StatusTone>('idle');
   const [restoreMessage, setRestoreMessage] = useState('');
-  const [copied, setCopied] = useState<string | null>(null);
 
   const authUrl = cloudConfig.authUrl;
   const backupUrl = cloudConfig.backupUrl;
@@ -465,12 +460,6 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     }
   };
 
-  const copyToClipboard = async (text: string, key: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(key);
-    window.setTimeout(() => setCopied(null), 1500);
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90vh] w-[min(96vw,72rem)] max-w-[72rem] sm:max-w-[72rem] flex flex-col overflow-hidden rounded-2xl p-0 shadow-2xl">
@@ -548,57 +537,6 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-5">
-                        <div className="grid gap-4 lg:grid-cols-2">
-                          <div className="space-y-1.5">
-                            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                              Auth API
-                            </Label>
-                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                              <Input
-                                value={authUrl}
-                                readOnly
-                                className="h-10 min-w-0 flex-1 rounded-xl px-3 text-xs sm:text-sm"
-                              />
-                              <Button
-                                variant="outline"
-                                size="icon-sm"
-                                className="h-10 w-10 shrink-0 self-start rounded-xl sm:self-auto"
-                                onClick={() => copyToClipboard(authUrl, 'cloudAuthUrl')}
-                              >
-                                {copied === 'cloudAuthUrl' ? (
-                                  <Check className="h-4 w-4" />
-                                ) : (
-                                  <Copy className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                              Backup API
-                            </Label>
-                            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                              <Input
-                                value={backupUrl}
-                                readOnly
-                                className="h-10 min-w-0 flex-1 rounded-xl px-3 text-xs sm:text-sm"
-                              />
-                              <Button
-                                variant="outline"
-                                size="icon-sm"
-                                className="h-10 w-10 shrink-0 self-start rounded-xl sm:self-auto"
-                                onClick={() => copyToClipboard(backupUrl, 'cloudBackupUrl')}
-                              >
-                                {copied === 'cloudBackupUrl' ? (
-                                  <Check className="h-4 w-4" />
-                                ) : (
-                                  <Copy className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-
                         <div className="grid gap-3 text-xs text-muted-foreground md:grid-cols-2 lg:grid-cols-3">
                           <div className="min-h-24 rounded-xl border bg-card px-4 py-3">
                             <div className="text-[10px] uppercase tracking-wider">Session</div>

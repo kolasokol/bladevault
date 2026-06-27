@@ -6,8 +6,21 @@ export const DATA_DIR = 'data';
 export const DB_PATH = 'data/bladevault.sqlite';
 
 let db: Database.Database | null = null;
+let restoreInProgress = false;
+
+export function beginLocalRestore(): void {
+  restoreInProgress = true;
+}
+
+export function endLocalRestore(): void {
+  restoreInProgress = false;
+}
 
 export function getLocalDb(): Database.Database {
+  if (restoreInProgress) {
+    throw new Error('Local database restore is in progress. Please try again in a moment.');
+  }
+
   if (!db) {
     fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
     db = new Database(DB_PATH);

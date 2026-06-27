@@ -8,7 +8,7 @@ import { pipeline } from 'stream/promises';
 import { promisify } from 'util';
 import { NextResponse } from 'next/server';
 import { clearStorageCache } from '@/lib/storage';
-import { closeLocalDb, DATA_DIR } from '@/lib/local-db';
+import { beginLocalRestore, closeLocalDb, DATA_DIR, endLocalRestore } from '@/lib/local-db';
 
 const execFileAsync = promisify(execFile);
 
@@ -43,6 +43,22 @@ async function extractArchive(archivePath: string, outputDir: string) {
 
 async function validateArchive(archivePath: string) {
   await execFileAsync('gzip', ['-t', archivePath]);
+}
+
+async function validateSqliteFile(dbPath: string) {
+  await execFileAsync('node', [
+    '-e',
+    `
+      const Database = require('better-sqlite3');
+      const db = new Database(process.argv[1], { readonly: true });
+      const row = db.prepare("PRAGMA integrity_check;").get();
+      db.close();
+      if (!row || Object.values(row)[0] !== 'ok') {
+        process.exit(2);
+      }
+    `,
+    dbPath,
+  ]);
 }
 
 async function ensureDirectory(dirPath: string) {
@@ -117,37 +133,44 @@ async function restoreArchiveFromPath(archivePath: string) {
 
     await fs.access(extractedDataDir);
     await fs.access(extractedDbPath);
+    await validateSqliteFile(extractedDbPath);
 
     const currentDataDir = resolveDataDir();
     const backupDataDir = `${currentDataDir}.before-restore-${Date.now()}.bak`;
 
+    beginLocalRestore();
     closeLocalDb();
     clearStorageCache();
 
     try {
-      await fs.rm(backupDataDir, { recursive: true, force: true });
-      await ensureDirectory(currentDataDir);
-      await moveDirectoryContents(currentDataDir, backupDataDir);
-    } catch (error) {
-      if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) {
-        throw error;
+      try {
+        await fs.rm(backupDataDir, { recursive: true, force: true });
+        await ensureDirectory(currentDataDir);
+        await moveDirectoryContents(currentDataDir, backupDataDir);
+      } catch (error) {
+        if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) {
+          throw error;
+        }
       }
-    }
 
-    await fs.mkdir(path.dirname(currentDataDir), { recursive: true });
-
-    try {
-      await copyDirectoryContents(extractedDataDir, currentDataDir);
-    } catch (error) {
-      await removeDirectoryContents(currentDataDir);
+      await fs.mkdir(path.dirname(currentDataDir), { recursive: true });
 
       try {
-        await moveDirectoryContents(backupDataDir, currentDataDir);
-      } catch {
-        // Best effort rollback if the restore copy fails.
-      }
+        await copyDirectoryContents(extractedDataDir, currentDataDir);
+        await validateSqliteFile(path.join(currentDataDir, 'bladevault.sqlite'));
+      } catch (error) {
+        await removeDirectoryContents(currentDataDir);
 
-      throw error;
+        try {
+          await moveDirectoryContents(backupDataDir, currentDataDir);
+        } catch {
+          // Best effort rollback if the restore copy fails.
+        }
+
+        throw error;
+      }
+    } finally {
+      endLocalRestore();
     }
 
     const stat = await fs.stat(archivePath);
