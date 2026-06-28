@@ -48,6 +48,12 @@ import {
 
 type StatusTone = 'idle' | 'loading' | 'success' | 'error';
 
+const settingsTabTriggerClassName =
+  'flex-none min-w-[9rem] rounded-lg border border-transparent px-4 py-1 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground data-active:border-[var(--bladevault-line)] data-active:bg-[var(--bladevault-olive)] data-active:text-[var(--bladevault-gold)] data-active:shadow-none dark:data-active:border-[var(--bladevault-line)] dark:data-active:bg-[var(--bladevault-olive)] dark:data-active:text-[var(--bladevault-gold)]';
+
+const settingsSecondaryButtonClassName =
+  'border-[var(--bladevault-line)] bg-accent text-foreground hover:bg-[var(--bladevault-olive)] hover:text-[var(--bladevault-gold)] dark:border-[var(--bladevault-line)] dark:bg-accent dark:text-foreground dark:hover:bg-[var(--bladevault-olive)] dark:hover:text-[var(--bladevault-gold)]';
+
 function StatusPill({ status, message }: { status: StatusTone; message?: string }) {
   if (status === 'idle') return null;
 
@@ -459,12 +465,17 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
           <Tabs defaultValue="general" className="flex w-full flex-col overflow-hidden">
             <div className="border-b px-7 pt-4">
               <TabsList className="h-auto flex-wrap gap-1.5 rounded-xl bg-muted/70 p-1">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="cloud-backup" className="gap-2">
-                  <span>Cloud Backup</span>
+                <TabsTrigger value="general" className={settingsTabTriggerClassName}>
+                  General
+                </TabsTrigger>
+                <TabsTrigger
+                  value="cloud-backup"
+                  className={`${settingsTabTriggerClassName} gap-2`}
+                >
+                  <span className="shrink-0">Cloud Backup</span>
                   <Badge
                     variant="outline"
-                    className="h-4 rounded-full border-amber-300 bg-amber-100 px-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-800"
+                    className="h-4 shrink-0 rounded-full border-amber-300 bg-amber-100 px-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-800"
                   >
                     Beta
                   </Badge>
@@ -547,7 +558,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                           <Button
                             variant="outline"
                             size="sm"
-                            className="self-start rounded-xl sm:self-auto"
+                            className={`${settingsSecondaryButtonClassName} self-start rounded-xl sm:self-auto`}
                             onClick={() => refreshCloudSession()}
                           >
                             <RefreshCw className="h-3.5 w-3.5" />
@@ -603,7 +614,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-11 rounded-xl text-sm"
+                              className={`${settingsSecondaryButtonClassName} h-11 rounded-xl text-sm`}
                               onClick={handleRestore}
                               disabled={restoreStatus === 'loading'}
                             >
@@ -648,7 +659,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-10 w-full rounded-xl"
+                            className={`${settingsSecondaryButtonClassName} h-10 w-full rounded-xl`}
                             onClick={handleLogout}
                           >
                             <LogOut className="h-3.5 w-3.5" />
