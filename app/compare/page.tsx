@@ -146,10 +146,10 @@ export default function ComparePage() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="sticky left-0 z-10 w-40 bg-card text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">Feature</TableHead>
+                    <TableRow className="bg-white hover:bg-white">
+                      <TableHead className="sticky left-0 z-10 w-40 bg-white text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">Feature</TableHead>
                       {comparedKnives.map((knife) => (
-                        <TableHead key={knife.id} className="min-w-[180px]">
+                        <TableHead key={knife.id} className="min-w-[180px] bg-white">
                           <div className="group/image relative mb-2 aspect-video w-full overflow-hidden rounded-lg cursor-pointer">
                             {knife.images.length > 0 ? (
                               <Image

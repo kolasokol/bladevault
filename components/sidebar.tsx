@@ -95,7 +95,7 @@ export function Sidebar() {
               <Badge
                 className={cn(
                   "h-auto rounded-full border-0 bg-transparent px-0 py-0 text-[9px] font-semibold uppercase tracking-[0.16em] shadow-none",
-                  "text-[var(--bladevault-local)] dark:text-[var(--bladevault-gold)]",
+                  "!text-[var(--bladevault-local)] dark:!text-[var(--bladevault-gold)]",
                 )}
                 title="Your vault stays local. Use Cloud Backup in settings to sync a copy."
               >
