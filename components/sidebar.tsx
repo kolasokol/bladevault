@@ -65,7 +65,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="flex h-screen w-60 flex-col border-r" style={{ backgroundColor: '#FCFCFB' }}>
+      <aside className="flex h-screen w-60 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="flex items-center gap-2.5 px-4 py-4">
           <div className="relative h-12 w-12">
             <Image
