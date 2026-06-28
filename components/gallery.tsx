@@ -89,7 +89,7 @@ export function Gallery({
                 className={cn(
                   'group relative h-20 w-20 shrink-0 overflow-hidden p-0 bg-white transition-all',
                   activeIdx === idx
-                    ? 'ring-2 ring-emerald-500 ring-offset-1'
+                    ? 'ring-2 ring-[var(--bladevault-title)] ring-offset-1'
                     : 'opacity-70 hover:opacity-100'
                 )}
               >
