@@ -65,7 +65,7 @@ export function KnifeCard({ knife }: { knife: Knife }) {
             size="icon-xs"
             onClick={handleCompareClick}
             className={cn(
-              'absolute left-2 top-2 z-10 rounded-full border bg-white/90 backdrop-blur-sm transition-colors hover:bg-white dark:border-input dark:bg-input/90 dark:hover:bg-input',
+              'absolute left-2 top-2 z-10 rounded-full border bg-white/90 text-[var(--bladevault-olive)] backdrop-blur-sm transition-colors hover:bg-white hover:text-[var(--bladevault-olive)] dark:border-input dark:bg-input/90 dark:text-[var(--bladevault-gold)] dark:hover:bg-input dark:hover:text-[var(--bladevault-gold)]',
               inCompare && activeKnifeFloatingClassName
             )}
             style={inCompare ? activeKnifeActionStyle : undefined}
@@ -79,7 +79,7 @@ export function KnifeCard({ knife }: { knife: Knife }) {
             size="icon-xs"
             onClick={handlePinClick}
             className={cn(
-              'absolute right-2 top-2 z-10 rounded-full border bg-white/90 text-black backdrop-blur-sm transition-colors hover:bg-white hover:text-black dark:border-input dark:bg-input/90 dark:text-white dark:hover:bg-input dark:hover:text-white',
+              'absolute right-2 top-2 z-10 rounded-full border bg-white/90 text-[var(--bladevault-olive)] backdrop-blur-sm transition-colors hover:bg-white hover:text-[var(--bladevault-olive)] dark:border-input dark:bg-input/90 dark:text-[var(--bladevault-gold)] dark:hover:bg-input dark:hover:text-[var(--bladevault-gold)]',
               pinned && activeKnifeFloatingClassName
             )}
             style={pinned ? activeKnifeActionStyle : undefined}

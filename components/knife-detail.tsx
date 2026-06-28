@@ -151,6 +151,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 onClick={handleToggleCompare}
                 disabled={isSaving || isTogglingCompare}
                 className={cn(
+                  'text-[var(--bladevault-olive)] hover:text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)] dark:hover:text-[var(--bladevault-gold)]',
                   inCompare && activeKnifeOutlineClassName
                 )}
                 style={inCompare ? activeKnifeActionStyle : undefined}
@@ -168,7 +169,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 onClick={handleTogglePin}
                 disabled={isSaving || isTogglingPin}
                 className={cn(
-                  'text-black hover:text-black dark:text-white dark:hover:text-white',
+                  'text-[var(--bladevault-olive)] hover:text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)] dark:hover:text-[var(--bladevault-gold)]',
                   pinned && activeKnifeOutlineClassName
                 )}
                 style={pinned ? activeKnifeActionStyle : undefined}
@@ -221,6 +222,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               onClick={handleToggleCompare}
               disabled={isTogglingCompare}
               className={cn(
+                'text-[var(--bladevault-olive)] hover:text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)] dark:hover:text-[var(--bladevault-gold)]',
                 inCompare && activeKnifeOutlineClassName
               )}
               style={inCompare ? activeKnifeActionStyle : undefined}
@@ -238,7 +240,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               onClick={handleTogglePin}
               disabled={isTogglingPin}
               className={cn(
-                'text-black hover:text-black dark:text-white dark:hover:text-white',
+                'text-[var(--bladevault-olive)] hover:text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)] dark:hover:text-[var(--bladevault-gold)]',
                 pinned && activeKnifeOutlineClassName
               )}
               style={pinned ? activeKnifeActionStyle : undefined}

@@ -49,7 +49,7 @@ export default function Dashboard() {
       </div>
 
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-medium tracking-tight text-foreground">Recently Added</h2>
+        <h2 className="text-sm font-medium tracking-tight text-[var(--bladevault-title)]">Recently Added</h2>
       </div>
 
       {knives.length === 0 ? (

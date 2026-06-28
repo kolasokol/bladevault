@@ -14,7 +14,7 @@ export function StatCard({
   return (
     <Card size="sm">
       <CardHeader>
-        <CardDescription className="text-[11px] uppercase tracking-wide font-medium">
+        <CardDescription className="text-[11px] font-medium uppercase tracking-wide text-[var(--bladevault-title)]">
           {label}
         </CardDescription>
       </CardHeader>

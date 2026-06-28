@@ -90,13 +90,13 @@ export default function ComparePage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleRemove(knife.id)}
-                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      className="text-[var(--bladevault-local)] transition-colors hover:text-destructive"
                       aria-label="Remove from compare"
                       title="Remove"
                     >
                       <X className="h-4 w-4" />
                     </button>
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
                       {knife.brand} {knife.name}
                     </span>
                   </div>
@@ -108,7 +108,7 @@ export default function ComparePage() {
                     <div className="mx-3 h-4 w-px bg-border" />
                   )}
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
                       Add knife
                     </span>
                     <Select
@@ -147,7 +147,7 @@ export default function ComparePage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="sticky left-0 z-10 w-40 bg-card text-[10px] uppercase tracking-wider shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">Feature</TableHead>
+                      <TableHead className="sticky left-0 z-10 w-40 bg-card text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">Feature</TableHead>
                       {comparedKnives.map((knife) => (
                         <TableHead key={knife.id} className="min-w-[180px]">
                           <div className="group/image relative mb-2 aspect-video w-full overflow-hidden rounded-lg cursor-pointer">
@@ -178,7 +178,7 @@ export default function ComparePage() {
                             className="block hover:underline"
                           >
                             <div className="text-sm font-medium">{knife.name}</div>
-                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            <div className="text-[10px] uppercase tracking-wider text-[var(--bladevault-title)]">
                               {knife.brand}
                             </div>
                           </Link>
@@ -194,7 +194,7 @@ export default function ComparePage() {
                       >
                         <TableCell
                           className={cn(
-                            'sticky left-0 z-10 text-[11px] font-medium uppercase tracking-wider text-muted-foreground shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]',
+                            'sticky left-0 z-10 text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]',
                             idx % 2 === 0
                               ? 'bg-[color-mix(in_oklch,var(--muted)_30%,var(--card))]'
                               : 'bg-card'

@@ -80,7 +80,7 @@ export function Sidebar() {
           </div>
           <span className="text-2xl font-semibold tracking-tight text-foreground">
             <span>Blade</span>
-            <span style={{ color: '#9fc629' }}>Vault</span>
+            <span style={{ color: 'var(--bladevault-title)' }}>Vault</span>
           </span>
         </div>
 
@@ -88,14 +88,14 @@ export function Sidebar() {
           <div className="flex items-center gap-2">
             <div
               className={cn(
-                "inline-flex w-fit items-center justify-center rounded-full p-px",
-                "bg-gradient-to-r from-lime-300 via-lime-400 to-emerald-600 [background-size:130%] bg-[position:12%_50%]",
+                "inline-flex w-fit items-center justify-center rounded-full border px-3 py-[0.22rem]",
+                "border-[var(--bladevault-line)] bg-[var(--card)]",
               )}
             >
               <Badge
                 className={cn(
-                  "h-auto rounded-full border-0 bg-card px-3 py-[0.22rem] text-[9px] font-semibold uppercase tracking-[0.16em] shadow-none",
-                  "text-emerald-700 dark:text-emerald-300",
+                  "h-auto rounded-full border-0 bg-transparent px-0 py-0 text-[9px] font-semibold uppercase tracking-[0.16em] shadow-none",
+                  "text-[var(--bladevault-local)] dark:text-[var(--bladevault-gold)]",
                 )}
                 title="Your vault stays local. Use Cloud Backup in settings to sync a copy."
               >
@@ -126,15 +126,15 @@ export function Sidebar() {
         <svg width="0" height="0" className="absolute">
           <defs>
             <linearGradient id="sidebar-cloud-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#d8b4fe" />
-              <stop offset="55%" stopColor="#c084fc" />
-              <stop offset="100%" stopColor="#a5b4fc" />
+              <stop offset="0%" stopColor="#e2c86e" />
+              <stop offset="55%" stopColor="#c89c3d" />
+              <stop offset="100%" stopColor="#9e6e1b" />
             </linearGradient>
           </defs>
         </svg>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
-          <div className="px-2 pb-1.5 pt-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="px-2 pb-1.5 pt-2 text-[10px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
             Main
           </div>
           {links.map((link) => {
@@ -150,7 +150,7 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors",
                   isActive
-                    ? "bg-gradient-to-b from-[#eaf5d3] to-[#f4f7ed] text-[#6fac18] dark:bg-emerald-950/30 dark:text-emerald-400"
+                    ? "bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
@@ -166,7 +166,7 @@ export function Sidebar() {
               <Collapsible open={pinnedOpen} onOpenChange={setPinnedOpen}>
                 <CollapsibleTrigger
                   render={
-                    <button className="flex w-full items-center justify-between px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground">
+                    <button className="flex w-full items-center justify-between px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-[var(--bladevault-title)] transition-colors hover:text-[var(--bladevault-local)]">
                       Pinned
                       <ChevronRight
                         className={cn(
@@ -189,19 +189,19 @@ export function Sidebar() {
                         className={cn(
                           "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors",
                           isKnifeActive
-                            ? "bg-gradient-to-b from-[#eaf5d3] to-[#f4f7ed] text-[#6fac18] dark:bg-emerald-950/30 dark:text-emerald-400"
+                            ? "bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]"
                             : "text-muted-foreground hover:bg-accent hover:text-foreground",
                         )}
                       >
                         <BookmarkIcon active className="size-3 shrink-0" />
                         <span className="truncate">
-                          <span className="text-muted-foreground">
+                          <span className={cn(isKnifeActive ? 'text-[var(--bladevault-line)]' : 'text-muted-foreground')}>
                             {knife.brand}
                           </span>
-                          <span className="mx-1 text-muted-foreground/50">
+                          <span className={cn('mx-1', isKnifeActive ? 'text-[var(--bladevault-line)]' : 'text-muted-foreground/50')}>
                             ·
                           </span>
-                          <span className="font-medium text-foreground">
+                          <span className={cn('font-medium', isKnifeActive ? 'text-[var(--bladevault-gold)]' : 'text-foreground')}>
                             {knife.name}
                           </span>
                         </span>
@@ -219,7 +219,7 @@ export function Sidebar() {
               <Collapsible open={brandsOpen} onOpenChange={setBrandsOpen}>
                 <CollapsibleTrigger
                   render={
-                    <button className="flex w-full items-center justify-between px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground">
+                    <button className="flex w-full items-center justify-between px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-[var(--bladevault-title)] transition-colors hover:text-[var(--bladevault-local)]">
                       Brands
                       <ChevronRight
                         className={cn(
@@ -244,7 +244,7 @@ export function Sidebar() {
                         className={cn(
                           "flex items-center rounded-md px-2 py-1 text-xs transition-colors",
                           isBrandActive
-                            ? "bg-gradient-to-b from-[#eaf5d3] to-[#f4f7ed] text-[#6fac18] dark:bg-emerald-950/30 dark:text-emerald-400"
+                            ? "bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]"
                             : "text-muted-foreground hover:bg-accent hover:text-foreground",
                         )}
                       >
@@ -259,7 +259,7 @@ export function Sidebar() {
 
           <Card size="sm" className="mt-4">
             <CardHeader>
-              <CardTitle className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <CardTitle className="text-[10px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
                 Total Items
               </CardTitle>
             </CardHeader>
@@ -274,7 +274,6 @@ export function Sidebar() {
         <div className="flex flex-col gap-2 border-t bg-muted/30 p-3">
           <Button
             size="sm"
-            className="border border-black bg-white text-black hover:bg-gray-50"
             render={<Link href="/add" />}
             nativeButton={false}
           >

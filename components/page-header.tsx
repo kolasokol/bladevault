@@ -34,7 +34,7 @@ export function PageHeader({ title, description, breadcrumbs = [], actions }: Pa
       )}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-medium tracking-tight text-foreground">{title}</h1>
+          <h1 className="text-xl font-medium tracking-tight text-[var(--bladevault-title)]">{title}</h1>
           {description && (
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           )}
