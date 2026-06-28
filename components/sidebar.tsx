@@ -94,7 +94,7 @@ export function Sidebar() {
               )}
               title="Your vault stays local. Use Cloud Backup in settings to sync a copy."
             >
-              <span className="size-1.25 rounded-full bg-emerald-500" />
+              <span className="size-1.25 rounded-full" style={{ backgroundColor: '#a8cf32' }} />
               Local
             </Badge>
           </div>

@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ImageIcon, GitCompareArrows } from 'lucide-react';
+import { ImageIcon, Scale } from 'lucide-react';
 import { getImageUrl, Knife } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { BookmarkIcon } from '@/components/bookmark-icon';
@@ -67,7 +67,7 @@ export function KnifeCard({ knife }: { knife: Knife }) {
             aria-label={inCompare ? 'Remove from compare' : 'Add to compare'}
             title={inCompare ? 'Remove from compare' : 'Add to compare'}
           >
-            <GitCompareArrows className="h-3 w-3" />
+            <Scale className="h-3 w-3" />
           </Button>
           <Button
             variant="ghost"

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Pencil, Trash2, Loader2, AlertCircle, ExternalLink, GitCompareArrows } from 'lucide-react';
+import { Pencil, Trash2, Loader2, AlertCircle, ExternalLink, Scale } from 'lucide-react';
 import { BookmarkIcon } from '@/components/bookmark-icon';
 import { useKnives } from '@/components/providers/knives-provider';
 import { Knife, KnifeUpdates } from '@/lib/data';
@@ -154,7 +154,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 {isTogglingCompare ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <GitCompareArrows className="h-3.5 w-3.5" />
+                  <Scale className="h-3.5 w-3.5" />
                 )}
                 {inCompare ? 'Comparing' : 'Compare'}
               </Button>
@@ -225,7 +225,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               {isTogglingCompare ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <GitCompareArrows className="h-3.5 w-3.5" />
+                <Scale className="h-3.5 w-3.5" />
               )}
               {inCompare ? 'Comparing' : 'Compare'}
             </Button>
