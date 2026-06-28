@@ -30,6 +30,10 @@ import {
   refreshCloudBackupAccessToken,
   setCloudAuthState,
 } from '@/lib/cloud-backup';
+import {
+  formatCloudBackupError,
+  uploadCloudBackupArchive,
+} from '@/lib/cloud-backup-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,16 +87,6 @@ function formatSyncTime(value: string) {
   } catch {
     return value;
   }
-}
-
-function formatCloudBackupError(error: unknown, baseUrl: string) {
-  const message = error instanceof Error ? error.message : 'Unknown error';
-
-  if (message === 'Load failed' || message.includes('Failed to fetch')) {
-    return `Could not reach Cloud Backup API at ${baseUrl}. Restart the frontend if you just updated it, and confirm the Backup API shown in settings is correct.`;
-  }
-
-  return message;
 }
 
 export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -232,21 +226,6 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     };
   }, [isOpen, refreshCloudConfig, refreshCloudSession]);
 
-  const updateSyncTime = async (value: string) => {
-    const response = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cloudBackupLastSyncedAt: value }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to update backup timestamp');
-    }
-
-    setSettings(data.settings as AppSettings);
-  };
-
   const handleGoogleSignIn = async () => {
     if (!settings) return;
 
@@ -376,38 +355,8 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     setBackupMessage('Uploading your local data folder...');
 
     try {
-      const nextConfig = await refreshCloudConfig();
-      if (!nextConfig.backupUrl) {
-        throw new Error('NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.');
-      }
-
-      const accessToken = await refreshCloudBackupAccessToken();
-
-      const archiveResponse = await fetch('/api/cloud-backup/archive', {
-        cache: 'no-store',
-      });
-      if (!archiveResponse.ok) {
-        throw new Error(await parseApiError(archiveResponse));
-      }
-
-      const archiveBlob = await archiveResponse.blob();
-      const response = await fetch(`${nextConfig.backupUrl}/backup/latest`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/gzip',
-          'X-Backup-Filename': 'bladevault-data.tar.gz',
-        },
-        body: archiveBlob,
-      });
-
-      if (!response.ok) {
-        const details = await response.text().catch(() => '');
-        throw new Error(details || `Backup upload failed (${response.status})`);
-      }
-
-      const now = new Date().toISOString();
-      await updateSyncTime(now);
+      const { syncedAt } = await uploadCloudBackupArchive();
+      setSettings((prev) => (prev ? { ...prev, cloudBackupLastSyncedAt: syncedAt } : prev));
       setBackupStatus('success');
       setBackupMessage('Cloud backup is up to date.');
     } catch (error) {
@@ -578,7 +527,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         <CardHeader>
                           <CardTitle className="text-sm">Sync Actions</CardTitle>
                           <CardDescription>
-                            Upload your full local data folder or restore the latest remote backup archive.
+                            Automatic backups run every hour and after new knives are added. You can also upload or restore manually here.
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
