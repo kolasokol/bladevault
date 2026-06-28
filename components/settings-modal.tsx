@@ -14,7 +14,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
-import { AppSettings } from '@/lib/settings';
+import { SETTINGS_UPDATED_EVENT, type AppSettings } from '@/lib/settings-shared';
 import {
   clearCloudAuthState,
   CloudAuthErrorMessage,
@@ -36,6 +36,7 @@ import {
 } from '@/lib/cloud-backup-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -226,6 +227,30 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     };
   }, [isOpen, refreshCloudConfig, refreshCloudSession]);
 
+  const saveSettings = useCallback(async (updates: Partial<AppSettings>) => {
+    const response = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to save settings');
+    }
+
+    const nextSettings = data.settings as AppSettings;
+    setSettings(nextSettings);
+
+    window.dispatchEvent(
+      new CustomEvent<Partial<AppSettings>>(SETTINGS_UPDATED_EVENT, {
+        detail: updates,
+      })
+    );
+
+    return nextSettings;
+  }, []);
+
   const handleGoogleSignIn = async () => {
     if (!settings) return;
 
@@ -409,6 +434,16 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     }
   };
 
+  const handleAutoBackupToggle = async (checked: boolean) => {
+    if (!settings) return;
+
+    try {
+      await saveSettings({ cloudAutoBackupEnabled: checked });
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Failed to save settings');
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90vh] w-[min(96vw,72rem)] max-w-[72rem] sm:max-w-[72rem] flex flex-col overflow-hidden rounded-2xl p-0 shadow-2xl">
@@ -519,6 +554,26 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                             Refresh Session
                           </Button>
                         </div>
+
+                        <div className="rounded-xl border bg-card px-4 py-3">
+                          <label className="flex items-start gap-3">
+                            <Checkbox
+                              checked={settings.cloudAutoBackupEnabled}
+                              onCheckedChange={(checked) => handleAutoBackupToggle(checked === true)}
+                              disabled={!cloudSession}
+                              aria-label="Enable auto backup"
+                            />
+                            <span className="space-y-1">
+                              <span className="block text-sm font-medium text-foreground">
+                                Enable auto backup
+                              </span>
+                              <span className="block text-xs text-muted-foreground">
+                                Off by default. When enabled, BladeVault silently backs up every hour
+                                and after new knives are added while you are signed in.
+                              </span>
+                            </span>
+                          </label>
+                        </div>
                       </CardContent>
                     </Card>
 
@@ -527,7 +582,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         <CardHeader>
                           <CardTitle className="text-sm">Sync Actions</CardTitle>
                           <CardDescription>
-                            Automatic backups run every hour and after new knives are added. You can also upload or restore manually here.
+                            While signed in, BladeVault runs background backups every hour and after newly added knives. You can also upload or restore manually here.
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -603,12 +658,12 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                       </Card>
                     ) : (
                       <Card size="sm" className="w-full rounded-2xl xl:sticky xl:top-0">
-                        <CardHeader>
-                          <CardTitle className="text-sm">Sign In To Cloud Backup</CardTitle>
-                          <CardDescription>
-                            Use Google on the auth domain, then back up your full local data folder to the backup server.
-                          </CardDescription>
-                        </CardHeader>
+                      <CardHeader>
+                        <CardTitle className="text-sm">Sign In To Cloud Backup</CardTitle>
+                        <CardDescription>
+                            Cloud backup stays off until you sign in. Use Google on the auth domain if you want to enable off-device sync.
+                        </CardDescription>
+                      </CardHeader>
                       <CardContent className="space-y-4">
                         {cloudConfigError && (
                           <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">

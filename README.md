@@ -42,6 +42,7 @@
 - **Dark & Light Mode** — Toggle themes instantly from the sidebar.
 - **Local-First Storage** — SQLite database + local image folder. Your data stays on your machine by default.
 - **Optional Cloud Backup** — Sign in to your BladeVault cloud account and sync a backup copy through the staging backend.
+- **Auto Sync To Cloud** — After cloud sign-in, BladeVault silently runs a background backup every hour and after each newly added knife, then shows a small bottom-right confirmation when sync completes.
 
 ---
 
@@ -271,9 +272,7 @@ BladeVault stores everything locally:
 
 No cloud accounts or API keys required. Keep the `data/` folder backed up to preserve your collection.
 
-#### Cloud Backup Beta (optional by invite)
-
-( not sure i will run it perma if you interested in it, DM me)
+#### Cloud Backup Beta
 
 Open **Settings** from the sidebar and use the **Cloud Backup** tab to:
 

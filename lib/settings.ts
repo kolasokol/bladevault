@@ -1,15 +1,11 @@
 import { getLocalDb } from './local-db';
-
-export type AppSettings = {
-  cloudBackupLastSyncedAt: string;
-};
-
-export const DEFAULT_SETTINGS: AppSettings = {
-  cloudBackupLastSyncedAt: '',
-};
+import { DEFAULT_SETTINGS, type AppSettings } from './settings-shared';
+export { DEFAULT_SETTINGS, SETTINGS_UPDATED_EVENT } from './settings-shared';
+export type { AppSettings } from './settings-shared';
 
 const SETTINGS_KEYS: Record<keyof AppSettings, string> = {
   cloudBackupLastSyncedAt: 'cloud_backup_last_synced_at',
+  cloudAutoBackupEnabled: 'cloud_auto_backup_enabled',
 };
 
 function getDb() {
@@ -27,6 +23,10 @@ export function getSettings(): AppSettings {
     cloudBackupLastSyncedAt:
       map.get(SETTINGS_KEYS.cloudBackupLastSyncedAt) ||
       DEFAULT_SETTINGS.cloudBackupLastSyncedAt,
+    cloudAutoBackupEnabled:
+      map.get(SETTINGS_KEYS.cloudAutoBackupEnabled) === '1'
+        ? true
+        : DEFAULT_SETTINGS.cloudAutoBackupEnabled,
   };
 }
 
@@ -40,6 +40,7 @@ export function saveSettings(settings: Partial<AppSettings>): AppSettings {
 
   const entries: Array<[keyof AppSettings, string]> = [
     ['cloudBackupLastSyncedAt', next.cloudBackupLastSyncedAt],
+    ['cloudAutoBackupEnabled', next.cloudAutoBackupEnabled ? '1' : '0'],
   ];
 
   const transaction = getDb().transaction(() => {

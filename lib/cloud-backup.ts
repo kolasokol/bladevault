@@ -20,6 +20,7 @@ let runtimeCloudConfig: CloudRuntimeConfig = {
 let runtimeCloudConfigPromise: Promise<CloudRuntimeConfig> | null = null;
 
 const CLOUD_AUTH_STATE_KEY = 'bladevault.cloudAuthState';
+export const CLOUD_AUTH_STATE_EVENT = 'bladevault-cloud-auth-state-change';
 
 export type CloudBackupSession = {
   user: {
@@ -156,6 +157,7 @@ export function setCloudAuthState(state: CloudAuthState) {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(CLOUD_AUTH_STATE_KEY, JSON.stringify(state));
+    window.dispatchEvent(new Event(CLOUD_AUTH_STATE_EVENT));
   } catch {
     // ignore storage failures
   }
@@ -165,6 +167,7 @@ export function clearCloudAuthState() {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.removeItem(CLOUD_AUTH_STATE_KEY);
+    window.dispatchEvent(new Event(CLOUD_AUTH_STATE_EVENT));
   } catch {
     // ignore storage failures
   }

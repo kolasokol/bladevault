@@ -12,6 +12,11 @@ import {
 } from 'react';
 import { Knife, KnifeDraft, KnifeUpdates } from '@/lib/data';
 import {
+  CLOUD_AUTH_STATE_EVENT,
+  getCloudAuthState,
+} from '@/lib/cloud-backup';
+import { DEFAULT_SETTINGS, SETTINGS_UPDATED_EVENT } from '@/lib/settings-shared';
+import {
   canAttemptSilentCloudBackup,
   uploadCloudBackupArchive,
 } from '@/lib/cloud-backup-client';
@@ -25,6 +30,9 @@ type KnivesContextValue = {
   compareIds: string[];
   addToCompare: (id: string) => Promise<void>;
   removeFromCompare: (id: string) => Promise<void>;
+  isCloudSyncEnabled: boolean;
+  isAutoBackupEnabled: boolean;
+  isAutoBackupActive: boolean;
 };
 
 const KnivesContext = createContext<KnivesContextValue | null>(null);
@@ -43,11 +51,72 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [backupNotice, setBackupNotice] = useState<{ id: number; message: string } | null>(null);
+  const [isCloudSyncEnabled, setIsCloudSyncEnabled] = useState(() =>
+    Boolean(getCloudAuthState()?.sessionToken)
+  );
+  const [isAutoBackupEnabled, setIsAutoBackupEnabled] = useState(
+    DEFAULT_SETTINGS.cloudAutoBackupEnabled
+  );
   const backupInFlightRef = useRef(false);
   const pendingBackupRef = useRef(false);
   const runAutoBackupRef = useRef<(reason: 'hourly' | 'item-added' | 'queued') => Promise<void>>(
     async () => {}
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncAutoBackupSetting = async () => {
+      try {
+        const response = await fetch('/api/settings', { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load settings');
+        }
+
+        if (!cancelled) {
+          setIsAutoBackupEnabled(Boolean(data.settings?.cloudAutoBackupEnabled));
+        }
+      } catch {
+        if (!cancelled) {
+          setIsAutoBackupEnabled(DEFAULT_SETTINGS.cloudAutoBackupEnabled);
+        }
+      }
+    };
+
+    const onSettingsUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ cloudAutoBackupEnabled?: boolean }>).detail;
+      if (typeof detail?.cloudAutoBackupEnabled === 'boolean') {
+        setIsAutoBackupEnabled(detail.cloudAutoBackupEnabled);
+        return;
+      }
+
+      void syncAutoBackupSetting();
+    };
+
+    void syncAutoBackupSetting();
+    window.addEventListener(SETTINGS_UPDATED_EVENT, onSettingsUpdated as EventListener);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener(SETTINGS_UPDATED_EVENT, onSettingsUpdated as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncCloudAuthState = () => {
+      setIsCloudSyncEnabled(Boolean(getCloudAuthState()?.sessionToken));
+    };
+
+    syncCloudAuthState();
+    window.addEventListener(CLOUD_AUTH_STATE_EVENT, syncCloudAuthState);
+    window.addEventListener('storage', syncCloudAuthState);
+
+    return () => {
+      window.removeEventListener(CLOUD_AUTH_STATE_EVENT, syncCloudAuthState);
+      window.removeEventListener('storage', syncCloudAuthState);
+    };
+  }, []);
 
   const showBackupNotice = useCallback((message: string) => {
     startTransition(() => {
@@ -146,6 +215,10 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
   }, [backupNotice]);
 
   useEffect(() => {
+    if (!isCloudSyncEnabled || !isAutoBackupEnabled) {
+      return;
+    }
+
     const interval = window.setInterval(() => {
       if (document.visibilityState !== 'visible') {
         return;
@@ -157,7 +230,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     return () => {
       window.clearInterval(interval);
     };
-  }, [scheduleAutoBackup]);
+  }, [isAutoBackupEnabled, isCloudSyncEnabled, scheduleAutoBackup]);
 
   const addKnife = useCallback(async (draft: KnifeDraft): Promise<Knife> => {
     const response = await fetch('/api/knives', {
@@ -184,9 +257,11 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     const data = await response.json();
     const knife = data.knife as Knife;
     setKnives((prev) => [knife, ...prev]);
-    scheduleAutoBackup('item-added');
+    if (isCloudSyncEnabled && isAutoBackupEnabled) {
+      scheduleAutoBackup('item-added');
+    }
     return knife;
-  }, [scheduleAutoBackup]);
+  }, [isAutoBackupEnabled, isCloudSyncEnabled, scheduleAutoBackup]);
 
   const updateKnife = useCallback(async (id: string, updates: KnifeUpdates): Promise<Knife> => {
     const response = await fetch(`/api/knives/${id}`, {
@@ -267,6 +342,9 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
         compareIds,
         addToCompare,
         removeFromCompare,
+        isCloudSyncEnabled,
+        isAutoBackupEnabled,
+        isAutoBackupActive: isCloudSyncEnabled && isAutoBackupEnabled,
       }}
     >
       {children}
