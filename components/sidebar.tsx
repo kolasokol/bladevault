@@ -117,7 +117,7 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors",
                   isActive
-                    ? "bg-gradient-to-b from-[#eaf5d3] to-[#f4f7ed] text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                    ? "bg-gradient-to-b from-[#eaf5d3] to-[#f4f7ed] text-[#6fac18] dark:bg-emerald-950/30 dark:text-emerald-400"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
@@ -156,7 +156,7 @@ export function Sidebar() {
                         className={cn(
                           "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors",
                           isKnifeActive
-                            ? "bg-gradient-to-b from-[#eaf5d3] to-[#f4f7ed] text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                            ? "bg-gradient-to-b from-[#eaf5d3] to-[#f4f7ed] text-[#6fac18] dark:bg-emerald-950/30 dark:text-emerald-400"
                             : "text-muted-foreground hover:bg-accent hover:text-foreground",
                         )}
                       >
@@ -211,7 +211,7 @@ export function Sidebar() {
                         className={cn(
                           "flex items-center rounded-md px-2 py-1 text-xs transition-colors",
                           isBrandActive
-                            ? "bg-gradient-to-b from-[#eaf5d3] to-[#f4f7ed] text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                            ? "bg-gradient-to-b from-[#eaf5d3] to-[#f4f7ed] text-[#6fac18] dark:bg-emerald-950/30 dark:text-emerald-400"
                             : "text-muted-foreground hover:bg-accent hover:text-foreground",
                         )}
                       >

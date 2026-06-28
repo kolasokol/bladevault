@@ -75,8 +75,9 @@ export function KnifeCard({ knife }: { knife: Knife }) {
             onClick={handlePinClick}
             className={cn(
               'absolute right-2 top-2 z-10 rounded-full border bg-white/90 text-black backdrop-blur-sm transition-colors hover:bg-white hover:text-black dark:border-input dark:bg-input/90 dark:text-white dark:hover:bg-input dark:hover:text-white',
-              pinned && 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-950/70 dark:hover:text-emerald-400'
+              pinned && 'border-[#a7c977] text-[#6fac18] hover:text-[#6fac18] dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-950/70 dark:hover:text-emerald-400'
             )}
+            style={pinned ? { background: 'linear-gradient(to bottom, #eaf5d3, #f4f7ed)' } : undefined}
             aria-label={pinned ? 'Unpin knife' : 'Pin knife'}
             title={pinned ? 'Unpin' : 'Pin'}
           >

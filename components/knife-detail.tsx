@@ -166,8 +166,9 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 className={cn(
                   'text-black hover:text-black dark:text-white dark:hover:text-white',
                   pinned &&
-                    'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400'
+                    'border-[#a7c977] text-[#6fac18] hover:text-[#6fac18] dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400'
                 )}
+                style={pinned ? { background: 'linear-gradient(to bottom, #eaf5d3, #f4f7ed)' } : undefined}
               >
                 {isTogglingPin ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -236,8 +237,9 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               className={cn(
                 'text-black hover:text-black dark:text-white dark:hover:text-white',
                 pinned &&
-                  'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400'
+                  'border-[#a7c977] text-[#6fac18] hover:text-[#6fac18] dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400'
               )}
+              style={pinned ? { background: 'linear-gradient(to bottom, #eaf5d3, #f4f7ed)' } : undefined}
             >
               {isTogglingPin ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
