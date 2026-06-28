@@ -7,18 +7,31 @@ import { X } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { KnifeCard } from '@/components/knife-card';
 import { EmptyState } from '@/components/empty-state';
+import { FilterMultiSelect } from '@/components/filter-multi-select';
 import { SearchField } from '@/components/search-field';
 import { useKnives } from '@/components/providers/knives-provider';
-import { matchesKnifeSearch } from '@/lib/data';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Knife, matchesKnifeSearch } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+
+const filterDefinitions = [
+  { key: 'brand', label: 'Brand', getValue: (knife: Knife) => knife.brand },
+  { key: 'modelNumber', label: 'Model Number', getValue: (knife: Knife) => knife.specs.modelNumber },
+  { key: 'bladeMaterial', label: 'Blade Material', getValue: (knife: Knife) => knife.specs.bladeMaterial },
+  { key: 'bladeStyle', label: 'Blade Style', getValue: (knife: Knife) => knife.bladeStyle },
+  { key: 'bladeCoating', label: 'Blade Coating / Finish', getValue: (knife: Knife) => knife.specs.bladeCoating },
+  { key: 'hardness', label: 'Hardness', getValue: (knife: Knife) => knife.specs.hardness },
+  { key: 'lockingMechanism', label: 'Locking Mechanism', getValue: (knife: Knife) => knife.specs.lockingMechanism },
+  { key: 'handleMaterial', label: 'Handle Material', getValue: (knife: Knife) => knife.handleMaterial },
+  { key: 'handleLength', label: 'Handle Length', getValue: (knife: Knife) => knife.specs.handleLength },
+  { key: 'bladeLength', label: 'Blade Length', getValue: (knife: Knife) => knife.specs.bladeLength },
+  { key: 'overallLength', label: 'Overall Length', getValue: (knife: Knife) => knife.specs.overallLength },
+  { key: 'bladeThickness', label: 'Blade Thickness', getValue: (knife: Knife) => knife.specs.bladeThickness },
+  { key: 'weight', label: 'Weight', getValue: (knife: Knife) => knife.specs.weight },
+  { key: 'country', label: 'Country', getValue: (knife: Knife) => knife.specs.country },
+] as const;
+
+type FilterKey = (typeof filterDefinitions)[number]['key'];
 
 function CollectionContent() {
   const { knives } = useKnives();
@@ -27,43 +40,84 @@ function CollectionContent() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState('');
 
-  const brandFilter = searchParams.get('brand') ?? '';
-  const handleFilter = searchParams.get('handle') ?? '';
+  const selectedFilters = useMemo(
+    () =>
+      Object.fromEntries(
+        filterDefinitions.map((definition) => [
+          definition.key,
+          searchParams.getAll(definition.key).filter(Boolean),
+        ])
+      ) as Record<FilterKey, string[]>,
+    [searchParams]
+  );
 
-  const handles = useMemo(
-    () => Array.from(new Set(knives.map((k) => k.handleMaterial))).filter(Boolean).sort(),
+  const optionsByFilter = useMemo(
+    () =>
+      Object.fromEntries(
+        filterDefinitions.map((definition) => [
+          definition.key,
+          Array.from(
+            new Set(
+              knives
+                .map((knife) => definition.getValue(knife))
+                .filter((value): value is string => Boolean(value && value.trim().length > 0))
+            )
+          ).sort((left, right) => left.localeCompare(right)),
+        ])
+      ) as Record<FilterKey, string[]>,
     [knives]
   );
 
   const filteredKnives = useMemo(() => {
     return knives.filter((knife) => {
-      if (brandFilter && knife.brand !== brandFilter) return false;
-      if (handleFilter && knife.handleMaterial !== handleFilter) return false;
       if (!matchesKnifeSearch(knife, query)) return false;
-      return true;
-    });
-  }, [knives, brandFilter, handleFilter, query]);
 
-  const setFilter = (key: string, value: string) => {
+      return filterDefinitions.every((definition) => {
+        const selectedValues = selectedFilters[definition.key];
+
+        if (selectedValues.length === 0) {
+          return true;
+        }
+
+        const value = definition.getValue(knife);
+        return Boolean(value && selectedValues.includes(value));
+      });
+    });
+  }, [knives, query, selectedFilters]);
+
+  const setFilterValues = (key: FilterKey, values: string[]) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
+    params.delete(key);
+
+    values.forEach((value) => {
+      params.append(key, value);
+    });
+
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
   };
 
-  const clearFilters = () => {
-    router.push(pathname);
+  const toggleFilterValue = (key: FilterKey, value: string) => {
+    const currentValues = selectedFilters[key];
+    const nextValues = currentValues.includes(value)
+      ? currentValues.filter((currentValue) => currentValue !== value)
+      : [...currentValues, value];
+
+    setFilterValues(key, nextValues);
+  };
+
+  const clearAllFilters = () => {
+    router.replace(pathname);
     setQuery('');
   };
 
-  const activeFilters = [
-    { key: 'brand', value: brandFilter },
-    { key: 'handle', value: handleFilter },
-  ].filter((f) => f.value) as { key: string; value: string }[];
+  const activeFilters = filterDefinitions.flatMap((definition) =>
+    selectedFilters[definition.key].map((value) => ({
+      key: definition.key,
+      label: definition.label,
+      value,
+    }))
+  );
 
   const hasActiveFilters = activeFilters.length > 0 || query.trim().length > 0;
 
@@ -75,25 +129,45 @@ function CollectionContent() {
       />
 
       {knives.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-4">
           <SearchField value={query} onChange={setQuery} />
         </div>
       )}
 
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      {knives.length > 0 && (
+        <div className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {filterDefinitions.map((definition) => (
+            <FilterMultiSelect
+              key={definition.key}
+              label={definition.label}
+              options={optionsByFilter[definition.key]}
+              selectedValues={selectedFilters[definition.key]}
+              onToggleValue={(value) => toggleFilterValue(definition.key, value)}
+              onClear={() => setFilterValues(definition.key, [])}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="mb-6 flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters.map((filter) => (
             <Badge
-              key={filter.key}
+              key={`${filter.key}-${filter.value}`}
               variant="secondary"
-              className="gap-1 pr-1 text-xs capitalize"
+              className="gap-1 pr-1 text-xs"
             >
-              <span className="text-muted-foreground">{filter.key}:</span>
+              <span className="text-muted-foreground">{filter.label}:</span>
               {filter.value}
               <button
-                onClick={() => setFilter(filter.key, '')}
+                onClick={() =>
+                  setFilterValues(
+                    filter.key,
+                    selectedFilters[filter.key].filter((value) => value !== filter.value)
+                  )
+                }
                 className="ml-1 rounded-sm p-0.5 hover:bg-muted"
-                aria-label={`Clear ${filter.key} filter`}
+                aria-label={`Clear ${filter.label} filter value ${filter.value}`}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -113,26 +187,10 @@ function CollectionContent() {
             </Badge>
           )}
           {hasActiveFilters && (
-            <Button variant="ghost" size="xs" onClick={clearFilters}>
+            <Button variant="ghost" size="xs" onClick={clearAllFilters}>
               Clear all
             </Button>
           )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Select value={handleFilter} onValueChange={(value) => setFilter('handle', value ?? '')}>
-            <SelectTrigger className="w-44" size="sm">
-              <SelectValue placeholder="All handles" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All handles</SelectItem>
-              {handles.map((handle) => (
-                <SelectItem key={handle} value={handle}>
-                  {handle}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -146,7 +204,7 @@ function CollectionContent() {
           }
           action={
             hasActiveFilters ? (
-              <Button variant="outline" size="sm" onClick={clearFilters}>
+              <Button variant="outline" size="sm" onClick={clearAllFilters}>
                 Clear all
               </Button>
             ) : undefined

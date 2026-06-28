@@ -30,7 +30,7 @@
 ## ✨ Features
 
 - **Dashboard** — Get a quick overview of your recently added knives.
-- **Collection Library** — Browse your complete inventory with brand filters and sorting controls.
+- **Collection Library** — Browse your complete inventory with searchable multi-select filters across brand, model number, blade material, blade style, coating, hardness, locking mechanism, handle material, handle length, blade length, overall length, blade thickness, weight, and country.
 - **Knife Detail Page** — View specifications, descriptions, and a full image gallery with lightbox navigation.
 - **Inline Editing** — Update any knife's details directly from the detail page.
 - **Comparison Tool** — Select up to 3 knives and compare specs side-by-side.
