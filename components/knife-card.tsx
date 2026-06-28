@@ -8,6 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useKnives } from '@/components/providers/knives-provider';
+import {
+  activeKnifeActionStyle,
+  activeKnifeFloatingClassName,
+} from '@/lib/knife-action-styles';
 
 export function KnifeCard({ knife }: { knife: Knife }) {
   const { updateKnife, compareIds, addToCompare, removeFromCompare } = useKnives();
@@ -62,8 +66,9 @@ export function KnifeCard({ knife }: { knife: Knife }) {
             onClick={handleCompareClick}
             className={cn(
               'absolute left-2 top-2 z-10 rounded-full border bg-white/90 backdrop-blur-sm transition-colors hover:bg-white dark:border-input dark:bg-input/90 dark:hover:bg-input',
-              inCompare && 'border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-400 dark:hover:bg-blue-950/70'
+              inCompare && activeKnifeFloatingClassName
             )}
+            style={inCompare ? activeKnifeActionStyle : undefined}
             aria-label={inCompare ? 'Remove from compare' : 'Add to compare'}
             title={inCompare ? 'Remove from compare' : 'Add to compare'}
           >
@@ -75,9 +80,9 @@ export function KnifeCard({ knife }: { knife: Knife }) {
             onClick={handlePinClick}
             className={cn(
               'absolute right-2 top-2 z-10 rounded-full border bg-white/90 text-black backdrop-blur-sm transition-colors hover:bg-white hover:text-black dark:border-input dark:bg-input/90 dark:text-white dark:hover:bg-input dark:hover:text-white',
-              pinned && 'border-[#a7c977] text-[#6fac18] hover:text-[#6fac18] dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-950/70 dark:hover:text-emerald-400'
+              pinned && activeKnifeFloatingClassName
             )}
-            style={pinned ? { background: 'linear-gradient(to bottom, #eaf5d3, #f4f7ed)' } : undefined}
+            style={pinned ? activeKnifeActionStyle : undefined}
             aria-label={pinned ? 'Unpin knife' : 'Pin knife'}
             title={pinned ? 'Unpin' : 'Pin'}
           >

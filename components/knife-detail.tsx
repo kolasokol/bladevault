@@ -16,6 +16,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import {
+  activeKnifeActionStyle,
+  activeKnifeOutlineClassName,
+} from '@/lib/knife-action-styles';
 
 export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
   const router = useRouter();
@@ -147,9 +151,9 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 onClick={handleToggleCompare}
                 disabled={isSaving || isTogglingCompare}
                 className={cn(
-                  inCompare &&
-                    'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-950/50'
+                  inCompare && activeKnifeOutlineClassName
                 )}
+                style={inCompare ? activeKnifeActionStyle : undefined}
               >
                 {isTogglingCompare ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -165,10 +169,9 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 disabled={isSaving || isTogglingPin}
                 className={cn(
                   'text-black hover:text-black dark:text-white dark:hover:text-white',
-                  pinned &&
-                    'border-[#a7c977] text-[#6fac18] hover:text-[#6fac18] dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400'
+                  pinned && activeKnifeOutlineClassName
                 )}
-                style={pinned ? { background: 'linear-gradient(to bottom, #eaf5d3, #f4f7ed)' } : undefined}
+                style={pinned ? activeKnifeActionStyle : undefined}
               >
                 {isTogglingPin ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -218,9 +221,9 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               onClick={handleToggleCompare}
               disabled={isTogglingCompare}
               className={cn(
-                inCompare &&
-                  'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-950/50'
+                inCompare && activeKnifeOutlineClassName
               )}
+              style={inCompare ? activeKnifeActionStyle : undefined}
             >
               {isTogglingCompare ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -236,10 +239,9 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               disabled={isTogglingPin}
               className={cn(
                 'text-black hover:text-black dark:text-white dark:hover:text-white',
-                pinned &&
-                  'border-[#a7c977] text-[#6fac18] hover:text-[#6fac18] dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400'
+                pinned && activeKnifeOutlineClassName
               )}
-              style={pinned ? { background: 'linear-gradient(to bottom, #eaf5d3, #f4f7ed)' } : undefined}
+              style={pinned ? activeKnifeActionStyle : undefined}
             >
               {isTogglingPin ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
