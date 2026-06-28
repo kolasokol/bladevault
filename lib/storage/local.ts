@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Knife, KnifeUpdates } from '@/lib/data';
+import { normalizeKnifeTextFields } from '@/lib/knife-text';
 import { getLocalDb } from '@/lib/local-db';
 import { CreateKnifeInput, ImageData, Storage } from './types';
 
@@ -166,13 +167,14 @@ export class LocalStorage implements Storage {
   }
 
   async createKnife(input: CreateKnifeInput): Promise<Knife> {
-    const id = await this.ensureUniqueId(generateId(input.name));
+    const normalizedInput = normalizeKnifeTextFields(input);
+    const id = await this.ensureUniqueId(generateId(normalizedInput.name));
     const addedAt = new Date().toISOString();
 
     const imagePaths: string[] = [];
-    for (let i = 0; i < input.imageUrls.length; i++) {
+    for (let i = 0; i < normalizedInput.imageUrls.length; i++) {
       try {
-        const src = input.imageUrls[i];
+        const src = normalizedInput.imageUrls[i];
         let relativePath: string;
         if (src.startsWith('data:image')) {
           relativePath = await this.saveDataUrl(src, id, i);
@@ -187,16 +189,16 @@ export class LocalStorage implements Storage {
 
     const newKnife: Knife = {
       id,
-      name: input.name,
-      brand: input.brand,
-      bladeStyle: input.bladeStyle,
-      handleMaterial: input.handleMaterial,
+      name: normalizedInput.name,
+      brand: normalizedInput.brand,
+      bladeStyle: normalizedInput.bladeStyle,
+      handleMaterial: normalizedInput.handleMaterial,
       images: imagePaths,
-      specs: input.specs,
-      description: input.description,
+      specs: normalizedInput.specs,
+      description: normalizedInput.description,
       addedAt,
-      sourceUrl: input.sourceUrl ?? '',
-      pinned: input.pinned ?? false,
+      sourceUrl: normalizedInput.sourceUrl ?? '',
+      pinned: normalizedInput.pinned ?? false,
     };
 
     getDb()
@@ -228,7 +230,9 @@ export class LocalStorage implements Storage {
       throw new Error(`Knife with id "${id}" not found`);
     }
 
-    const incomingImages = updates.images ?? existing.images;
+    const normalizedUpdates = normalizeKnifeTextFields(updates);
+
+    const incomingImages = normalizedUpdates.images ?? existing.images;
     const existingExternalUrls = new Set(
       existing.images.filter((src) => src.startsWith('http://') || src.startsWith('https://'))
     );
@@ -279,17 +283,17 @@ export class LocalStorage implements Storage {
 
     const updated: Knife = {
       ...existing,
-      name: updates.name ?? existing.name,
-      brand: updates.brand ?? existing.brand,
-      bladeStyle: updates.bladeStyle ?? existing.bladeStyle,
-      handleMaterial: updates.handleMaterial ?? existing.handleMaterial,
-      description: updates.description ?? existing.description,
-      sourceUrl: updates.sourceUrl ?? existing.sourceUrl,
+      name: normalizedUpdates.name ?? existing.name,
+      brand: normalizedUpdates.brand ?? existing.brand,
+      bladeStyle: normalizedUpdates.bladeStyle ?? existing.bladeStyle,
+      handleMaterial: normalizedUpdates.handleMaterial ?? existing.handleMaterial,
+      description: normalizedUpdates.description ?? existing.description,
+      sourceUrl: normalizedUpdates.sourceUrl ?? existing.sourceUrl,
       images: processedImages,
-      pinned: updates.pinned ?? existing.pinned,
+      pinned: normalizedUpdates.pinned ?? existing.pinned,
       specs: {
         ...existing.specs,
-        ...(updates.specs ?? {}),
+        ...(normalizedUpdates.specs ?? {}),
       },
     };
 
@@ -354,24 +358,26 @@ export class LocalStorage implements Storage {
   }
 
   async migrateKnife(knife: Knife, images: string[]): Promise<void> {
+    const normalizedKnife = normalizeKnifeTextFields(knife);
+
     getDb()
       .prepare(
         `INSERT OR REPLACE INTO knives (id, name, brand, steel, blade_style, handle_material, images, specs, description, added_at, source_url, pinned)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
-        knife.id,
-        knife.name,
-        knife.brand,
+        normalizedKnife.id,
+        normalizedKnife.name,
+        normalizedKnife.brand,
         '',
-        knife.bladeStyle,
-        knife.handleMaterial,
+        normalizedKnife.bladeStyle,
+        normalizedKnife.handleMaterial,
         JSON.stringify(images),
-        JSON.stringify(knife.specs),
-        knife.description,
-        knife.addedAt,
-        knife.sourceUrl,
-        knife.pinned ? 1 : 0
+        JSON.stringify(normalizedKnife.specs),
+        normalizedKnife.description,
+        normalizedKnife.addedAt,
+        normalizedKnife.sourceUrl,
+        normalizedKnife.pinned ? 1 : 0
       );
   }
 
