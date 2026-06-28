@@ -58,6 +58,7 @@ export function Gallery({
                   src={getImageUrl(images[activeIdx])}
                   alt="Knife detailed view"
                   fill
+                  sizes="(max-width: 1024px) 100vw, (max-width: 1536px) 60vw, 70vw"
                   className="object-contain"
                   referrerPolicy="no-referrer"
                   priority
@@ -101,6 +102,7 @@ export function Gallery({
                   src={getImageUrl(img)}
                   alt={`Thumbnail ${idx}`}
                   fill
+                  sizes="80px"
                   className="object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -166,6 +168,7 @@ export function Gallery({
                 src={getImageUrl(images[activeIdx])}
                 alt="Knife full screen"
                 fill
+                sizes="90vw"
                 className="object-contain"
                 referrerPolicy="no-referrer"
               />

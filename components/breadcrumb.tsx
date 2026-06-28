@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import Link from 'next/link';
 import { Home } from 'lucide-react';
 import {
@@ -25,19 +26,22 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
             <span className="sr-only">Home</span>
           </BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator className="[&>svg]:size-3" />
+        {items.length > 0 && <BreadcrumbSeparator className="[&>svg]:size-3" />}
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
-            <BreadcrumbItem key={item.label}>
-              {isLast || !item.href ? (
-                <BreadcrumbPage className="text-xs">{item.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink render={<Link href={item.href} className="text-xs" />}>
-                  {item.label}
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
+            <Fragment key={item.label}>
+              <BreadcrumbItem>
+                {isLast || !item.href ? (
+                  <BreadcrumbPage className="text-xs">{item.label}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink render={<Link href={item.href} className="text-xs" />}>
+                    {item.label}
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+              {!isLast && <BreadcrumbSeparator className="[&>svg]:size-3" />}
+            </Fragment>
           );
         })}
       </BreadcrumbList>

@@ -12,6 +12,10 @@ const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono' });
 export const metadata: Metadata = {
   title: 'BladeVault | Knife Collection',
   description: 'Manage your local knife collection.',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {

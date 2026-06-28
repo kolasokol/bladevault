@@ -65,18 +65,20 @@ export function Sidebar() {
     <>
       <aside className="flex h-screen w-60 flex-col border-r" style={{ backgroundColor: '#FCFCFB' }}>
         <div className="flex items-center gap-2.5 px-4 py-4">
-          <div className="relative h-7 w-7 overflow-hidden rounded-lg">
+          <div className="relative h-12 w-12">
             <Image
               src="/logo.svg"
               alt="BladeVault logo"
               fill
-              sizes="28px"
-              className="object-contain dark:invert"
+              sizes="48px"
+              unoptimized
+              className="object-contain p-1"
               priority
             />
           </div>
-          <span className="text-base font-semibold tracking-tight">
-            BladeVault
+          <span className="text-2xl font-semibold tracking-tight text-foreground">
+            <span>Blade</span>
+            <span style={{ color: '#9fc629' }}>Vault</span>
           </span>
         </div>
 
