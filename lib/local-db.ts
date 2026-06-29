@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { normalizeKnifeTextFields } from '@/lib/knife-text';
 
-export const DATA_DIR = 'data';
-export const DB_PATH = 'data/bladevault.sqlite';
+export const DATA_DIR = process.env.BLADEVAULT_DATA_DIR?.trim() || 'data';
+export const DB_PATH = path.join(DATA_DIR, 'bladevault.sqlite');
 
 let db: Database.Database | null = null;
 let restoreInProgress = false;
