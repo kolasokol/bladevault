@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArchiveX, ImageIcon, X } from 'lucide-react';
+import { ArchiveX, FileDown, ImageIcon, Printer, X } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/empty-state';
 import { getImageUrl, Knife } from '@/lib/data';
@@ -44,6 +44,26 @@ const compareRows = [
 ] as const;
 
 const COMPARE_LIMIT = 12;
+type CompareRowKey = (typeof compareRows)[number]['key'];
+
+function getRowValue(knife: Knife, rowKey: CompareRowKey): string {
+  if (rowKey.includes('.')) {
+    const specKey = rowKey.split('.')[1] as keyof Knife['specs'];
+    return knife.specs[specKey] ?? '-';
+  }
+
+  const knifeKey = rowKey as 'bladeStyle' | 'handleMaterial';
+  return knife[knifeKey] ?? '-';
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
 
 export default function ComparePage() {
   const { knives, compareIds, addToCompare, removeFromCompare } = useKnives();
@@ -67,8 +87,167 @@ export default function ComparePage() {
     removeFromCompare(id);
   };
 
+  const hasComparedKnives = comparedKnives.length > 0;
   const showAddSlot = compareIds.length < COMPARE_LIMIT;
   const slotCount = compareIds.length + (showAddSlot ? 1 : 0);
+
+  const handleExportPdf = async () => {
+    if (!hasComparedKnives) return;
+
+    const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
+
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const title = 'BladeVault Comparison Table';
+    const head = [['Feature', ...comparedKnives.map((knife) => `${knife.brand} ${knife.name}`)]];
+    const body = compareRows.map((row) => [
+      row.label,
+      ...comparedKnives.map((knife) => getRowValue(knife, row.key)),
+    ]);
+
+    autoTable(doc, {
+      startY: 18,
+      head,
+      body,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [17, 24, 39],
+        textColor: [255, 255, 255],
+      },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251],
+      },
+      columnStyles: {
+        0: {
+          fontStyle: 'bold',
+          cellWidth: 46,
+        },
+      },
+      didDrawPage: () => {
+        doc.setFontSize(12);
+        doc.text(title, 14, 12);
+      },
+    });
+
+    doc.save(`bladevault-comparison-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
+  const handlePrint = () => {
+    if (!hasComparedKnives) return;
+
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1280,height=900');
+    if (!printWindow) return;
+
+    const generatedAt = new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date());
+
+    const headerCells = comparedKnives
+      .map((knife) => `<th>${escapeHtml(`${knife.brand} ${knife.name}`)}</th>`)
+      .join('');
+
+    const bodyRows = compareRows
+      .map((row) => {
+        const cells = comparedKnives
+          .map((knife) => `<td>${escapeHtml(getRowValue(knife, row.key))}</td>`)
+          .join('');
+        return `<tr><th>${escapeHtml(row.label)}</th>${cells}</tr>`;
+      })
+      .join('');
+
+    const printableHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BladeVault Comparison</title>
+  <style>
+    body {
+      margin: 24px;
+      color: #111827;
+      font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+    }
+    p {
+      margin: 0 0 18px;
+      color: #4b5563;
+      font-size: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+    }
+    thead th {
+      background: #111827;
+      color: #ffffff;
+      text-align: left;
+      border: 1px solid #d1d5db;
+      padding: 8px;
+      word-wrap: break-word;
+    }
+    tbody th {
+      background: #f3f4f6;
+      text-align: left;
+      font-weight: 600;
+    }
+    td, tbody th {
+      border: 1px solid #d1d5db;
+      padding: 7px 8px;
+      word-wrap: break-word;
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+    @media print {
+      body {
+        margin: 12mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>BladeVault Comparison</h1>
+  <p>Generated ${escapeHtml(generatedAt)}</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        ${headerCells}
+      </tr>
+    </thead>
+    <tbody>
+      ${bodyRows}
+    </tbody>
+  </table>
+</body>
+</html>`;
+
+    printWindow.document.write(printableHtml);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
 
   return (
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
@@ -85,6 +264,29 @@ export default function ComparePage() {
         />
       ) : (
         <>
+          <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void handleExportPdf();
+              }}
+              disabled={!hasComparedKnives}
+            >
+              <FileDown className="mr-2 h-4 w-4" />
+              Export PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              disabled={!hasComparedKnives}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Print
+            </Button>
+          </div>
+
           <div className="mb-6 overflow-x-auto">
             <div className="flex min-w-max items-center">
               {comparedKnives.map((knife, index) => (
@@ -215,9 +417,7 @@ export default function ComparePage() {
                           {row.label}
                         </TableCell>
                         {comparedKnives.map((knife) => {
-                          const value = row.key.includes('.')
-                            ? (knife.specs as Record<string, string>)[row.key.split('.')[1]]
-                            : ((knife as unknown) as Record<string, string>)[row.key];
+                          const value = getRowValue(knife, row.key);
                           return (
                             <TableCell
                               key={knife.id}
