@@ -2,10 +2,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Knife, KnifeUpdates } from '@/lib/data';
 import { normalizeKnifeTextFields } from '@/lib/knife-text';
-import { getLocalDb } from '@/lib/local-db';
+import { getLocalDb, DATA_DIR } from '@/lib/local-db';
 import { CreateKnifeInput, ImageData, Storage } from './types';
 
-export const IMAGES_DIR = 'data/images';
+export const IMAGES_DIR = path.join(DATA_DIR, 'images');
 
 function extensionFromMimeType(contentType: string): string {
   const type = contentType.split(';')[0].trim().toLowerCase();

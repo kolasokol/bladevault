@@ -13,6 +13,7 @@ RUN npm run build
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV BLADEVAULT_DATA_DIR=/app/data
 
 EXPOSE 3000
 
