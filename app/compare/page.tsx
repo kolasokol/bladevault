@@ -66,7 +66,7 @@ function escapeHtml(value: string): string {
 }
 
 export default function ComparePage() {
-  const { knives, compareIds, addToCompare, removeFromCompare } = useKnives();
+  const { knives, compareIds, addToCompare, removeFromCompare, clearCompare } = useKnives();
   const [hoveredCell, setHoveredCell] = useState<{
     knifeId: string;
     rowKey: (typeof compareRows)[number]['key'];
@@ -85,6 +85,10 @@ export default function ComparePage() {
 
   const handleRemove = (id: string) => {
     removeFromCompare(id);
+  };
+
+  const handleClearCompare = () => {
+    void clearCompare();
   };
 
   const hasComparedKnives = comparedKnives.length > 0;
@@ -265,6 +269,15 @@ export default function ComparePage() {
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearCompare}
+              disabled={!hasComparedKnives}
+            >
+              <ArchiveX className="mr-2 h-4 w-4" />
+              Clear
+            </Button>
             <Button
               variant="outline"
               size="sm"

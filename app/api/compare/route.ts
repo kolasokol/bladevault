@@ -38,15 +38,20 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const body = await request.json();
-    const id = body.id;
-
-    if (!id || typeof id !== 'string') {
-      return NextResponse.json({ error: 'Knife id is required' }, { status: 400 });
+    let id: string | null = null;
+    try {
+      const body = await request.json();
+      id = typeof body?.id === 'string' ? body.id : null;
+    } catch {
+      id = null;
     }
 
     const storage = getStorage();
-    await storage.removeFromCompare(id);
+    if (id) {
+      await storage.removeFromCompare(id);
+    } else {
+      await storage.clearCompareList();
+    }
     const compareIds = await storage.getCompareList();
     return NextResponse.json({ compareIds });
   } catch (error) {

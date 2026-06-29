@@ -34,6 +34,8 @@
 - **Knife Detail Page** — View specifications, descriptions, and a full image gallery with lightbox navigation.
 - **Inline Editing** — Update any knife's details directly from the detail page.
 - **Comparison Tool** — Select up to 3 knives and compare specs side-by-side.
+- **PDF Export** — Export knife details and comparison views as PDF files for sharing or archiving.
+- **Print Support** — Use print-friendly layouts to generate clean hard copies of knife records.
 - **Smart URL Scraping** — Paste a product URL and BladeVault auto-fetches title, brand, images, steel, and specs.
   - Includes special handling for **Shopify** stores via their `.json` product endpoint.
   - Uses **Playwright** for JavaScript-rendered pages.

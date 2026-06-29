@@ -30,6 +30,7 @@ type KnivesContextValue = {
   compareIds: string[];
   addToCompare: (id: string) => Promise<void>;
   removeFromCompare: (id: string) => Promise<void>;
+  clearCompare: () => Promise<void>;
   isCloudSyncEnabled: boolean;
   isAutoBackupEnabled: boolean;
   isAutoBackupActive: boolean;
@@ -331,6 +332,22 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const clearCompare = useCallback(async (): Promise<void> => {
+    const response = await fetch('/api/compare', {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error ?? 'Failed to clear compare list');
+    }
+
+    const data = await response.json();
+    if (Array.isArray(data.compareIds)) {
+      setCompareIds(data.compareIds);
+    }
+  }, []);
+
   return (
     <KnivesContext.Provider
       value={{
@@ -342,6 +359,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
         compareIds,
         addToCompare,
         removeFromCompare,
+        clearCompare,
         isCloudSyncEnabled,
         isAutoBackupEnabled,
         isAutoBackupActive: isCloudSyncEnabled && isAutoBackupEnabled,
