@@ -229,7 +229,7 @@ npm run dist:desktop:mac:unsigned
 npm run dist:desktop:mac:signed
 ```
 
-Local desktop data is stored in the app's user-data directory instead of the repo root. That keeps the packaged app self-contained and lets cloud backup archive the same local data folder on macOS and Windows.
+Local desktop data is stored in `~/BladeVault/data` instead of the repo root. On Windows that resolves to `C:\Users\USERNAME\BladeVault\data`, which makes the SQLite database and downloaded images easier to find and back up.
 
 ### GitHub tag releases
 
@@ -356,6 +356,8 @@ BladeVault stores everything locally:
 - **Downloaded images:** `data/images/`
 
 No cloud accounts or API keys required. Keep the `data/` folder backed up to preserve your collection.
+
+For packaged desktop builds, the local data folder lives in `~/BladeVault/data` instead of the repo root `data/` directory.
 
 #### Cloud Backup Beta
 

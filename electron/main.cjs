@@ -69,7 +69,7 @@ function getNodeExecPath() {
 }
 
 function getDataDir() {
-  return path.join(app.getPath('userData'), 'data');
+  return path.join(app.getPath('home'), 'BladeVault', 'data');
 }
 
 function delay(ms) {
