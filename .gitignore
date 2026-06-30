@@ -14,7 +14,7 @@ pnpm-workspace.yaml
 # Environment secrets
 .env*
 !.env.example
-
+next-env.d.ts
 # Generated runtime data (DB seeded automatically, images downloaded at runtime)
 data/*.sqlite
 data/*.sqlite-shm
