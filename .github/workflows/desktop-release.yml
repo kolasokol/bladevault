@@ -43,4 +43,3 @@ jobs:
             dist/desktop/*.exe
             dist/desktop/latest*.yml
             dist/desktop/latest*.yaml
-          generate_release_notes: true

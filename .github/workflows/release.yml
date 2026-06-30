@@ -38,20 +38,7 @@ jobs:
             exit 1
           fi
 
-      - name: Create release body
-        env:
-          TAG: ${{ github.ref_name }}
-          VERSION: ${{ steps.package.outputs.version }}
-        run: |
-          set -euo pipefail
-          cat > release-body.md <<EOF
-          # Release ${TAG}
-
-          This release was generated from package.json version ${VERSION}.
-          EOF
-
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          body_path: release-body.md
           generate_release_notes: true
