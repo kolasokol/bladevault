@@ -14,6 +14,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response';
 import { SETTINGS_UPDATED_EVENT, type AppSettings } from '@/lib/settings-shared';
 import {
   clearCloudAuthState,
@@ -111,6 +112,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
   const [backupMessage, setBackupMessage] = useState('');
   const [restoreStatus, setRestoreStatus] = useState<StatusTone>('idle');
   const [restoreMessage, setRestoreMessage] = useState('');
+  const [loadAttemptKey, setLoadAttemptKey] = useState(0);
 
   const authUrl = cloudConfig.authUrl;
   const backupUrl = cloudConfig.backupUrl;
@@ -161,7 +163,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
         throw new Error(await parseApiError(response));
       }
 
-      const data = (await response.json()) as CloudBackupSession | null;
+      const data = await readJsonResponse<CloudBackupSession | null>(response);
       if (cancelled) return;
 
       if (data?.user && data?.session) {
@@ -205,12 +207,18 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
           fetch('/api/settings'),
           refreshCloudConfig(true),
         ]);
-        const data = await response.json();
+        const data = await readJsonResponse<{
+          error?: string;
+          settings?: AppSettings;
+        }>(response);
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to load settings');
+          throw new Error(getApiErrorMessage(data, 'Failed to load settings'));
         }
 
-        const nextSettings = data.settings as AppSettings;
+        const nextSettings = data.settings;
+        if (!nextSettings) {
+          throw new Error('BladeVault did not return settings data.');
+        }
 
         if (cancelled) return;
         setSettings(nextSettings);
@@ -231,7 +239,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
     return () => {
       cancelled = true;
     };
-  }, [isOpen, refreshCloudConfig, refreshCloudSession]);
+  }, [isOpen, loadAttemptKey, refreshCloudConfig, refreshCloudSession]);
 
   const saveSettings = useCallback(async (updates: Partial<AppSettings>) => {
     const response = await fetch('/api/settings', {
@@ -240,12 +248,18 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
       body: JSON.stringify(updates),
     });
 
-    const data = await response.json();
+    const data = await readJsonResponse<{
+      error?: string;
+      settings?: AppSettings;
+    }>(response);
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to save settings');
+      throw new Error(getApiErrorMessage(data, 'Failed to save settings'));
     }
 
-    const nextSettings = data.settings as AppSettings;
+    const nextSettings = data.settings;
+    if (!nextSettings) {
+      throw new Error('BladeVault did not return settings data.');
+    }
     setSettings(nextSettings);
 
     window.dispatchEvent(
@@ -426,9 +440,9 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
         }),
       });
 
-      const importData = await importResponse.json();
+      const importData = await readJsonResponse<{ error?: string }>(importResponse);
       if (!importResponse.ok) {
-        throw new Error(importData.error || 'Failed to restore cloud backup locally');
+        throw new Error(getApiErrorMessage(importData, 'Failed to restore cloud backup locally'));
       }
 
       setRestoreStatus('success');
@@ -457,9 +471,29 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
 
-        {isLoading || !settings ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : !settings ? (
+          <div className="flex flex-col gap-4 px-7 py-8">
+            <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{loadError || 'Failed to load settings.'}</span>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" className="rounded-xl" onClick={onClose}>
+                Close
+              </Button>
+              <Button
+                size="sm"
+                className="rounded-xl"
+                onClick={() => setLoadAttemptKey((current) => current + 1)}
+              >
+                Retry
+              </Button>
+            </div>
           </div>
         ) : (
           <Tabs defaultValue="general" className="flex w-full flex-col overflow-hidden">

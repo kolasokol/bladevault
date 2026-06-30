@@ -15,6 +15,7 @@ import {
   CLOUD_AUTH_STATE_EVENT,
   getCloudAuthState,
 } from '@/lib/cloud-backup';
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response';
 import { DEFAULT_SETTINGS, SETTINGS_UPDATED_EVENT } from '@/lib/settings-shared';
 import {
   canAttemptSilentCloudBackup,
@@ -70,9 +71,14 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     const syncAutoBackupSetting = async () => {
       try {
         const response = await fetch('/api/settings', { cache: 'no-store' });
-        const data = await response.json();
+        const data = await readJsonResponse<{
+          error?: string;
+          settings?: {
+            cloudAutoBackupEnabled?: boolean;
+          };
+        }>(response);
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to load settings');
+          throw new Error(getApiErrorMessage(data, 'Failed to load settings'));
         }
 
         if (!cancelled) {

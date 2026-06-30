@@ -2,10 +2,19 @@
   "name": "bladevault",
   "version": "0.2.1",
   "private": true,
+  "description": "A sharp, local-first knife collection manager.",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:desktop": "npm run build && node scripts/prepare-desktop-build.cjs",
     "start": "next start",
+    "desktop:dev": "node scripts/dev-desktop.cjs",
+    "rebuild:desktop-native": "electron-rebuild -f -w better-sqlite3",
+    "sync:desktop-runtime": "node scripts/sync-desktop-runtime-deps.cjs",
+    "desktop:smoke": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && node scripts/run-desktop-smoke.cjs",
+    "dist:desktop": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && electron-builder --publish never",
+    "dist:desktop:dir": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && electron-builder --dir --publish never",
     "lint": "eslint .",
     "clean": "rm -rf .next"
   },
@@ -29,7 +38,8 @@
     "react-dom": "^19.2.7",
     "react-icons": "^5.6.0",
     "shadcn": "^4.11.0",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "tar": "7.5.19"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.1",
@@ -38,6 +48,8 @@
     "@types/node": "^26.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "electron": "42.5.1",
+    "electron-builder": "26.15.3",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "4.3.1",
@@ -51,6 +63,8 @@
     "sharp@0.34.5": true,
     "unrs-resolver@1.12.2": true,
     "better-sqlite3@12.11.1": true,
-    "fsevents@2.3.2": true
+    "fsevents@2.3.2": true,
+    "core-js@3.49.0": true,
+    "electron-winstaller@5.4.0": true
   }
 }

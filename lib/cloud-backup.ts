@@ -1,3 +1,5 @@
+import { readJsonResponse } from '@/lib/api-response';
+
 export const FALLBACK_CLOUD_AUTH_URL = 'https://auth.tkweb.site';
 export const FALLBACK_CLOUD_BACKUP_URL = 'https://backup.tkweb.site';
 
@@ -104,7 +106,7 @@ export async function loadCloudRuntimeConfig(force = false): Promise<CloudRuntim
         throw new Error(await parseApiError(response));
       }
 
-      const data = (await response.json()) as Partial<CloudRuntimeConfig>;
+      const data = await readJsonResponse<Partial<CloudRuntimeConfig>>(response);
       runtimeCloudConfig = {
         authUrl:
           typeof data.authUrl === 'string' && data.authUrl.trim()
@@ -210,7 +212,7 @@ export async function refreshCloudBackupAccessToken(): Promise<string> {
     throw new Error(await parseApiError(response));
   }
 
-  const data = (await response.json()) as { token?: string };
+  const data = await readJsonResponse<{ token?: string }>(response);
   if (!data.token) {
     throw new Error('Auth server did not return a backup token.');
   }

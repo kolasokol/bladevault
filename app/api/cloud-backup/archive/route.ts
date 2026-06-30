@@ -1,16 +1,14 @@
-import { execFile } from 'child_process';
 import { createWriteStream } from 'fs';
+import Database from 'better-sqlite3';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
-import { promisify } from 'util';
+import * as tar from 'tar';
 import { NextResponse } from 'next/server';
 import { clearStorageCache } from '@/lib/storage';
 import { beginLocalRestore, closeLocalDb, DATA_DIR, endLocalRestore } from '@/lib/local-db';
-
-const execFileAsync = promisify(execFile);
 
 function shouldIgnoreBackupEntry(name: string): boolean {
   return name === '.DS_Store' || name === '__MACOSX' || name.startsWith('._');
@@ -25,40 +23,47 @@ function isTarGzipFile(buffer: Buffer): boolean {
 }
 
 async function createArchive(sourceDir: string, outputPath: string) {
-  await execFileAsync('tar', [
-    '--exclude=.DS_Store',
-    '--exclude=__MACOSX',
-    '--exclude=._*',
-    '-czf',
-    outputPath,
-    '-C',
-    path.dirname(sourceDir),
-    path.basename(sourceDir),
-  ]);
+  await tar.create(
+    {
+      cwd: path.dirname(sourceDir),
+      file: outputPath,
+      gzip: true,
+      portable: true,
+      filter: (entryPath) => !shouldIgnoreBackupEntry(path.basename(entryPath)),
+    },
+    [path.basename(sourceDir)]
+  );
 }
 
 async function extractArchive(archivePath: string, outputDir: string) {
-  await execFileAsync('tar', ['-xzf', archivePath, '-C', outputDir]);
+  await tar.extract({
+    cwd: outputDir,
+    file: archivePath,
+    filter: (entryPath) => !shouldIgnoreBackupEntry(path.basename(entryPath)),
+    gzip: true,
+    strict: true,
+  });
 }
 
 async function validateArchive(archivePath: string) {
-  await execFileAsync('gzip', ['-t', archivePath]);
+  await tar.list({
+    file: archivePath,
+    gzip: true,
+    strict: true,
+  });
 }
 
 async function validateSqliteFile(dbPath: string) {
-  await execFileAsync('node', [
-    '-e',
-    `
-      const Database = require('better-sqlite3');
-      const db = new Database(process.argv[1], { readonly: true });
-      const row = db.prepare("PRAGMA integrity_check;").get();
-      db.close();
-      if (!row || Object.values(row)[0] !== 'ok') {
-        process.exit(2);
-      }
-    `,
-    dbPath,
-  ]);
+  const db = new Database(dbPath, { readonly: true });
+
+  try {
+    const row = db.prepare('PRAGMA integrity_check;').get() as Record<string, string> | undefined;
+    if (!row || Object.values(row)[0] !== 'ok') {
+      throw new Error('Restored SQLite database failed integrity_check.');
+    }
+  } finally {
+    db.close();
+  }
 }
 
 async function ensureDirectory(dirPath: string) {

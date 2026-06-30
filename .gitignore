@@ -1,7 +1,10 @@
 # Dependencies & build output
 node_modules/
 .next/
+dist/
 coverage/
+pnpm-lock.yaml
+pnpm-workspace.yaml
 
 # OS / editor files
 .DS_Store
@@ -23,5 +26,3 @@ data/images/*/
 # Agent instructions (local-only)
 AGENTS.md
 /tsconfig.tsbuildinfo
-/data/images/.gitkeep
-/data/.gitkeep

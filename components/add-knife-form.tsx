@@ -21,6 +21,7 @@ import {
   KnifeFormFields,
   formDataToKnifeDraft,
 } from '@/components/knife-form';
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response';
 import { ScrapedProduct } from '@/lib/scrape';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -133,13 +134,18 @@ export function AddKnifeForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
       });
-      const data = await response.json();
+      const data = await readJsonResponse<{
+        error?: string;
+        product: ScrapedProduct;
+        html?: string;
+        finalUrl?: string;
+      }>(response);
 
       if (!response.ok) {
-        throw new Error(data.error ?? 'Failed to scrape product page');
+        throw new Error(getApiErrorMessage(data, 'Failed to scrape product page'));
       }
 
-      const product = data.product as ScrapedProduct;
+      const product = data.product;
 
       setForm({
         brand: product.brand ?? '',

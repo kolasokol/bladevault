@@ -78,6 +78,7 @@
 
 Choose the setup that fits you:
 
+- **Desktop App** — package BladeVault as a native macOS or Windows app with Electron.
 - **Docker** — the quickest way to run BladeVault with persistent local storage.
 - **Source** — best if you want to develop, customize, or run the app locally with Node.js.
 
@@ -207,6 +208,36 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## 🖥 Desktop Packaging
+
+BladeVault can now be wrapped as a native desktop app for macOS and Windows while keeping the same local SQLite database, image storage, and cloud-backup flow.
+
+```bash
+# Run the desktop shell against a local Next.js dev server
+npm run desktop:dev
+
+# Smoke-test the packaged desktop runtime locally
+npm run desktop:smoke
+
+# Build a local release artifact for your current platform
+npm run dist:desktop
+```
+
+Local desktop data is stored in the app's user-data directory instead of the repo root. That keeps the packaged app self-contained and lets cloud backup archive the same local data folder on macOS and Windows.
+
+### GitHub tag releases
+
+Pushing a version tag like `v0.2.2` triggers `.github/workflows/desktop-release.yml`, which builds:
+
+- a macOS `.dmg` on `macos-latest`
+- a Windows NSIS installer `.exe` on `windows-latest`
+
+The workflow uploads those files directly to the GitHub Release for that tag.
+
+> macOS code signing and notarization are not configured in this repo yet, so GitHub builds will be unsigned until you add Apple signing credentials.
+
+---
+
 ## ℹ️ Other Stuff
 
 ### 🚀 Tech Stack
@@ -228,6 +259,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run dev`   | Start the local development server |
 | `npm run build` | Create a production build          |
 | `npm run start` | Serve the production build         |
+| `npm run desktop:dev` | Launch BladeVault in Electron during development |
+| `npm run desktop:smoke` | Build and smoke-test the packaged Electron runtime |
+| `npm run dist:desktop` | Build a release artifact for the current desktop platform |
 | `npm run lint`  | Run ESLint across the repo         |
 | `npm run clean` | Clear Next.js build artifacts      |
 

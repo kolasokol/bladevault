@@ -5,7 +5,6 @@ import {
   getShopifyJsonUrl,
   extractShopifyProduct,
 } from '@/lib/scrape';
-import { fetchRenderedHtml } from '@/lib/scrape-playwright';
 
 export async function POST(request: Request) {
   try {
@@ -27,6 +26,7 @@ export async function POST(request: Request) {
     let finalUrl: string;
 
     try {
+      const { fetchRenderedHtml } = await import('@/lib/scrape-playwright');
       const rendered = await fetchRenderedHtml(normalizedUrl);
       html = rendered.html;
       finalUrl = rendered.finalUrl;

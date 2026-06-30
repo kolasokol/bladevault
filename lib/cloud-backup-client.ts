@@ -7,6 +7,7 @@ import {
   parseApiError,
   refreshCloudBackupAccessToken,
 } from '@/lib/cloud-backup';
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response';
 
 export type CloudBackupUploadResult = {
   syncedAt: string;
@@ -43,9 +44,9 @@ async function updateBackupSyncTime(value: string) {
     body: JSON.stringify({ cloudBackupLastSyncedAt: value }),
   });
 
-  const data = await response.json();
+  const data = await readJsonResponse<{ error?: string }>(response);
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to update backup timestamp');
+    throw new Error(getApiErrorMessage(data, 'Failed to update backup timestamp'));
   }
 }
 
