@@ -13,8 +13,11 @@
     "rebuild:desktop-native": "electron-rebuild -f -w better-sqlite3",
     "sync:desktop-runtime": "node scripts/sync-desktop-runtime-deps.cjs",
     "desktop:smoke": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && node scripts/run-desktop-smoke.cjs",
-    "dist:desktop": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && electron-builder --publish never",
-    "dist:desktop:dir": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && electron-builder --dir --publish never",
+    "dist:desktop": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && electron-builder --config electron-builder.config.cjs --publish never",
+    "dist:desktop:dir": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && electron-builder --config electron-builder.config.cjs --dir --publish never",
+    "dist:desktop:mac:unsigned": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && BLADEVAULT_MAC_SIGN=0 BLADEVAULT_MAC_NOTARIZE=0 electron-builder --config electron-builder.config.cjs --mac dmg --publish never",
+    "dist:desktop:mac:signed": "npm run build:desktop && npm run rebuild:desktop-native && npm run sync:desktop-runtime && BLADEVAULT_MAC_SIGN=1 BLADEVAULT_MAC_NOTARIZE=1 electron-builder --config electron-builder.config.cjs --mac dmg --publish never",
+    "verify:desktop:mac": "node scripts/verify-macos-release.cjs",
     "lint": "eslint .",
     "clean": "rm -rf .next"
   },
@@ -42,6 +45,7 @@
     "tar": "7.5.19"
   },
   "devDependencies": {
+    "@electron/notarize": "^2.5.0",
     "@tailwindcss/postcss": "4.3.1",
     "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.13",

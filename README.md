@@ -221,6 +221,12 @@ npm run desktop:smoke
 
 # Build a local release artifact for your current platform
 npm run dist:desktop
+
+# On macOS, build an explicit unsigned tester DMG
+npm run dist:desktop:mac:unsigned
+
+# On macOS, build a signed/notarized DMG once Apple credentials are configured
+npm run dist:desktop:mac:signed
 ```
 
 Local desktop data is stored in the app's user-data directory instead of the repo root. That keeps the packaged app self-contained and lets cloud backup archive the same local data folder on macOS and Windows.
@@ -234,7 +240,47 @@ Pushing a version tag like `v0.2.2` triggers `.github/workflows/desktop-release.
 
 The workflow uploads those files directly to the GitHub Release for that tag.
 
-> macOS code signing and notarization are not configured in this repo yet, so GitHub builds will be unsigned until you add Apple signing credentials.
+#### Unsigned tester builds
+
+If Apple signing secrets are not configured, the macOS job produces an `-unsigned.dmg` artifact for trusted testers. That build is intentionally not a normal consumer-ready Mac download.
+
+Expected tester flow:
+
+1. Open the downloaded DMG.
+2. Drag `BladeVault.app` into `Applications`.
+3. Remove the quarantine flag from the copied app:
+
+```bash
+xattr -d com.apple.quarantine "/Applications/BladeVault.app"
+open "/Applications/BladeVault.app"
+```
+
+If Finder still blocks first launch, start the app once from Terminal:
+
+```bash
+"/Applications/BladeVault.app/Contents/MacOS/BladeVault"
+```
+
+#### Signed public builds
+
+If the macOS GitHub Actions job finds the secrets below, it switches automatically to a signed + notarized public build:
+
+- `APPLE_SIGNING_CERTIFICATE_BASE64`
+- `APPLE_SIGNING_CERTIFICATE_PASSWORD`
+- `APPLE_ID`
+- `APPLE_APP_SPECIFIC_PASSWORD`
+- `APPLE_TEAM_ID`
+
+That path requires an Apple Developer Program membership and a Developer ID Application certificate.
+
+#### Local signing setup
+
+For a local signed build, export the same environment variables and run:
+
+```bash
+npm run dist:desktop:mac:signed
+npm run verify:desktop:mac
+```
 
 ---
 
@@ -262,6 +308,9 @@ The workflow uploads those files directly to the GitHub Release for that tag.
 | `npm run desktop:dev` | Launch BladeVault in Electron during development |
 | `npm run desktop:smoke` | Build and smoke-test the packaged Electron runtime |
 | `npm run dist:desktop` | Build a release artifact for the current desktop platform |
+| `npm run dist:desktop:mac:unsigned` | Build an unsigned macOS tester DMG |
+| `npm run dist:desktop:mac:signed` | Build a signed/notarized macOS DMG when Apple credentials are available |
+| `npm run verify:desktop:mac` | Inspect or validate the packaged macOS app bundle |
 | `npm run lint`  | Run ESLint across the repo         |
 | `npm run clean` | Clear Next.js build artifacts      |
 
