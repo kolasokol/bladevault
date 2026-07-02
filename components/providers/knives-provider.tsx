@@ -227,10 +227,6 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     }
 
     const interval = window.setInterval(() => {
-      if (document.visibilityState !== 'visible') {
-        return;
-      }
-
       scheduleAutoBackup('hourly');
     }, AUTO_BACKUP_INTERVAL_MS);
 

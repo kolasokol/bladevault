@@ -278,6 +278,7 @@ async function createMainWindow() {
     title: 'BladeVault',
     width: 1440,
     webPreferences: {
+      backgroundThrottling: false,
       contextIsolation: true,
       nativeWindowOpen: true,
       nodeIntegration: false,
