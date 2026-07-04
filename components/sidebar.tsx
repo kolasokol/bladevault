@@ -44,7 +44,7 @@ const links = [
 export function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { knives, isAutoBackupActive } = useKnives();
+  const { knives, compareIds, isAutoBackupActive } = useKnives();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [brandsOpen, setBrandsOpen] = useState(true);
   const [pinnedOpen, setPinnedOpen] = useState(true);
@@ -155,7 +155,21 @@ export function Sidebar() {
                 )}
               >
                 <Icon className="h-4 w-4" />
-                {link.label}
+                <span className="flex flex-1 items-center justify-between gap-2">
+                  <span>{link.label}</span>
+                  {link.href === '/compare' && compareIds.length > 0 ? (
+                    <span
+                      className={cn(
+                        'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none',
+                        isActive
+                          ? 'bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)]'
+                          : 'bg-muted text-foreground',
+                      )}
+                    >
+                      {compareIds.length}
+                    </span>
+                  ) : null}
+                </span>
               </Link>
             );
           })}
