@@ -21,7 +21,6 @@ import { cn } from "@/lib/utils";
 import { useKnives } from "@/components/providers/knives-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -270,19 +269,6 @@ export function Sidebar() {
               </Collapsible>
             </>
           )}
-
-          <Card size="sm" className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-[10px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
-                Total Items
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-medium tracking-tight">
-                {knives.length}
-              </span>
-            </CardContent>
-          </Card>
         </nav>
 
         <div className="flex flex-col gap-2 border-t bg-muted/30 p-3">
