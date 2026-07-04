@@ -296,7 +296,6 @@ npm run verify:desktop:mac
 | Local Database       | [better-sqlite3 12](https://github.com/WiseLibs/better-sqlite3)                      |
 | Cloud Backup Backend | Cloudflare Worker auth + D1 + Ubuntu backup API                                      |
 | Scraping             | [Playwright 1.61](https://playwright.dev/) + [Cheerio 1.2](https://cheerio.js.org/)  |
-| Animations           | [Motion 12](https://motion.dev/)                                                     |
 
 ### 🛠 Available Scripts
 

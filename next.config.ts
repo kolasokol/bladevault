@@ -11,7 +11,6 @@ const nextConfig: NextConfig = {
   },
   allowedDevOrigins: ["192.168.0.155"],
   output: "standalone",
-  transpilePackages: ["motion"],
   turbopack: {},
   webpack: (config, { dev }) => {
     if (dev && process.env.DISABLE_HMR === "true") {
