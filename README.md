@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://img.shields.io/badge/BladeVault-0A0A0A?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIj48cGF0aCBkPSJNMTQuNSAxNy41IDMgNmgxOGwtNC41IDExLjV6Ii8+PHBhdGggZD0iTTEyIDE4djMiLz48L3N2Zz4=&logoColor=white" alt="BladeVault" />
+  <img src="./public/logo.svg" alt="BladeVault logo" width="120" />
 
   <h1>BladeVault</h1>
   <p>
@@ -8,22 +8,39 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/Next.js_16-000000?logo=nextdotjs&logoColor=white&style=flat-square" alt="Next.js 16" />
-    <img src="https://img.shields.io/badge/React_19-61DAFB?logo=react&logoColor=black&style=flat-square" alt="React 19" />
+    Track your collection, compare knives side by side, export clean PDFs, and keep full control of your data with local SQLite storage and optional cloud backup.
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/Next.js_16.2-000000?logo=nextdotjs&logoColor=white&style=flat-square" alt="Next.js 16.2" />
+    <img src="https://img.shields.io/badge/React_19.2-61DAFB?logo=react&logoColor=black&style=flat-square" alt="React 19.2" />
     <img src="https://img.shields.io/badge/TypeScript_6-3178C6?logo=typescript&logoColor=white&style=flat-square" alt="TypeScript 6" />
-    <img src="https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square" alt="Tailwind CSS 4" />
+    <img src="https://img.shields.io/badge/Tailwind_CSS_4.3-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square" alt="Tailwind CSS 4.3" />
     <img src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white&style=flat-square" alt="SQLite" />
-    <img src="https://img.shields.io/badge/Cloudflare-F38020?logo=cloudflare&logoColor=white&style=flat-square" alt="Cloudflare" />
+    <img src="https://img.shields.io/badge/Electron_42-47848F?logo=electron&logoColor=white&style=flat-square" alt="Electron 42" />
   </p>
 
   <p>
     <img src="https://img.shields.io/badge/App_Router-000000?style=flat-square&logo=nextdotjs&logoColor=white" alt="App Router" />
-    <img src="https://img.shields.io/badge/Playwright-2EAD33?style=flat-square&logo=playwright&logoColor=white" alt="Playwright" />
+    <img src="https://img.shields.io/badge/Playwright_1.61-2EAD33?style=flat-square&logo=playwright&logoColor=white" alt="Playwright 1.61" />
     <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
+    <img src="https://img.shields.io/badge/Cloudflare-F38020?logo=cloudflare&logoColor=white&style=flat-square" alt="Cloudflare" />
     <img src="https://img.shields.io/badge/Dark_Mode-0A0A0A?style=flat-square&logo=weather-night&logoColor=white" alt="Dark Mode" />
   </p>
 
 </div>
+
+---
+
+## Quick Start
+
+Choose the fastest path for how you want to use BladeVault:
+
+- **Docker**: `docker compose up -d --build`
+- **Source**: `npm install` then `npx playwright install chromium` and `npm run dev`
+- **Desktop shell**: `npm run desktop:dev`
+
+If you only want to try the app, Docker is the quickest setup. If you want to develop or customize it, run from source.
 
 ---
 
@@ -171,17 +188,18 @@ docker compose up -d --build
 ```
 
 Docker Compose also works with no extra env if you want the default hosted auth
-and backup services.
+and backup services. It now writes Docker data to the same user-level folder as
+the desktop app by default: `~/BladeVault/data` on macOS/Linux.
 
 Only create a `.env` file if you want to override those defaults and point the
-container to a different auth or backup server. If you want Settings to show the
-native host folder path on Docker Desktop for macOS or Windows, also set
-`BLADEVAULT_HOST_DATA_DIR`:
+container to a different auth or backup server. Set
+`BLADEVAULT_HOST_DATA_DIR` only if you want Docker Compose to use a different
+host folder:
 
 ```env
 NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site
 NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site
-BLADEVAULT_HOST_DATA_DIR=./data
+BLADEVAULT_HOST_DATA_DIR=/custom/path/to/bladevault-data
 ```
 
 Typical later update:
@@ -216,144 +234,31 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🖥 Desktop Packaging
 
-BladeVault can now be wrapped as a native desktop app for macOS and Windows while keeping the same local SQLite database, image storage, and cloud-backup flow.
+## Run DMG on macOS:
 
-```bash
-# Run the desktop shell against a local Next.js dev server
-npm run desktop:dev
+If you downloaded the macOS DMG:
 
-# Smoke-test the packaged desktop runtime locally
-npm run desktop:smoke
-
-# Build a local release artifact for your current platform
-npm run dist:desktop
-
-# On macOS, build an explicit unsigned tester DMG
-npm run dist:desktop:mac:unsigned
-
-# On macOS, build a signed/notarized DMG once Apple credentials are configured
-npm run dist:desktop:mac:signed
-```
-
-Local desktop data is stored in `~/BladeVault/data` instead of the repo root. On Windows that resolves to `C:\Users\USERNAME\BladeVault\data`, which makes the SQLite database and downloaded images easier to find and back up.
-
-### GitHub tag releases
-
-Pushing a version tag like `v0.2.2` triggers `.github/workflows/desktop-release.yml`, which builds:
-
-- a macOS `.dmg` on `macos-latest`
-- a Windows NSIS installer `.exe` on `windows-latest`
-
-The workflow uploads those files directly to the GitHub Release for that tag.
-
-#### Unsigned tester builds
-
-If Apple signing secrets are not configured, the macOS job produces an `-unsigned.dmg` artifact for trusted testers. That build is intentionally not a normal consumer-ready Mac download.
-
-Expected tester flow:
-
-1. Open the downloaded DMG.
+1. Open the `.dmg` file.
 2. Drag `BladeVault.app` into `Applications`.
-3. Remove the quarantine flag from the copied app:
+3. Open BladeVault from `Applications`.
+
+If macOS blocks the first launch, run:
 
 ```bash
 xattr -d com.apple.quarantine "/Applications/BladeVault.app"
 open "/Applications/BladeVault.app"
 ```
 
-If Finder still blocks first launch, start the app once from Terminal:
+If it still does not open, try starting it once from Terminal:
 
 ```bash
 "/Applications/BladeVault.app/Contents/MacOS/BladeVault"
 ```
 
-#### Signed public builds
-
-If the macOS GitHub Actions job finds the secrets below, it switches automatically to a signed + notarized public build:
-
-- `APPLE_SIGNING_CERTIFICATE_BASE64`
-- `APPLE_SIGNING_CERTIFICATE_PASSWORD`
-- `APPLE_ID`
-- `APPLE_APP_SPECIFIC_PASSWORD`
-- `APPLE_TEAM_ID`
-
-That path requires an Apple Developer Program membership and a Developer ID Application certificate.
-
-#### Local signing setup
-
-For a local signed build, export the same environment variables and run:
-
-```bash
-npm run dist:desktop:mac:signed
-npm run verify:desktop:mac
-```
-
 ---
 
-## ℹ️ Other Stuff
-
-### 🚀 Tech Stack
-
-| Layer                | Technology                                                                           |
-| -------------------- | ------------------------------------------------------------------------------------ |
-| Framework            | [Next.js 16](https://nextjs.org/) with App Router                                    |
-| UI                   | [React 19](https://react.dev/), [TypeScript 6](https://www.typescriptlang.org/)      |
-| Styling              | [Tailwind CSS 4](https://tailwindcss.com/), [Lucide Icons 1.21](https://lucide.dev/) |
-| Local Database       | [better-sqlite3 12](https://github.com/WiseLibs/better-sqlite3)                      |
-| Cloud Backup Backend | Cloudflare Worker auth + D1 + Ubuntu backup API                                      |
-| Scraping             | [Playwright 1.61](https://playwright.dev/) + [Cheerio 1.2](https://cheerio.js.org/)  |
-
-### 🛠 Available Scripts
-
-| Command         | Description                        |
-| --------------- | ---------------------------------- |
-| `npm run dev`   | Start the local development server |
-| `npm run build` | Create a production build          |
-| `npm run start` | Serve the production build         |
-| `npm run desktop:dev` | Launch BladeVault in Electron during development |
-| `npm run desktop:smoke` | Build and smoke-test the packaged Electron runtime |
-| `npm run dist:desktop` | Build a release artifact for the current desktop platform |
-| `npm run dist:desktop:mac:unsigned` | Build an unsigned macOS tester DMG |
-| `npm run dist:desktop:mac:signed` | Build a signed/notarized macOS DMG when Apple credentials are available |
-| `npm run verify:desktop:mac` | Inspect or validate the packaged macOS app bundle |
-| `npm run lint`  | Run ESLint across the repo         |
-| `npm run clean` | Clear Next.js build artifacts      |
-
-### 📁 Project Structure
-
-```
-bladevault/
-├── app/                  # Next.js App Router routes
-│   ├── page.tsx          # Dashboard
-│   ├── collection/       # Collection list & detail pages
-│   ├── compare/          # Knife comparison page
-│   └── api/              # REST API routes (knives, scrape, images, settings)
-├── components/           # Reusable React components
-│   ├── providers/        # React context providers
-│   ├── add-knife-modal.tsx
-│   ├── knife-card.tsx
-│   ├── knife-detail.tsx
-│   ├── gallery.tsx
-│   ├── settings-modal.tsx
-│   └── sidebar.tsx
-├── lib/                  # Utilities, storage backends, and scrapers
-│   ├── local-db.ts       # Local SQLite connection
-│   ├── settings.ts       # App settings + cloud backup preferences
-│   ├── storage/          # Storage abstraction (local-first)
-│   ├── scrape.ts
-│   ├── scrape-playwright.ts
-│   └── data.ts           # Shared types
-├── data/                 # SQLite DB + downloaded images (created at runtime)
-├── public/               # Static assets
-├── Dockerfile
-├── next.config.ts
-├── package.json
-└── tsconfig.json
-```
-
-### 💾 Data Storage
+## 💾 Your Data
 
 #### Local mode (default)
 
@@ -380,20 +285,8 @@ The app remains local-first. Cloud backup keeps an off-device copy without askin
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome. Please keep changes focused and run the verification gates before submitting:
-
-```bash
-npm run lint
-npm run build
-```
-
----
-
 ## 📄 License
 
-This project is open source and available under the [MIT License](LICENSE).
 
 ---
 

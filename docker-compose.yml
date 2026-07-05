@@ -8,11 +8,13 @@ services:
     ports:
       - "5500:3000"
     volumes:
-      - ./data:/app/data
+      - type: bind
+        source: ${BLADEVAULT_HOST_DATA_DIR:-${HOME:-${USERPROFILE}}/BladeVault/data}
+        target: /app/data
     environment:
       NODE_ENV: production
       PORT: 3000
       BLADEVAULT_DATA_DIR: /app/data
-      BLADEVAULT_HOST_DATA_DIR: ${BLADEVAULT_HOST_DATA_DIR:-./data}
+      BLADEVAULT_HOST_DATA_DIR: ${BLADEVAULT_HOST_DATA_DIR:-${HOME:-${USERPROFILE}}/BladeVault/data}
       NEXT_PUBLIC_BLADEVAULT_AUTH_URL: ${NEXT_PUBLIC_BLADEVAULT_AUTH_URL:-}
       NEXT_PUBLIC_BLADEVAULT_BACKUP_URL: ${NEXT_PUBLIC_BLADEVAULT_BACKUP_URL:-}
