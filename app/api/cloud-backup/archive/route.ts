@@ -8,14 +8,15 @@ import { pipeline } from 'stream/promises';
 import * as tar from 'tar';
 import { NextResponse } from 'next/server';
 import { clearStorageCache } from '@/lib/storage';
-import { beginLocalRestore, closeLocalDb, DATA_DIR, endLocalRestore } from '@/lib/local-db';
+import {
+  beginLocalRestore,
+  closeLocalDb,
+  endLocalRestore,
+  getLocalDataDirPath,
+} from '@/lib/local-db';
 
 function shouldIgnoreBackupEntry(name: string): boolean {
   return name === '.DS_Store' || name === '__MACOSX' || name.startsWith('._');
-}
-
-function resolveDataDir(): string {
-  return path.resolve(DATA_DIR);
 }
 
 function isTarGzipFile(buffer: Buffer): boolean {
@@ -133,14 +134,14 @@ async function restoreArchiveFromPath(archivePath: string) {
     await validateArchive(archivePath);
     await extractArchive(archivePath, extractRoot);
 
-    const extractedDataDir = path.join(extractRoot, path.basename(resolveDataDir()));
+    const extractedDataDir = path.join(extractRoot, path.basename(getLocalDataDirPath()));
     const extractedDbPath = path.join(extractedDataDir, 'bladevault.sqlite');
 
     await fs.access(extractedDataDir);
     await fs.access(extractedDbPath);
     await validateSqliteFile(extractedDbPath);
 
-    const currentDataDir = resolveDataDir();
+    const currentDataDir = getLocalDataDirPath();
     const backupDataDir = `${currentDataDir}.before-restore-${Date.now()}.bak`;
 
     beginLocalRestore();
@@ -220,7 +221,7 @@ export async function GET() {
   const archivePath = path.join(tempRoot, 'bladevault-data.tar.gz');
 
   try {
-    const dataDir = resolveDataDir();
+    const dataDir = getLocalDataDirPath();
     await fs.mkdir(dataDir, { recursive: true });
 
     closeLocalDb();

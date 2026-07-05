@@ -17,6 +17,10 @@ export function endLocalRestore(): void {
   restoreInProgress = false;
 }
 
+export function getLocalDataDirPath(): string {
+  return path.resolve(DATA_DIR);
+}
+
 export function getLocalDb(): Database.Database {
   if (restoreInProgress) {
     throw new Error('Local database restore is in progress. Please try again in a moment.');
