@@ -49,7 +49,17 @@ export function Sidebar() {
   const [pinnedOpen, setPinnedOpen] = useState(true);
 
   const brands = useMemo(
-    () => Array.from(new Set(knives.map((knife) => knife.brand))).sort(),
+    () => {
+      const counts = new Map<string, number>();
+
+      knives.forEach((knife) => {
+        counts.set(knife.brand, (counts.get(knife.brand) ?? 0) + 1);
+      });
+
+      return Array.from(counts.entries())
+        .sort(([brandA], [brandB]) => brandA.localeCompare(brandB))
+        .map(([name, count]) => ({ name, count }));
+    },
     [knives],
   );
 
@@ -159,10 +169,10 @@ export function Sidebar() {
                   {link.href === '/compare' && compareIds.length > 0 ? (
                     <span
                       className={cn(
-                        'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none',
+                        "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
                         isActive
-                          ? 'bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)]'
-                          : 'bg-muted text-foreground',
+                          ? "bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)]"
+                          : "bg-muted text-foreground",
                       )}
                     >
                       {compareIds.length}
@@ -245,23 +255,33 @@ export function Sidebar() {
                 />
                 <CollapsibleContent className="space-y-0.5 pl-1 pt-1">
                   {brands.map((brand) => {
-                    const brandHref = `/collection?brand=${encodeURIComponent(brand)}`;
+                    const brandHref = `/collection?brand=${encodeURIComponent(brand.name)}`;
                     const isBrandActive =
                       pathname === "/collection" &&
-                      searchParams.get("brand") === brand;
+                      searchParams.get("brand") === brand.name;
 
                     return (
                       <Link
-                        key={brand}
+                        key={brand.name}
                         href={brandHref}
                         className={cn(
-                          "flex items-center rounded-md px-2 py-1 text-xs transition-colors",
+                          "flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs transition-colors",
                           isBrandActive
                             ? "bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]"
                             : "text-muted-foreground hover:bg-accent hover:text-foreground",
                         )}
                       >
-                        {brand}
+                        <span className="truncate">{brand.name}</span>
+                        <span
+                          className={cn(
+                            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                            isBrandActive
+                              ? "bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)]"
+                              : "bg-muted text-foreground",
+                          )}
+                        >
+                          {brand.count}
+                        </span>
                       </Link>
                     );
                   })}
