@@ -21,6 +21,98 @@ export function getLocalDataDirPath(): string {
   return path.resolve(DATA_DIR);
 }
 
+export function isContainerizedRuntime(): boolean {
+  return (
+    fs.existsSync('/.dockerenv') ||
+    fs.existsSync('/run/.containerenv') ||
+    Boolean(process.env.KUBERNETES_SERVICE_HOST)
+  );
+}
+
+function decodeMountInfoPath(value: string): string {
+  return value.replace(/\\([0-7]{3})/g, (_, octalValue: string) =>
+    String.fromCharCode(Number.parseInt(octalValue, 8))
+  );
+}
+
+function readMountInfoForPath(targetPath: string) {
+  try {
+    const lines = fs.readFileSync('/proc/self/mountinfo', 'utf8').split('\n');
+    const resolvedTarget = path.resolve(targetPath);
+    let bestMatch:
+      | {
+          mountPoint: string;
+          root: string;
+          source: string;
+        }
+      | null = null;
+
+    for (const line of lines) {
+      if (!line) continue;
+
+      const separatorIndex = line.indexOf(' - ');
+      if (separatorIndex === -1) continue;
+
+      const left = line.slice(0, separatorIndex).split(' ');
+      const right = line.slice(separatorIndex + 3).split(' ');
+
+      if (left.length < 5 || right.length < 2) continue;
+
+      const mountPoint = decodeMountInfoPath(left[4]);
+      if (
+        resolvedTarget !== mountPoint &&
+        !resolvedTarget.startsWith(`${mountPoint}${path.sep}`)
+      ) {
+        continue;
+      }
+
+      if (bestMatch && mountPoint.length <= bestMatch.mountPoint.length) {
+        continue;
+      }
+
+      bestMatch = {
+        mountPoint,
+        root: decodeMountInfoPath(left[3]),
+        source: decodeMountInfoPath(right[1]),
+      };
+    }
+
+    return bestMatch;
+  } catch {
+    return null;
+  }
+}
+
+export function getDockerHostDataMountPath(): string | null {
+  const configuredMountPath = process.env.BLADEVAULT_HOST_DATA_DIR?.trim();
+  if (configuredMountPath) {
+    return configuredMountPath;
+  }
+
+  if (!isContainerizedRuntime()) {
+    return null;
+  }
+
+  const mountInfo = readMountInfoForPath(getLocalDataDirPath());
+  if (!mountInfo || mountInfo.mountPoint !== getLocalDataDirPath()) {
+    return null;
+  }
+
+  if (mountInfo.root && mountInfo.root !== '/') {
+    return mountInfo.root;
+  }
+
+  if (
+    mountInfo.source &&
+    mountInfo.source !== 'none' &&
+    !mountInfo.source.startsWith('/dev/')
+  ) {
+    return mountInfo.source;
+  }
+
+  return null;
+}
+
 export function getLocalDb(): Database.Database {
   if (restoreInProgress) {
     throw new Error('Local database restore is in progress. Please try again in a moment.');

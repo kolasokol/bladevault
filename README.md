@@ -93,6 +93,7 @@ docker run -d \
   --name bladevault \
   --restart unless-stopped \
   -p 5500:3000 \
+  -e BLADEVAULT_HOST_DATA_DIR="$HOME/BladeVault/data" \
   -v "$HOME/BladeVault/data:/app/data" \
   ghcr.io/kolasokol/bladevault:latest
 ```
@@ -106,6 +107,7 @@ podman run -d \
   --name bladevault \
   --restart unless-stopped \
   -p 5500:3000 \
+  -e BLADEVAULT_HOST_DATA_DIR="$HOME/BladeVault/data" \
   -v "$HOME/BladeVault/data:/app/data" \
   ghcr.io/kolasokol/bladevault:latest
 ```
@@ -119,6 +121,7 @@ docker run -d `
   --name bladevault `
   --restart unless-stopped `
   -p 5500:3000 `
+  -e BLADEVAULT_HOST_DATA_DIR="${env:USERPROFILE}\BladeVault\data" `
   -v "${env:USERPROFILE}\BladeVault\data:/app/data" `
   ghcr.io/kolasokol/bladevault:latest
 
@@ -133,6 +136,7 @@ New-Item -ItemType Directory -Force $path | Out-Null
 podman run -d `
   --name bladevault `
   -p 5500:3000 `
+  -e BLADEVAULT_HOST_DATA_DIR="${path}" `
   -v "${path}:/app/data" `
   ghcr.io/kolasokol/bladevault:latest
 
@@ -153,6 +157,7 @@ docker build --no-cache -t bladevault .
 docker run -p 5500:3000 -d \
   --name bladevault \
   --restart unless-stopped \
+  -e BLADEVAULT_HOST_DATA_DIR="$(pwd)/data" \
   -v $(pwd)/data:/app/data \
   bladevault
 ```
@@ -169,11 +174,14 @@ Docker Compose also works with no extra env if you want the default hosted auth
 and backup services.
 
 Only create a `.env` file if you want to override those defaults and point the
-container to a different auth or backup server:
+container to a different auth or backup server. If you want Settings to show the
+native host folder path on Docker Desktop for macOS or Windows, also set
+`BLADEVAULT_HOST_DATA_DIR`:
 
 ```env
 NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site
 NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site
+BLADEVAULT_HOST_DATA_DIR=./data
 ```
 
 Typical later update:

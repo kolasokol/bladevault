@@ -100,6 +100,8 @@ function formatSyncTime(value: string) {
 export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [localDataPath, setLocalDataPath] = useState('');
+  const [dockerHostDataMountPath, setDockerHostDataMountPath] = useState('');
+  const [isContainerized, setIsContainerized] = useState(false);
   const [cloudSession, setCloudSession] = useState<CloudBackupSession | null>(null);
   const [cloudConfig, setCloudConfig] = useState<CloudRuntimeConfig>(() => getCloudRuntimeConfig());
   const [isLoading, setIsLoading] = useState(true);
@@ -212,6 +214,8 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
           error?: string;
           settings?: AppSettings;
           localDataPath?: string;
+          dockerHostDataMountPath?: string | null;
+          isContainerized?: boolean;
         }>(response);
         if (!response.ok) {
           throw new Error(getApiErrorMessage(data, 'Failed to load settings'));
@@ -225,6 +229,8 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
         if (cancelled) return;
         setSettings(nextSettings);
         setLocalDataPath(data.localDataPath || '');
+        setDockerHostDataMountPath(data.dockerHostDataMountPath || '');
+        setIsContainerized(Boolean(data.isContainerized));
         setCloudConfig(nextCloudConfig);
         void refreshCloudSession(cancelled);
       } catch (error) {
@@ -550,6 +556,24 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         {localDataPath || 'Unavailable'}
                       </div>
                     </div>
+                    {dockerHostDataMountPath ? (
+                      <div className="rounded-xl border bg-card px-4 py-3">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Docker Host Mount
+                        </div>
+                        <div className="mt-2 break-all font-mono text-xs text-foreground">
+                          {dockerHostDataMountPath}
+                        </div>
+                      </div>
+                    ) : null}
+                    {isContainerized && !dockerHostDataMountPath ? (
+                      <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                        Host mount path is not available from this container runtime. On Docker
+                        Desktop for macOS or Windows, set
+                        <strong className="text-foreground"> BLADEVAULT_HOST_DATA_DIR </strong>
+                        to show the native host folder here.
+                      </div>
+                    ) : null}
                     <p>
                       Use the <strong className="text-foreground">Cloud Backup</strong> tab to sign
                       in through BladeVault Auth and store an off-device copy of your full local
