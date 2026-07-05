@@ -143,6 +143,7 @@ function CollectionContent() {
               options={optionsByFilter[definition.key]}
               selectedValues={selectedFilters[definition.key]}
               onToggleValue={(value) => toggleFilterValue(definition.key, value)}
+              onSelectAll={() => setFilterValues(definition.key, optionsByFilter[definition.key])}
               onClear={() => setFilterValues(definition.key, [])}
             />
           ))}

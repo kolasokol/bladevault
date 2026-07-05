@@ -11,6 +11,7 @@ type FilterMultiSelectProps = {
   options: string[];
   selectedValues: string[];
   onToggleValue: (value: string) => void;
+  onSelectAll: () => void;
   onClear: () => void;
   className?: string;
 };
@@ -20,6 +21,7 @@ export function FilterMultiSelect({
   options,
   selectedValues,
   onToggleValue,
+  onSelectAll,
   onClear,
   className,
 }: FilterMultiSelectProps) {
@@ -141,6 +143,9 @@ export function FilterMultiSelect({
                 </button>
               )}
             </div>
+            <Button type="button" variant="ghost" size="xs" onClick={onSelectAll}>
+              All
+            </Button>
             {selectedValues.length > 0 && (
               <Button type="button" variant="ghost" size="xs" onClick={onClear}>
                 Clear
