@@ -191,24 +191,6 @@ Docker Compose also works with no extra env if you want the default hosted auth
 and backup services. It now writes Docker data to the same user-level folder as
 the desktop app by default: `~/BladeVault/data` on macOS/Linux.
 
-Only create a `.env` file if you want to override those defaults and point the
-container to a different auth or backup server. Set
-`BLADEVAULT_HOST_DATA_DIR` only if you want Docker Compose to use a different
-host folder:
-
-```env
-NEXT_PUBLIC_BLADEVAULT_AUTH_URL=https://auth.tkweb.site
-NEXT_PUBLIC_BLADEVAULT_BACKUP_URL=https://backup.tkweb.site
-BLADEVAULT_HOST_DATA_DIR=/custom/path/to/bladevault-data
-```
-
-Typical later update:
-
-```bash
-git pull
-docker compose up -d --build
-```
-
 ---
 
 ## 📦 Run from Source
