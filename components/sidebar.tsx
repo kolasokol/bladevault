@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
+import packageJson from "@/package.json";
 import { useMemo, useState } from "react";
 import { BookmarkIcon } from "@/components/bookmark-icon";
 import {
@@ -39,6 +40,8 @@ const links = [
   { href: "/collection", label: "Collection", icon: Library },
   { href: "/compare", label: "Compare", icon: Scale },
 ];
+
+const appVersion = `v.${packageJson.version}`;
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -94,41 +97,47 @@ export function Sidebar() {
         </div>
 
         <div className="px-4 pb-2">
-          <div className="flex items-center gap-2">
-            <div
-              className={cn(
-                "inline-flex w-fit items-center justify-center rounded-full border px-3 py-[0.22rem]",
-                "border-[var(--bladevault-line)] bg-[var(--card)]",
-              )}
-            >
-              <Badge
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-medium tracking-[0.16em] text-muted-foreground/75">
+              {appVersion}
+            </span>
+
+            <div className="flex items-center gap-2">
+              <div
                 className={cn(
-                  "h-auto rounded-full border-0 bg-transparent px-0 py-0 text-[9px] font-semibold uppercase tracking-[0.16em] shadow-none",
-                  "!text-[var(--bladevault-local)] dark:!text-[var(--bladevault-gold)]",
+                  "inline-flex w-fit items-center justify-center rounded-full border px-3 py-[0.22rem]",
+                  "border-[var(--bladevault-line)] bg-[var(--card)]",
                 )}
-                title="Your vault stays local. Use Cloud Backup in settings to sync a copy."
               >
-                Local
+                <Badge
+                  className={cn(
+                    "h-auto rounded-full border-0 bg-transparent px-0 py-0 text-[9px] font-semibold uppercase tracking-[0.16em] shadow-none",
+                    "!text-[var(--bladevault-local)] dark:!text-[var(--bladevault-gold)]",
+                  )}
+                  title="Your vault stays local. Use Cloud Backup in settings to sync a copy."
+                >
+                  Local
+                </Badge>
+              </div>
+
+              <Badge
+                className="h-6 min-w-6 rounded-full border border-border/70 bg-card px-0 shadow-none"
+                title={
+                  isAutoBackupActive
+                    ? "Cloud auto backup is active."
+                    : "Cloud auto backup is inactive."
+                }
+              >
+                {isAutoBackupActive ? (
+                  <Cloud
+                    className="h-3.5 w-3.5"
+                    style={{ stroke: "url(#sidebar-cloud-gradient)" }}
+                  />
+                ) : (
+                  <CloudOff className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                )}
               </Badge>
             </div>
-
-            <Badge
-              className="h-6 min-w-6 rounded-full border border-border/70 bg-card px-0 shadow-none"
-              title={
-                isAutoBackupActive
-                  ? "Cloud auto backup is active."
-                  : "Cloud auto backup is inactive."
-              }
-            >
-              {isAutoBackupActive ? (
-                <Cloud
-                  className="h-3.5 w-3.5"
-                  style={{ stroke: "url(#sidebar-cloud-gradient)" }}
-                />
-              ) : (
-                <CloudOff className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
-              )}
-            </Badge>
           </div>
         </div>
 
