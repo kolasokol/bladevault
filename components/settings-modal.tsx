@@ -648,8 +648,8 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                                 Enable auto backup
                               </span>
                               <span className="block text-xs text-muted-foreground">
-                                Off by default. When enabled, BladeVault silently backs up every hour
-                                and after new knives are added while you are signed in.
+                                Off by default. When enabled, BladeVault silently uploads a full
+                                backup after you add, edit, or delete a knife while you are signed in.
                               </span>
                             </span>
                           </label>
@@ -662,7 +662,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         <CardHeader>
                           <CardTitle className="text-sm">Sync Actions</CardTitle>
                           <CardDescription>
-                            While signed in, BladeVault runs background backups every hour and after newly added knives. You can also upload or restore manually here.
+                            While signed in, BladeVault can auto-upload after knife changes, and you can also upload or restore manually here.
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">

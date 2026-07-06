@@ -38,7 +38,6 @@ type KnivesContextValue = {
 };
 
 const KnivesContext = createContext<KnivesContextValue | null>(null);
-const AUTO_BACKUP_INTERVAL_MS = 60 * 60 * 1000;
 const BACKUP_NOTICE_DURATION_MS = 3200;
 
 function toImageUrls(draft: KnifeDraft): string[] {
@@ -61,7 +60,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
   );
   const backupInFlightRef = useRef(false);
   const pendingBackupRef = useRef(false);
-  const runAutoBackupRef = useRef<(reason: 'hourly' | 'item-added' | 'queued') => Promise<void>>(
+  const runAutoBackupRef = useRef<(reason: 'mutation' | 'queued') => Promise<void>>(
     async () => {}
   );
 
@@ -134,7 +133,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const runAutoBackup = useCallback(async (reason: 'hourly' | 'item-added' | 'queued') => {
+  const runAutoBackup = useCallback(async (_reason: 'mutation' | 'queued') => {
     if (!canAttemptSilentCloudBackup()) {
       return;
     }
@@ -148,7 +147,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
 
     try {
       await uploadCloudBackupArchive();
-      showBackupNotice(reason === 'hourly' ? 'Hourly backup complete' : 'Backup complete');
+      showBackupNotice('Backup complete');
     } catch (error) {
       console.error('Automatic cloud backup failed', error);
     } finally {
@@ -167,7 +166,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     runAutoBackupRef.current = runAutoBackup;
   }, [runAutoBackup]);
 
-  const scheduleAutoBackup = useCallback((reason: 'hourly' | 'item-added') => {
+  const scheduleAutoBackup = useCallback((reason: 'mutation') => {
     window.setTimeout(() => {
       void runAutoBackup(reason);
     }, 0);
@@ -221,20 +220,6 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     };
   }, [backupNotice]);
 
-  useEffect(() => {
-    if (!isCloudSyncEnabled || !isAutoBackupEnabled) {
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      scheduleAutoBackup('hourly');
-    }, AUTO_BACKUP_INTERVAL_MS);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [isAutoBackupEnabled, isCloudSyncEnabled, scheduleAutoBackup]);
-
   const addKnife = useCallback(async (draft: KnifeDraft): Promise<Knife> => {
     const response = await fetch('/api/knives', {
       method: 'POST',
@@ -261,7 +246,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     const knife = data.knife as Knife;
     setKnives((prev) => [knife, ...prev]);
     if (isCloudSyncEnabled && isAutoBackupEnabled) {
-      scheduleAutoBackup('item-added');
+      scheduleAutoBackup('mutation');
     }
     return knife;
   }, [isAutoBackupEnabled, isCloudSyncEnabled, scheduleAutoBackup]);
@@ -281,8 +266,11 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     const data = await response.json();
     const knife = data.knife as Knife;
     setKnives((prev) => prev.map((k) => (k.id === id ? knife : k)));
+    if (isCloudSyncEnabled && isAutoBackupEnabled) {
+      scheduleAutoBackup('mutation');
+    }
     return knife;
-  }, []);
+  }, [isAutoBackupEnabled, isCloudSyncEnabled, scheduleAutoBackup]);
 
   const deleteKnife = useCallback(async (id: string): Promise<void> => {
     const response = await fetch(`/api/knives/${id}`, {
@@ -296,7 +284,10 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
 
     setKnives((prev) => prev.filter((k) => k.id !== id));
     setCompareIds((prev) => prev.filter((cid) => cid !== id));
-  }, []);
+    if (isCloudSyncEnabled && isAutoBackupEnabled) {
+      scheduleAutoBackup('mutation');
+    }
+  }, [isAutoBackupEnabled, isCloudSyncEnabled, scheduleAutoBackup]);
 
   const addToCompare = useCallback(async (id: string): Promise<void> => {
     const response = await fetch('/api/compare', {
