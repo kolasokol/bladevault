@@ -101,16 +101,22 @@ Choose the setup that fits you:
 
 ---
 
-## 🐳 Install in Docker
+## 🐳 Run in Container
+
+### Docker / Podman
+
+If you want a clear, user-owned folder on your machine, use `docker run` or
+`podman run` and mount `~/BladeVault/data` directly.
 
 For macOS / Linux Docker:
 
 ```bash
+mkdir -p "$HOME/BladeVault/data"
+
 docker run -d \
   --name bladevault \
   --restart unless-stopped \
   -p 5500:3000 \
-  -e BLADEVAULT_HOST_DATA_DIR="$HOME/BladeVault/data" \
   -v "$HOME/BladeVault/data:/app/data" \
   ghcr.io/kolasokol/bladevault:latest
 ```
@@ -124,7 +130,6 @@ podman run -d \
   --name bladevault \
   --restart unless-stopped \
   -p 5500:3000 \
-  -e BLADEVAULT_HOST_DATA_DIR="$HOME/BladeVault/data" \
   -v "$HOME/BladeVault/data:/app/data" \
   ghcr.io/kolasokol/bladevault:latest
 ```
@@ -138,7 +143,6 @@ docker run -d `
   --name bladevault `
   --restart unless-stopped `
   -p 5500:3000 `
-  -e BLADEVAULT_HOST_DATA_DIR="${env:USERPROFILE}\BladeVault\data" `
   -v "${env:USERPROFILE}\BladeVault\data:/app/data" `
   ghcr.io/kolasokol/bladevault:latest
 
@@ -153,13 +157,45 @@ New-Item -ItemType Directory -Force $path | Out-Null
 podman run -d `
   --name bladevault `
   -p 5500:3000 `
-  -e BLADEVAULT_HOST_DATA_DIR="${path}" `
   -v "${path}:/app/data" `
   ghcr.io/kolasokol/bladevault:latest
 
 ```
 
 Open [http://localhost:5500](http://localhost:5500) after the container starts.
+## Run DMG on macOS:
+
+If you downloaded the macOS DMG:
+
+1. Open the `.dmg` file.
+2. Drag `BladeVault.app` into `Applications`.
+3. Open BladeVault from `Applications`.
+
+If macOS blocks the first launch, run:
+
+```bash
+xattr -d com.apple.quarantine "/Applications/BladeVault.app"
+open "/Applications/BladeVault.app"
+```
+
+If it still does not open, try starting it once from Terminal:
+
+```bash
+"/Applications/BladeVault.app/Contents/MacOS/BladeVault"
+```
+
+---
+
+## Run Installer on Windows:
+
+If you downloaded the Windows installer:
+
+1. Open the `.exe` file.
+2. Follow the installer prompts.
+3. Open BladeVault from the Start menu or desktop shortcut.
+
+If Windows SmartScreen blocks the first launch, click `More info` and then
+`Run anyway` if you trust the download source.
 
 ### Build your own Docker image
 
@@ -170,26 +206,15 @@ cd bladevault
 # Build the image
 docker build --no-cache -t bladevault .
 
-# Run with a persistent data volume
+# Run with a persistent folder in your home directory
+mkdir -p "$HOME/BladeVault/data"
+
 docker run -p 5500:3000 -d \
   --name bladevault \
   --restart unless-stopped \
-  -e BLADEVAULT_HOST_DATA_DIR="$(pwd)/data" \
-  -v $(pwd)/data:/app/data \
+  -v "$HOME/BladeVault/data:/app/data" \
   bladevault
 ```
-
-The `-v $(pwd)/data:/app/data` mount preserves the SQLite database and downloaded images between runs.
-
-You can also use Docker Compose:
-
-```bash
-docker compose up -d --build
-```
-
-Docker Compose also works with no extra env if you want the default hosted auth
-and backup services. It now writes Docker data to the same user-level folder as
-the desktop app by default: `~/BladeVault/data` on macOS/Linux.
 
 ---
 
@@ -223,28 +248,7 @@ until you move the file.
 ---
 
 
-## Run DMG on macOS:
 
-If you downloaded the macOS DMG:
-
-1. Open the `.dmg` file.
-2. Drag `BladeVault.app` into `Applications`.
-3. Open BladeVault from `Applications`.
-
-If macOS blocks the first launch, run:
-
-```bash
-xattr -d com.apple.quarantine "/Applications/BladeVault.app"
-open "/Applications/BladeVault.app"
-```
-
-If it still does not open, try starting it once from Terminal:
-
-```bash
-"/Applications/BladeVault.app/Contents/MacOS/BladeVault"
-```
-
----
 
 ## 💾 Your Data
 

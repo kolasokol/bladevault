@@ -422,7 +422,7 @@ export default function ComparePage() {
                           className={cn(
                             'sticky left-0 z-10 text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)] transition-colors',
                             idx % 2 === 0
-                              ? 'bg-[color-mix(in_oklch,var(--muted)_30%,var(--card))]'
+                              ? 'bg-[var(--bladevault-surface-soft)]'
                               : 'bg-card',
                             hoveredCell?.rowKey === row.key && 'bg-muted'
                           )}
