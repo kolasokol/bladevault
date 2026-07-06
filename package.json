@@ -41,7 +41,7 @@
     "tar": "7.5.19"
   },
   "devDependencies": {
-    "@electron/notarize": "^2.5.0",
+    "@electron/notarize": "^3.1.1",
     "@tailwindcss/postcss": "4.3.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.0",
