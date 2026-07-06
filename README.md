@@ -17,7 +17,7 @@
     <img src="https://img.shields.io/badge/TypeScript_6-3178C6?logo=typescript&logoColor=white&style=flat-square" alt="TypeScript 6" />
     <img src="https://img.shields.io/badge/Tailwind_CSS_4.3-06B6D4?logo=tailwindcss&logoColor=white&style=flat-square" alt="Tailwind CSS 4.3" />
     <img src="https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white&style=flat-square" alt="SQLite" />
-    <img src="https://img.shields.io/badge/Electron_42-47848F?logo=electron&logoColor=white&style=flat-square" alt="Electron 42" />
+    <img src="https://img.shields.io/badge/Electron_43-47848F?logo=electron&logoColor=white&style=flat-square" alt="Electron 43" />
   </p>
 
   <p>

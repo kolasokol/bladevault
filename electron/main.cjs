@@ -246,7 +246,6 @@ function wireMainWindowSecurity(window) {
           width: 520,
           webPreferences: {
             contextIsolation: true,
-            nativeWindowOpen: true,
             nodeIntegration: false,
             sandbox: true,
           },
@@ -280,7 +279,6 @@ async function createMainWindow() {
     webPreferences: {
       backgroundThrottling: false,
       contextIsolation: true,
-      nativeWindowOpen: true,
       nodeIntegration: false,
       sandbox: true,
     },
