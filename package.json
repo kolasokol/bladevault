@@ -1,6 +1,6 @@
 {
   "name": "bladevault",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "private": true,
   "description": "A sharp, local-first knife collection manager.",
   "main": "electron/main.cjs",
