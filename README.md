@@ -214,6 +214,12 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+By default, source mode stores its SQLite database and downloaded images in
+`~/BladeVault/data` (or the Windows equivalent under your user profile). Set
+`BLADEVAULT_DATA_DIR` if you want a custom location. Older local checkouts with
+an existing repo-level `data/bladevault.sqlite` keep using that legacy path
+until you move the file.
+
 ---
 
 
@@ -246,12 +252,15 @@ If it still does not open, try starting it once from Terminal:
 
 BladeVault stores everything locally:
 
-- **SQLite database:** `data/bladevault.sqlite`
-- **Downloaded images:** `data/images/`
+- **SQLite database:** `~/BladeVault/data/bladevault.sqlite`
+- **Downloaded images:** `~/BladeVault/data/images/`
 
-No cloud accounts or API keys required. Keep the `data/` folder backed up to preserve your collection.
+No cloud accounts or API keys required. Keep the `~/BladeVault/data` folder
+backed up to preserve your collection.
 
-For packaged desktop builds, the local data folder lives in `~/BladeVault/data` instead of the repo root `data/` directory.
+If you already have an older repo-local `data/bladevault.sqlite`, BladeVault
+continues to use it until you move that database or set `BLADEVAULT_DATA_DIR`
+explicitly.
 
 #### Cloud Backup Beta
 
