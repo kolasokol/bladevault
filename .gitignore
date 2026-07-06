@@ -26,3 +26,4 @@ data/images/*/
 # Agent instructions (local-only)
 AGENTS.md
 /tsconfig.tsbuildinfo
+/compose.override.yaml
