@@ -35,7 +35,7 @@
     "postcss": "^8.5.16",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-icons": "^5.6.0",
+    "react-icons": "^5.7.0",
     "shadcn": "^4.13.0",
     "tailwind-merge": "^3.6.0",
     "tar": "7.5.19"
