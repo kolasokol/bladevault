@@ -61,7 +61,7 @@ function main() {
       'Expected behavior: Gatekeeper will block direct first launch from a downloaded DMG.',
     )
     console.log(
-      'Tester install flow: copy the app out of the DMG, run the included Open BladeVault.command helper, then open it.',
+      'Tester install flow: drag the app from the DMG into Applications, then open First Launch.txt from the DMG and run those Terminal commands.',
     )
     return
   }

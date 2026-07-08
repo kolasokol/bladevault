@@ -4,28 +4,32 @@ const isMacHost = process.platform === 'darwin'
 const isMacSigningEnabled = process.env.BLADEVAULT_MAC_SIGN === '1'
 const isMacNotarizeEnabled = process.env.BLADEVAULT_MAC_NOTARIZE === '1'
 const isUnsignedMacBuild = isMacHost && !isMacSigningEnabled
-const dmgHelperPath = path.join(__dirname, 'build', 'Open BladeVault.command')
+const dmgLaunchTextPath = path.join(
+  __dirname,
+  'build',
+  'First Launch.txt',
+)
 const dmgWindow = {
   width: 920,
   height: 720,
 }
 const dmgContents = [
   {
-    x: 193,
-    y: 558,
+    x: 241,
+    y: 394,
     type: 'file',
   },
   {
-    x: 459,
-    y: 558,
+    x: 679,
+    y: 394,
     type: 'link',
     path: '/Applications',
   },
   {
-    x: 725,
-    y: 558,
+    x: 717,
+    y: 601,
     type: 'file',
-    path: dmgHelperPath,
+    path: dmgLaunchTextPath,
   },
 ]
 

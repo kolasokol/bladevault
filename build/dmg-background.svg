@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="920" height="720" viewBox="0 0 920 720" role="img" aria-labelledby="title desc">
   <title id="title">BladeVault DMG background</title>
-  <desc id="desc">Installer instructions for dragging BladeVault into Applications, then running the included launch helper.</desc>
+  <desc id="desc">Installer instructions for dragging BladeVault into Applications, then opening a text file to copy the launch commands.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#FAFAF8"/>
@@ -17,14 +17,11 @@
     <style>
       .sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
       .title { fill: #18191D; font-size: 44px; font-weight: 700; }
-      .subtitle { fill: #5F6470; font-size: 22px; }
       .step-label { fill: #86A91E; font-size: 17px; font-weight: 700; letter-spacing: 2.4px; }
       .step-title { fill: #18191D; font-size: 24px; font-weight: 650; }
-      .step-body { fill: #525865; font-size: 17px; }
-      .muted { fill: #707684; font-size: 15px; }
       .mono { font-family: 'SFMono-Regular', Menlo, Monaco, monospace; fill: #2B313B; font-size: 14px; }
-      .chip { fill: #FFFFFF; font-size: 15px; font-weight: 700; }
       .lane-label { fill: #6B7180; font-size: 14px; letter-spacing: 1.6px; font-weight: 700; }
+      .doc-label { fill: #6B7180; font-size: 12px; letter-spacing: 1.1px; font-weight: 700; }
     </style>
   </defs>
 
@@ -33,38 +30,37 @@
   <circle cx="120" cy="648" r="180" fill="#FFFFFF" opacity="0.34"/>
   <circle cx="764" cy="626" r="122" fill="#FFFFFF" opacity="0.18"/>
 
-  <rect x="64" y="54" width="792" height="420" rx="30" fill="#FFFFFF" opacity="0.98" filter="url(#shadow)"/>
-  <rect x="64" y="54" width="792" height="420" rx="30" fill="none" stroke="#D8DCD1"/>
+  <rect x="64" y="48" width="792" height="624" rx="30" fill="#FFFFFF" opacity="0.98" filter="url(#shadow)"/>
+  <rect x="64" y="48" width="792" height="624" rx="30" fill="none" stroke="#D8DCD1"/>
 
-  <text class="sans title" x="460" y="124" text-anchor="middle">Install BladeVault</text>
-  <text class="sans subtitle" x="460" y="158" text-anchor="middle">Install it first, then run the helper below to launch it.</text>
+  <text class="sans title" x="460" y="118" text-anchor="middle">Install Blade</text>
 
-  <rect x="96" y="190" width="728" height="92" rx="24" fill="url(#panel)" stroke="#DCE0D7"/>
-  <rect x="96" y="298" width="728" height="142" rx="24" fill="url(#panel)" stroke="#DCE0D7"/>
+  <rect x="96" y="186" width="728" height="92" rx="24" fill="url(#panel)" stroke="#DCE0D7"/>
+  <text class="sans step-label" x="126" y="222">STEP 1</text>
+  <text class="sans step-title" x="126" y="254">Drag BladeVault.app into Applications.</text>
 
-  <text class="sans step-label" x="126" y="226">STEP 1</text>
-  <text class="sans step-title" x="126" y="258">Drag BladeVault.app into Applications.</text>
-  <text class="sans step-body" x="126" y="282">This installs BladeVault on your Mac.</text>
+  <rect x="96" y="304" width="728" height="174" rx="28" fill="#FFFFFF" opacity="0.62" stroke="#E1E5DB"/>
+  <rect x="156" y="340" width="170" height="114" rx="28" fill="#FFFFFF" stroke="#D8DDD2"/>
+  <rect x="594" y="340" width="170" height="114" rx="28" fill="#FFFFFF" stroke="#D8DDD2"/>
 
-  <text class="sans step-label" x="126" y="334">STEP 2</text>
-  <text class="sans step-title" x="126" y="366">Double-click Open BladeVault.command.</text>
-  <text class="sans step-body" x="126" y="392">It removes quarantine and launches BladeVault:</text>
-
-  <rect x="126" y="408" width="668" height="56" rx="16" fill="#F7F8F3" stroke="#DCE0D7"/>
-  <text class="mono" x="146" y="432">xattr -d com.apple.quarantine "/Applications/BladeVault.app"</text>
-  <text class="mono" x="146" y="450">open "/Applications/BladeVault.app"</text>
-
-  <rect x="98" y="520" width="190" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
-  <rect x="364" y="520" width="190" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
-  <rect x="630" y="520" width="190" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
-
-  <text class="sans lane-label" x="193" y="568" text-anchor="middle">BLADEVAULT</text>
-  <text class="sans lane-label" x="459" y="568" text-anchor="middle">APPLICATIONS</text>
-  <text class="sans lane-label" x="725" y="568" text-anchor="middle">OPEN HELPER</text>
-  <text class="sans muted" x="725" y="594" text-anchor="middle">double-click after install</text>
+  <text class="sans lane-label" x="241" y="328" text-anchor="middle">BLADEVAULT</text>
+  <text class="sans lane-label" x="679" y="328" text-anchor="middle">APPLICATIONS</text>
 
   <g opacity="0.86">
-    <path d="M286 596 H364" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-dasharray="18 14"/>
-    <path d="M334 566 L384 596 L334 626" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M356 397 H554" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-dasharray="18 14"/>
+    <path d="M504 367 L554 397 L504 427" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
+
+  <rect x="96" y="506" width="728" height="138" rx="24" fill="url(#panel)" stroke="#DCE0D7"/>
+  <text class="sans step-label" x="126" y="542">STEP 2</text>
+  <text class="sans step-title" x="126" y="574">Open First Launch.txt and copy this in Terminal.</text>
+
+  <rect x="126" y="588" width="500" height="40" rx="14" fill="#F7F8F3" stroke="#DCE0D7"/>
+  <text class="mono" x="146" y="606">xattr -d com.apple.quarantine "/Applications/BladeVault.app"</text>
+  <text class="mono" x="146" y="622">open "/Applications/BladeVault.app"</text>
+
+  <rect x="662" y="574" width="110" height="54" rx="14" fill="#FFFFFF" stroke="#D8DDD2"/>
+  <path d="M688 584 H730 L746 600 V618 C746 623 742 627 737 627 H688 C683 627 679 623 679 618 V593 C679 588 683 584 688 584 Z" fill="#F7F8F3" stroke="#C9CFBF"/>
+  <path d="M730 584 V597 C730 600 732 602 735 602 H746" fill="none" stroke="#C9CFBF"/>
+  <text class="sans doc-label" x="717" y="642" text-anchor="middle">FIRST LAUNCH TXT</text>
 </svg>
