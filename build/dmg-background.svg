@@ -21,7 +21,6 @@
       .step-title { fill: #18191D; font-size: 24px; font-weight: 650; }
       .mono { font-family: 'SFMono-Regular', Menlo, Monaco, monospace; fill: #2B313B; font-size: 14px; }
       .lane-label { fill: #6B7180; font-size: 14px; letter-spacing: 1.6px; font-weight: 700; }
-      .doc-label { fill: #6B7180; font-size: 12px; letter-spacing: 1.1px; font-weight: 700; }
     </style>
   </defs>
 
@@ -59,8 +58,4 @@
   <text class="mono" x="146" y="606">xattr -d com.apple.quarantine "/Applications/BladeVault.app"</text>
   <text class="mono" x="146" y="622">open "/Applications/BladeVault.app"</text>
 
-  <rect x="662" y="574" width="110" height="54" rx="14" fill="#FFFFFF" stroke="#D8DDD2"/>
-  <path d="M688 584 H730 L746 600 V618 C746 623 742 627 737 627 H688 C683 627 679 623 679 618 V593 C679 588 683 584 688 584 Z" fill="#F7F8F3" stroke="#C9CFBF"/>
-  <path d="M730 584 V597 C730 600 732 602 735 602 H746" fill="none" stroke="#C9CFBF"/>
-  <text class="sans doc-label" x="717" y="642" text-anchor="middle">FIRST LAUNCH TXT</text>
 </svg>
