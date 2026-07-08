@@ -61,7 +61,7 @@ function main() {
       'Expected behavior: Gatekeeper will block direct first launch from a downloaded DMG.',
     )
     console.log(
-      'Tester install flow: copy the app out of the DMG, remove quarantine, then open it.',
+      'Tester install flow: copy the app out of the DMG, run the included Open BladeVault.command helper, then open it.',
     )
     return
   }

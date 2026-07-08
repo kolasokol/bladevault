@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="920" height="720" viewBox="0 0 920 720" role="img" aria-labelledby="title desc">
   <title id="title">BladeVault DMG background</title>
-  <desc id="desc">Installer instructions for dragging BladeVault into Applications.</desc>
+  <desc id="desc">Installer instructions for dragging BladeVault into Applications, then running the included launch helper.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#FAFAF8"/>
@@ -22,6 +22,7 @@
       .step-title { fill: #18191D; font-size: 24px; font-weight: 650; }
       .step-body { fill: #525865; font-size: 17px; }
       .muted { fill: #707684; font-size: 15px; }
+      .mono { font-family: 'SFMono-Regular', Menlo, Monaco, monospace; fill: #2B313B; font-size: 14px; }
       .chip { fill: #FFFFFF; font-size: 15px; font-weight: 700; }
       .lane-label { fill: #6B7180; font-size: 14px; letter-spacing: 1.6px; font-weight: 700; }
     </style>
@@ -32,26 +33,38 @@
   <circle cx="120" cy="648" r="180" fill="#FFFFFF" opacity="0.34"/>
   <circle cx="764" cy="626" r="122" fill="#FFFFFF" opacity="0.18"/>
 
-  <rect x="64" y="54" width="792" height="316" rx="30" fill="#FFFFFF" opacity="0.98" filter="url(#shadow)"/>
-  <rect x="64" y="54" width="792" height="316" rx="30" fill="none" stroke="#D8DCD1"/>
+  <rect x="64" y="54" width="792" height="420" rx="30" fill="#FFFFFF" opacity="0.98" filter="url(#shadow)"/>
+  <rect x="64" y="54" width="792" height="420" rx="30" fill="none" stroke="#D8DCD1"/>
 
   <text class="sans title" x="460" y="124" text-anchor="middle">Install BladeVault</text>
-  <text class="sans subtitle" x="460" y="158" text-anchor="middle">Drag BladeVault into Applications to install it.</text>
+  <text class="sans subtitle" x="460" y="158" text-anchor="middle">Install it first, then run the helper below to launch it.</text>
 
-  <rect x="96" y="190" width="728" height="118" rx="24" fill="url(#panel)" stroke="#DCE0D7"/>
+  <rect x="96" y="190" width="728" height="92" rx="24" fill="url(#panel)" stroke="#DCE0D7"/>
+  <rect x="96" y="298" width="728" height="142" rx="24" fill="url(#panel)" stroke="#DCE0D7"/>
 
-  <text class="sans step-label" x="126" y="226">INSTALL</text>
-  <text class="sans step-title" x="126" y="260">Drag BladeVault.app</text>
-  <text class="sans step-body" x="126" y="286">onto the Applications folder below.</text>
+  <text class="sans step-label" x="126" y="226">STEP 1</text>
+  <text class="sans step-title" x="126" y="258">Drag BladeVault.app into Applications.</text>
+  <text class="sans step-body" x="126" y="282">This installs BladeVault on your Mac.</text>
 
-  <rect x="158" y="430" width="214" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
-  <rect x="548" y="430" width="214" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
+  <text class="sans step-label" x="126" y="334">STEP 2</text>
+  <text class="sans step-title" x="126" y="366">Double-click Open BladeVault.command.</text>
+  <text class="sans step-body" x="126" y="392">It removes quarantine and launches BladeVault:</text>
 
-  <text class="sans lane-label" x="250" y="478" text-anchor="middle">BLADEVAULT</text>
-  <text class="sans lane-label" x="670" y="478" text-anchor="middle">APPLICATIONS</text>
+  <rect x="126" y="408" width="668" height="56" rx="16" fill="#F7F8F3" stroke="#DCE0D7"/>
+  <text class="mono" x="146" y="432">xattr -d com.apple.quarantine "/Applications/BladeVault.app"</text>
+  <text class="mono" x="146" y="450">open "/Applications/BladeVault.app"</text>
+
+  <rect x="98" y="520" width="190" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
+  <rect x="364" y="520" width="190" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
+  <rect x="630" y="520" width="190" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
+
+  <text class="sans lane-label" x="193" y="568" text-anchor="middle">BLADEVAULT</text>
+  <text class="sans lane-label" x="459" y="568" text-anchor="middle">APPLICATIONS</text>
+  <text class="sans lane-label" x="725" y="568" text-anchor="middle">OPEN HELPER</text>
+  <text class="sans muted" x="725" y="594" text-anchor="middle">double-click after install</text>
 
   <g opacity="0.86">
-    <path d="M360 548 H560" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-dasharray="18 14"/>
-    <path d="M528 518 L578 548 L528 578" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M286 596 H364" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-dasharray="18 14"/>
+    <path d="M334 566 L384 596 L334 626" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

@@ -170,7 +170,8 @@ If you downloaded the macOS DMG:
 
 1. Open the `.dmg` file.
 2. Drag `BladeVault.app` into `Applications`.
-3. Open Terminal and run:
+3. In the DMG window, double-click `Open BladeVault.command`.
+4. If you prefer Terminal, run:
 
 ```bash
 xattr -d com.apple.quarantine "/Applications/BladeVault.app"
