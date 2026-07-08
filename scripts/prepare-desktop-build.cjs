@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { generateDmgBackground } = require('./generate-dmg-background.cjs');
 
 const projectRoot = process.cwd();
 const standaloneRoot = path.join(projectRoot, '.next', 'standalone');
@@ -28,3 +29,5 @@ copyDirectory(nextStaticRoot, standaloneStaticRoot);
 if (fs.existsSync(publicRoot)) {
   copyDirectory(publicRoot, standalonePublicRoot);
 }
+
+generateDmgBackground();

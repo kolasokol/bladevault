@@ -11,6 +11,11 @@ pnpm-workspace.yaml
 *.log
 .idea/
 .omo/
+
+# Generated DMG assets
+build/background.png
+build/background@2x.png
+
 # Environment secrets
 .env*
 !.env.example

@@ -169,16 +169,14 @@ If you downloaded the macOS DMG:
 
 1. Open the `.dmg` file.
 2. Drag `BladeVault.app` into `Applications`.
-3. Open BladeVault from `Applications`.
-
-If macOS blocks the first launch, run:
+3. Open Terminal and run:
 
 ```bash
 xattr -d com.apple.quarantine "/Applications/BladeVault.app"
 open "/Applications/BladeVault.app"
 ```
 
-If it still does not open, try starting it once from Terminal:
+If macOS still blocks the first launch, try starting it once from Terminal:
 
 ```bash
 "/Applications/BladeVault.app/Contents/MacOS/BladeVault"

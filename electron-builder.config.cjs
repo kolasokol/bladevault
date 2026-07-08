@@ -35,6 +35,29 @@ const config = {
     entitlements: path.join('build', 'entitlements.mac.plist'),
     entitlementsInherit: path.join('build', 'entitlements.mac.inherit.plist'),
   },
+  dmg: {
+    background: 'background.png',
+    window: {
+      width: 540,
+      height: 420,
+    },
+    contents: [
+      {
+        x: 150,
+        y: 334,
+        type: 'file',
+      },
+      {
+        x: 390,
+        y: 334,
+        type: 'link',
+        path: '/Applications',
+      },
+    ],
+    iconSize: 92,
+    iconTextSize: 14,
+    title: '${productName} ${version}',
+  },
   afterSign:
     isMacSigningEnabled && isMacNotarizeEnabled
       ? path.join(__dirname, 'scripts', 'notarize-macos.cjs')
