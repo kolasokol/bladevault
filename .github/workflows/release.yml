@@ -60,7 +60,7 @@ jobs:
           fi
 
           {
-            echo "## What's Changed"
+            echo "## Changelog"
             echo
 
             found_commit=0
@@ -70,11 +70,18 @@ jobs:
               fi
 
               found_commit=1
-              printf -- '- %s ([%s](https://github.com/%s/commit/%s))\n' "$subject" "$short_sha" "$REPOSITORY" "$sha"
+              if printf '%s\n' "$subject" | grep -Eq ' \(#[0-9]+\)$'; then
+                pr_number="$(printf '%s\n' "$subject" | sed -E 's/^.* \(#([0-9]+)\)$/\1/')"
+                pr_subject="$(printf '%s\n' "$subject" | sed -E 's/ \(#[0-9]+\)$//')"
+                printf -- '* [#%s](https://github.com/%s/pull/%s) %s\n' "$pr_number" "$REPOSITORY" "$pr_number" "$pr_subject"
+                continue
+              fi
+
+              printf -- '* [%s](https://github.com/%s/commit/%s) %s\n' "$short_sha" "$REPOSITORY" "$sha" "$subject"
             done < "$commits_file"
 
             if [ "$found_commit" -eq 0 ]; then
-              echo "- No commit summaries were found for this release."
+              echo "* No commit summaries were found for this release."
             fi
 
             if [ -n "$previous_tag" ]; then
