@@ -1,51 +1,55 @@
-'use client';
+'use client'
 
-import Image from 'next/image';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
-import { getImageUrl } from '@/lib/data';
-import { Maximize2, X, ChevronLeft, ChevronRight, GripHorizontal, ImageIcon } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import Image from 'next/image'
+import { useState } from 'react'
+import { cn } from '@/lib/utils'
+import { getImageUrl } from '@/lib/data'
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Maximize2,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  GripHorizontal,
+  ImageIcon,
+} from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 
 export function Gallery({
   images,
   editable = false,
   onReorder,
 }: {
-  images: string[];
-  editable?: boolean;
-  onReorder?: (newImages: string[]) => void;
+  images: string[]
+  editable?: boolean
+  onReorder?: (newImages: string[]) => void
 }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0)
+  const [isFullScreen, setIsFullScreen] = useState(false)
 
-  const nextImage = () => setActiveIdx((prev) => (prev + 1) % images.length);
-  const prevImage = () => setActiveIdx((prev) => (prev - 1 + images.length) % images.length);
+  const nextImage = () => setActiveIdx((prev) => (prev + 1) % images.length)
+  const prevImage = () =>
+    setActiveIdx((prev) => (prev - 1 + images.length) % images.length)
 
   const moveImage = (index: number, direction: -1 | 1) => {
-    if (!onReorder) return;
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= images.length) return;
+    if (!onReorder) return
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= images.length) return
 
-    const reordered = [...images];
-    const [moved] = reordered.splice(index, 1);
-    reordered.splice(newIndex, 0, moved);
+    const reordered = [...images]
+    const [moved] = reordered.splice(index, 1)
+    reordered.splice(newIndex, 0, moved)
 
     if (activeIdx === index) {
-      setActiveIdx(newIndex);
+      setActiveIdx(newIndex)
     } else if (direction === 1 && activeIdx > index && activeIdx <= newIndex) {
-      setActiveIdx(activeIdx - 1);
+      setActiveIdx(activeIdx - 1)
     } else if (direction === -1 && activeIdx < index && activeIdx >= newIndex) {
-      setActiveIdx(activeIdx + 1);
+      setActiveIdx(activeIdx + 1)
     }
 
-    onReorder(reordered);
-  };
+    onReorder(reordered)
+  }
 
   return (
     <>
@@ -90,7 +94,7 @@ export function Gallery({
                   'group relative h-20 w-20 shrink-0 overflow-hidden p-0 bg-white transition-all',
                   activeIdx === idx
                     ? 'ring-2 ring-[var(--bladevault-title)] ring-offset-1'
-                    : 'opacity-70 hover:opacity-100'
+                    : 'opacity-70 hover:opacity-100',
                 )}
               >
                 <button
@@ -114,8 +118,8 @@ export function Gallery({
                     <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-between px-1 py-1 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => {
-                          e.stopPropagation();
-                          moveImage(idx, -1);
+                          e.stopPropagation()
+                          moveImage(idx, -1)
                         }}
                         disabled={idx === 0}
                         className="rounded-full p-1 bg-white/90 text-foreground hover:bg-white disabled:opacity-30 disabled:hover:bg-white/90 transition-colors"
@@ -125,8 +129,8 @@ export function Gallery({
                       </button>
                       <button
                         onClick={(e) => {
-                          e.stopPropagation();
-                          moveImage(idx, 1);
+                          e.stopPropagation()
+                          moveImage(idx, 1)
                         }}
                         disabled={idx === images.length - 1}
                         className="rounded-full p-1 bg-white/90 text-foreground hover:bg-white disabled:opacity-30 disabled:hover:bg-white/90 transition-colors"
@@ -144,7 +148,10 @@ export function Gallery({
       </div>
 
       <Dialog open={isFullScreen} onOpenChange={setIsFullScreen}>
-        <DialogContent showCloseButton={false} className="max-w-[calc(100%-2rem)] h-[90vh] w-[90vw] border-none bg-black/95 p-0 text-white sm:max-w-[90vw] rounded-none">
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-[calc(100%-2rem)] h-[90vh] w-[90vw] border-none bg-black/95 p-0 text-white sm:max-w-[90vw] rounded-none"
+        >
           <DialogTitle className="sr-only">Image viewer</DialogTitle>
           <button
             onClick={() => setIsFullScreen(false)}
@@ -189,5 +196,5 @@ export function Gallery({
         </DialogContent>
       </Dialog>
     </>
-  );
+  )
 }

@@ -23,5 +23,12 @@ export function BookmarkIcon({ active, className }: BookmarkIconProps) {
     )
   }
 
-  return <FiBookmark className={cn('text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)]', className)} />
+  return (
+    <FiBookmark
+      className={cn(
+        'text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)]',
+        className,
+      )}
+    />
+  )
 }

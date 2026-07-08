@@ -9,7 +9,7 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbSeparator
+  BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 
 export type BreadcrumbSegment =
@@ -34,7 +34,7 @@ type Breadcrumb3Props = {
 export default function Breadcrumb3({ segments, className }: Breadcrumb3Props) {
   return (
     <Breadcrumb className={className}>
-      <BreadcrumbList className='gap-1.5 text-sm'>
+      <BreadcrumbList className="gap-1.5 text-sm">
         {segments.map((segment, index) => {
           const Icon = segment.icon
 
@@ -44,20 +44,24 @@ export default function Breadcrumb3({ segments, className }: Breadcrumb3Props) {
                 {!segment.current ? (
                   <BreadcrumbLink
                     render={<Link href={segment.href} />}
-                    className='flex items-center gap-1.5 rounded-sm px-1 py-0.5 hover:text-foreground'
+                    className="flex items-center gap-1.5 rounded-sm px-1 py-0.5 hover:text-foreground"
                   >
-                    <Icon className='size-3.5 text-muted-foreground' />
-                    {index === 0 ? <span className='text-sm'>Home</span> : segment.label}
+                    <Icon className="size-3.5 text-muted-foreground" />
+                    {index === 0 ? (
+                      <span className="text-sm">Home</span>
+                    ) : (
+                      segment.label
+                    )}
                   </BreadcrumbLink>
                 ) : (
-                  <BreadcrumbPage className='flex items-center gap-1.5 rounded-sm px-1 py-0.5 font-medium'>
-                    <Icon className='size-3.5 text-foreground/80' />
+                  <BreadcrumbPage className="flex items-center gap-1.5 rounded-sm px-1 py-0.5 font-medium">
+                    <Icon className="size-3.5 text-foreground/80" />
                     {segment.label}
                   </BreadcrumbPage>
                 )}
               </BreadcrumbItem>
               {index < segments.length - 1 ? (
-                <BreadcrumbSeparator className='text-muted-foreground/70'>
+                <BreadcrumbSeparator className="text-muted-foreground/70">
                   <ChevronRightIcon />
                 </BreadcrumbSeparator>
               ) : null}

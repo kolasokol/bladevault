@@ -1,9 +1,9 @@
-const path = require('path');
+const path = require('path')
 
-const isMacHost = process.platform === 'darwin';
-const isMacSigningEnabled = process.env.BLADEVAULT_MAC_SIGN === '1';
-const isMacNotarizeEnabled = process.env.BLADEVAULT_MAC_NOTARIZE === '1';
-const isUnsignedMacBuild = isMacHost && !isMacSigningEnabled;
+const isMacHost = process.platform === 'darwin'
+const isMacSigningEnabled = process.env.BLADEVAULT_MAC_SIGN === '1'
+const isMacNotarizeEnabled = process.env.BLADEVAULT_MAC_NOTARIZE === '1'
+const isUnsignedMacBuild = isMacHost && !isMacSigningEnabled
 
 const config = {
   appId: 'com.bladevault.desktop',
@@ -21,11 +21,7 @@ const config = {
     output: 'dist/desktop',
     buildResources: 'build',
   },
-  files: [
-    'package.json',
-    'electron/**/*',
-    '.next/standalone/**/*',
-  ],
+  files: ['package.json', 'electron/**/*', '.next/standalone/**/*'],
   mac: {
     category: 'public.app-category.utilities',
     target: ['dmg'],
@@ -74,6 +70,6 @@ const config = {
     oneClick: false,
     allowToChangeInstallationDirectory: true,
   },
-};
+}
 
-module.exports = config;
+module.exports = config

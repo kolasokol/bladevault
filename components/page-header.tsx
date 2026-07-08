@@ -1,28 +1,35 @@
-import { FileTextIcon, FolderIcon, HomeIcon } from 'lucide-react';
-import Breadcrumb3, { type BreadcrumbSegment } from '@/components/ui/breadcrumb-3';
+import { FileTextIcon, FolderIcon, HomeIcon } from 'lucide-react'
+import Breadcrumb3, {
+  type BreadcrumbSegment,
+} from '@/components/ui/breadcrumb-3'
 
 export type BreadcrumbItemData = {
-  label: string;
-  href?: string;
-};
+  label: string
+  href?: string
+}
 
 type PageHeaderProps = {
-  title: string;
-  description?: string;
-  breadcrumbs?: BreadcrumbItemData[];
-  actions?: React.ReactNode;
-};
+  title: string
+  description?: string
+  breadcrumbs?: BreadcrumbItemData[]
+  actions?: React.ReactNode
+}
 
-export function PageHeader({ title, description, breadcrumbs = [], actions }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  breadcrumbs = [],
+  actions,
+}: PageHeaderProps) {
   const segments: BreadcrumbSegment[] = breadcrumbs.map((item, index) => {
-    const isLast = index === breadcrumbs.length - 1;
+    const isLast = index === breadcrumbs.length - 1
 
     if (isLast || !item.href) {
-      return { label: item.label, icon: FileTextIcon, current: true };
+      return { label: item.label, icon: FileTextIcon, current: true }
     }
 
-    return { label: item.label, href: item.href, icon: FolderIcon };
-  });
+    return { label: item.label, href: item.href, icon: FolderIcon }
+  })
 
   return (
     <div className="mb-8">
@@ -34,7 +41,9 @@ export function PageHeader({ title, description, breadcrumbs = [], actions }: Pa
       )}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-medium tracking-tight text-[var(--bladevault-title)]">{title}</h1>
+          <h1 className="text-xl font-medium tracking-tight text-[var(--bladevault-title)]">
+            {title}
+          </h1>
           {description && (
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           )}
@@ -42,5 +51,5 @@ export function PageHeader({ title, description, breadcrumbs = [], actions }: Pa
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
     </div>
-  );
+  )
 }

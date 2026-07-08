@@ -1,25 +1,25 @@
-const { app, BrowserWindow, dialog, shell } = require('electron');
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const net = require('net');
+const { app, BrowserWindow, dialog, shell } = require('electron')
+const { spawn } = require('child_process')
+const fs = require('fs')
+const path = require('path')
+const net = require('net')
 
-const DEV_SERVER_URL = process.env.ELECTRON_START_URL || 'http://127.0.0.1:3000';
-const DEV_SERVER_ORIGIN = new URL(DEV_SERVER_URL).origin;
-const FORCE_PRODUCTION_SERVER = process.env.BLADEVAULT_FORCE_PROD_SERVER === '1';
-const SMOKE_TEST_MODE = process.env.BLADEVAULT_SMOKE_TEST === '1';
+const DEV_SERVER_URL = process.env.ELECTRON_START_URL || 'http://127.0.0.1:3000'
+const DEV_SERVER_ORIGIN = new URL(DEV_SERVER_URL).origin
+const FORCE_PRODUCTION_SERVER = process.env.BLADEVAULT_FORCE_PROD_SERVER === '1'
+const SMOKE_TEST_MODE = process.env.BLADEVAULT_SMOKE_TEST === '1'
 const PREFERRED_DESKTOP_PORT = Number.parseInt(
   process.env.BLADEVAULT_DESKTOP_PORT || '3000',
-  10
-);
+  10,
+)
 
-let mainWindow = null;
-let serverProcess = null;
-let serverOrigin = null;
-let isQuitting = false;
+let mainWindow = null
+let serverProcess = null
+let serverOrigin = null
+let isQuitting = false
 
 function isUsingEmbeddedServer() {
-  return app.isPackaged || FORCE_PRODUCTION_SERVER;
+  return app.isPackaged || FORCE_PRODUCTION_SERVER
 }
 
 function getStandaloneDir() {
@@ -28,28 +28,28 @@ function getStandaloneDir() {
       process.resourcesPath,
       'app.asar.unpacked',
       '.next',
-      'standalone'
-    );
+      'standalone',
+    )
 
     if (fs.existsSync(unpackedStandaloneDir)) {
-      return unpackedStandaloneDir;
+      return unpackedStandaloneDir
     }
   }
 
-  return path.join(app.getAppPath(), '.next', 'standalone');
+  return path.join(app.getAppPath(), '.next', 'standalone')
 }
 
 function getServerEntry() {
-  return path.join(getStandaloneDir(), 'server.js');
+  return path.join(getStandaloneDir(), 'server.js')
 }
 
 function getServerWorkingDir() {
-  return getStandaloneDir();
+  return getStandaloneDir()
 }
 
 function getNodeExecPath() {
   if (app.isPackaged && process.platform === 'darwin') {
-    const helperName = `${app.getName()} Helper`;
+    const helperName = `${app.getName()} Helper`
     const helperExecPath = path.join(
       process.resourcesPath,
       '..',
@@ -57,124 +57,131 @@ function getNodeExecPath() {
       `${helperName}.app`,
       'Contents',
       'MacOS',
-      helperName
-    );
+      helperName,
+    )
 
     if (fs.existsSync(helperExecPath)) {
-      return helperExecPath;
+      return helperExecPath
     }
   }
 
-  return process.execPath;
+  return process.execPath
 }
 
 function getDataDir() {
-  return path.join(app.getPath('home'), 'BladeVault', 'data');
+  return path.join(app.getPath('home'), 'BladeVault', 'data')
 }
 
 function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function isLocalAppUrl(url) {
   if (!serverOrigin) {
     try {
-      return new URL(url).origin === DEV_SERVER_ORIGIN;
+      return new URL(url).origin === DEV_SERVER_ORIGIN
     } catch {
-      return false;
+      return false
     }
   }
 
   try {
-    return new URL(url).origin === serverOrigin;
+    return new URL(url).origin === serverOrigin
   } catch {
-    return false;
+    return false
   }
 }
 
 function isAllowedPopupUrl(url) {
   if (url === 'about:blank') {
-    return true;
+    return true
   }
 
   try {
-    const parsed = new URL(url);
-    return parsed.protocol === 'https:' && parsed.pathname.startsWith('/auth/');
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' && parsed.pathname.startsWith('/auth/')
   } catch {
-    return false;
+    return false
   }
 }
 
 function reservePort(port) {
   return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.on('error', reject);
+    const server = net.createServer()
+    server.unref()
+    server.on('error', reject)
     server.listen(port, '127.0.0.1', () => {
-      const address = server.address();
+      const address = server.address()
       if (!address || typeof address === 'string') {
-        server.close(() => reject(new Error('Failed to reserve a local port.')));
-        return;
+        server.close(() => reject(new Error('Failed to reserve a local port.')))
+        return
       }
 
-      const { port } = address;
+      const { port } = address
       server.close((error) => {
         if (error) {
-          reject(error);
-          return;
+          reject(error)
+          return
         }
-        resolve(port);
-      });
-    });
-  });
+        resolve(port)
+      })
+    })
+  })
 }
 
 async function getPreferredPort() {
   if (Number.isInteger(PREFERRED_DESKTOP_PORT) && PREFERRED_DESKTOP_PORT > 0) {
     try {
-      return await reservePort(PREFERRED_DESKTOP_PORT);
+      return await reservePort(PREFERRED_DESKTOP_PORT)
     } catch (error) {
-      if (!(error && typeof error === 'object' && 'code' in error && error.code === 'EADDRINUSE')) {
-        throw error;
+      if (!(
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'EADDRINUSE'
+      )) {
+        throw error
       }
     }
   }
 
-  return reservePort(0);
+  return reservePort(0)
 }
 
 async function waitForServer(url, timeoutMs = 45000) {
-  const deadline = Date.now() + timeoutMs;
+  const deadline = Date.now() + timeoutMs
 
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(url, { cache: 'no-store' });
+      const response = await fetch(url, { cache: 'no-store' })
       if (response.ok) {
-        return;
+        return
       }
     } catch {
       // Server is still starting up.
     }
 
     if (serverProcess && serverProcess.exitCode !== null) {
-      throw new Error(`Embedded server exited early with code ${serverProcess.exitCode}.`);
+      throw new Error(
+        `Embedded server exited early with code ${serverProcess.exitCode}.`,
+      )
     }
 
-    await delay(400);
+    await delay(400)
   }
 
-  throw new Error(`Timed out waiting for BladeVault to start at ${url}.`);
+  throw new Error(`Timed out waiting for BladeVault to start at ${url}.`)
 }
 
 async function startEmbeddedServer() {
-  const serverEntry = getServerEntry();
+  const serverEntry = getServerEntry()
   if (!fs.existsSync(serverEntry)) {
     throw new Error(
-      `Missing desktop server build at ${serverEntry}. Run "npm run build:desktop" first.`
-    );
+      `Missing desktop server build at ${serverEntry}. Run "npm run build:desktop" first.`,
+    )
   }
 
-  const port = await getPreferredPort();
+  const port = await getPreferredPort()
   const env = {
     ...process.env,
     BLADEVAULT_DATA_DIR: getDataDir(),
@@ -183,56 +190,56 @@ async function startEmbeddedServer() {
     NEXT_TELEMETRY_DISABLED: '1',
     NODE_ENV: 'production',
     PORT: String(port),
-  };
+  }
 
   serverProcess = spawn(getNodeExecPath(), [serverEntry], {
     cwd: getServerWorkingDir(),
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  })
 
   serverProcess.stdout.on('data', (chunk) => {
-    process.stdout.write(`[bladevault-server] ${chunk}`);
-  });
+    process.stdout.write(`[bladevault-server] ${chunk}`)
+  })
 
   serverProcess.stderr.on('data', (chunk) => {
-    process.stderr.write(`[bladevault-server] ${chunk}`);
-  });
+    process.stderr.write(`[bladevault-server] ${chunk}`)
+  })
 
   serverProcess.once('exit', (code) => {
     if (!isQuitting && mainWindow && !mainWindow.isDestroyed()) {
       dialog.showErrorBox(
         'BladeVault server stopped',
-        `The embedded BladeVault server exited with code ${code ?? 'unknown'}.`
-      );
-      mainWindow.close();
+        `The embedded BladeVault server exited with code ${code ?? 'unknown'}.`,
+      )
+      mainWindow.close()
     }
-  });
+  })
 
-  const url = `http://127.0.0.1:${port}`;
-  await waitForServer(url);
-  serverOrigin = new URL(url).origin;
-  return url;
+  const url = `http://127.0.0.1:${port}`
+  await waitForServer(url)
+  serverOrigin = new URL(url).origin
+  return url
 }
 
 function stopEmbeddedServer() {
   if (!serverProcess) {
-    return;
+    return
   }
 
-  serverProcess.kill();
-  serverProcess = null;
+  serverProcess.kill()
+  serverProcess = null
 }
 
 function wireMainWindowSecurity(window) {
   window.webContents.on('will-navigate', (event, url) => {
     if (isLocalAppUrl(url)) {
-      return;
+      return
     }
 
-    event.preventDefault();
-    void shell.openExternal(url);
-  });
+    event.preventDefault()
+    void shell.openExternal(url)
+  })
 
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (isAllowedPopupUrl(url)) {
@@ -250,21 +257,21 @@ function wireMainWindowSecurity(window) {
             sandbox: true,
           },
         },
-      };
+      }
     }
 
-    void shell.openExternal(url);
-    return { action: 'deny' };
-  });
+    void shell.openExternal(url)
+    return { action: 'deny' }
+  })
 }
 
 async function createMainWindow() {
   const startUrl = isUsingEmbeddedServer()
     ? await startEmbeddedServer()
-    : DEV_SERVER_URL;
+    : DEV_SERVER_URL
 
   if (!serverOrigin) {
-    serverOrigin = new URL(startUrl).origin;
+    serverOrigin = new URL(startUrl).origin
   }
 
   mainWindow = new BrowserWindow({
@@ -282,70 +289,71 @@ async function createMainWindow() {
       nodeIntegration: false,
       sandbox: true,
     },
-  });
+  })
 
-  wireMainWindowSecurity(mainWindow);
+  wireMainWindowSecurity(mainWindow)
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-  });
+    mainWindow.show()
+  })
 
   if (SMOKE_TEST_MODE) {
     const timeout = setTimeout(() => {
-      process.exitCode = 1;
-      app.quit();
-    }, 60000);
+      process.exitCode = 1
+      app.quit()
+    }, 60000)
 
     mainWindow.webContents.once('did-finish-load', () => {
-      clearTimeout(timeout);
-      setTimeout(() => app.quit(), 1200);
-    });
+      clearTimeout(timeout)
+      setTimeout(() => app.quit(), 1200)
+    })
   }
 
-  await mainWindow.loadURL(startUrl);
+  await mainWindow.loadURL(startUrl)
 }
 
 app.on('before-quit', () => {
-  isQuitting = true;
-  stopEmbeddedServer();
-});
+  isQuitting = true
+  stopEmbeddedServer()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    app.quit()
   }
-});
+})
 
 app.on('activate', async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     try {
-      await createMainWindow();
+      await createMainWindow()
     } catch (error) {
       dialog.showErrorBox(
         'BladeVault failed to start',
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      app.quit();
+        error instanceof Error ? error.message : 'Unknown error',
+      )
+      app.quit()
     }
   }
-});
+})
 
-app.whenReady()
+app
+  .whenReady()
   .then(async () => {
     try {
-      await createMainWindow();
+      await createMainWindow()
     } catch (error) {
       dialog.showErrorBox(
         'BladeVault failed to start',
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      app.quit();
+        error instanceof Error ? error.message : 'Unknown error',
+      )
+      app.quit()
     }
   })
   .catch((error) => {
     dialog.showErrorBox(
       'BladeVault failed to start',
-      error instanceof Error ? error.message : 'Unknown error'
-    );
-    app.quit();
-  });
+      error instanceof Error ? error.message : 'Unknown error',
+    )
+    app.quit()
+  })

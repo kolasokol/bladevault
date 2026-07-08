@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState } from 'react'
+import Image from 'next/image'
 import {
   Loader2,
   Link2,
@@ -18,38 +18,38 @@ import {
   RefreshCw,
   Merge,
   ImageIcon,
-} from 'lucide-react';
-import { getImageUrl, Knife, KnifeDraft } from '@/lib/data';
-import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response';
-import { ScrapedProduct } from '@/lib/scrape';
-import { PageHeader, BreadcrumbItemData } from '@/components/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+} from 'lucide-react'
+import { getImageUrl, Knife, KnifeDraft } from '@/lib/data'
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
+import { ScrapedProduct } from '@/lib/scrape'
+import { PageHeader, BreadcrumbItemData } from '@/components/page-header'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export type KnifeFormData = {
-  brand: string;
-  name: string;
-  handleMaterial: string;
-  bladeStyle: string;
-  description: string;
-  weight: string;
-  overallLength: string;
-  bladeLength: string;
-  bladeThickness: string;
-  bladeCoating: string;
-  bladeMaterial: string;
-  lockingMechanism: string;
-  designer: string;
-  modelNumber: string;
-  handleLength: string;
-  hardness: string;
-  country: string;
-  images: string[];
-  sourceUrl: string;
-};
+  brand: string
+  name: string
+  handleMaterial: string
+  bladeStyle: string
+  description: string
+  weight: string
+  overallLength: string
+  bladeLength: string
+  bladeThickness: string
+  bladeCoating: string
+  bladeMaterial: string
+  lockingMechanism: string
+  designer: string
+  modelNumber: string
+  handleLength: string
+  hardness: string
+  country: string
+  images: string[]
+  sourceUrl: string
+}
 
 export const EMPTY_KNIFE_FORM: KnifeFormData = {
   brand: '',
@@ -71,7 +71,7 @@ export const EMPTY_KNIFE_FORM: KnifeFormData = {
   country: '',
   images: [],
   sourceUrl: '',
-};
+}
 
 export function knifeToFormData(knife: Knife): KnifeFormData {
   return {
@@ -94,10 +94,13 @@ export function knifeToFormData(knife: Knife): KnifeFormData {
     country: knife.specs.country,
     images: knife.images,
     sourceUrl: knife.sourceUrl,
-  };
+  }
 }
 
-export function formDataToKnifeDraft(form: KnifeFormData, selectedImages: Set<string>): KnifeDraft {
+export function formDataToKnifeDraft(
+  form: KnifeFormData,
+  selectedImages: Set<string>,
+): KnifeDraft {
   return {
     brand: form.brand,
     name: form.name,
@@ -121,22 +124,25 @@ export function formDataToKnifeDraft(form: KnifeFormData, selectedImages: Set<st
     },
     description: form.description,
     sourceUrl: form.sourceUrl,
-  };
+  }
 }
 
 type KnifeFormFieldsProps = {
-  form: KnifeFormData;
-  updateField: <K extends keyof KnifeFormData>(field: K, value: KnifeFormData[K]) => void;
-  imageUrlInput: string;
-  setImageUrlInput: (value: string) => void;
-  addImageUrl: () => void;
-  onImageFileSelect?: (file: File) => void;
-  selectedImages: Set<string>;
-  toggleImageSelection: (src: string) => void;
-  selectAllImages: () => void;
-  deselectAllImages: () => void;
-  removeImage: (index: number) => void;
-};
+  form: KnifeFormData
+  updateField: <K extends keyof KnifeFormData>(
+    field: K,
+    value: KnifeFormData[K],
+  ) => void
+  imageUrlInput: string
+  setImageUrlInput: (value: string) => void
+  addImageUrl: () => void
+  onImageFileSelect?: (file: File) => void
+  selectedImages: Set<string>
+  toggleImageSelection: (src: string) => void
+  selectAllImages: () => void
+  deselectAllImages: () => void
+  removeImage: (index: number) => void
+}
 
 export function KnifeFormFields({
   form,
@@ -152,33 +158,43 @@ export function KnifeFormFields({
   removeImage,
 }: KnifeFormFieldsProps) {
   const reorderImage = (index: number, direction: -1 | 1) => {
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= form.images.length) return;
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= form.images.length) return
 
-    const reordered = [...form.images];
-    const [moved] = reordered.splice(index, 1);
-    reordered.splice(newIndex, 0, moved);
-    updateField('images', reordered);
-  };
+    const reordered = [...form.images]
+    const [moved] = reordered.splice(index, 1)
+    reordered.splice(newIndex, 0, moved)
+    updateField('images', reordered)
+  }
 
   const setFirstImage = (index: number) => {
-    if (index <= 0) return;
-    const reordered = [form.images[index], ...form.images.filter((_, i) => i !== index)];
-    updateField('images', reordered);
-  };
+    if (index <= 0) return
+    const reordered = [
+      form.images[index],
+      ...form.images.filter((_, i) => i !== index),
+    ]
+    updateField('images', reordered)
+  }
 
-  const inputField = (label: string, field: keyof KnifeFormData, placeholder: string, span: 1 | 2 = 1) => (
+  const inputField = (
+    label: string,
+    field: keyof KnifeFormData,
+    placeholder: string,
+    span: 1 | 2 = 1,
+  ) => (
     <div className={`space-y-1.5 ${span === 2 ? 'sm:col-span-2' : ''}`}>
       <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </label>
       <Input
         value={form[field] as string}
-        onChange={(e) => updateField(field, e.target.value as KnifeFormData[typeof field])}
+        onChange={(e) =>
+          updateField(field, e.target.value as KnifeFormData[typeof field])
+        }
         placeholder={placeholder}
       />
     </div>
-  );
+  )
 
   return (
     <div className="space-y-4">
@@ -196,7 +212,11 @@ export function KnifeFormFields({
         {inputField('Blade Thickness', 'bladeThickness', 'e.g. 3.7 mm')}
         {inputField('Blade Coating / Finish', 'bladeCoating', 'e.g. Satin')}
         {inputField('Hardness', 'hardness', 'e.g. 58-60 HRC')}
-        {inputField('Locking Mechanism', 'lockingMechanism', 'e.g. Compression lock')}
+        {inputField(
+          'Locking Mechanism',
+          'lockingMechanism',
+          'e.g. Compression lock',
+        )}
         {inputField('Designer', 'designer', 'e.g. Chris Reeve')}
         {inputField('Country', 'country', 'e.g. USA')}
       </div>
@@ -266,11 +286,11 @@ export function KnifeFormFields({
             accept="image/*"
             className="hidden"
             onChange={(e) => {
-              const file = e.target.files?.[0];
+              const file = e.target.files?.[0]
               if (file && onImageFileSelect) {
-                onImageFileSelect(file);
+                onImageFileSelect(file)
               }
-              e.target.value = '';
+              e.target.value = ''
             }}
           />
           <Button
@@ -287,8 +307,8 @@ export function KnifeFormFields({
         {form.images.length > 0 ? (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             {form.images.map((src, index) => {
-              const isSelected = selectedImages.has(src);
-              const isFirst = index === 0;
+              const isSelected = selectedImages.has(src)
+              const isFirst = index === 0
               return (
                 <div
                   key={`${src}-${index}`}
@@ -316,8 +336,8 @@ export function KnifeFormFields({
                   </div>
                   <button
                     onClick={(e) => {
-                      e.stopPropagation();
-                      removeImage(index);
+                      e.stopPropagation()
+                      removeImage(index)
                     }}
                     className="absolute right-1 top-1 z-10 rounded-md bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
@@ -331,8 +351,8 @@ export function KnifeFormFields({
                   <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-center gap-2 px-1 py-1 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={(e) => {
-                        e.stopPropagation();
-                        reorderImage(index, -1);
+                        e.stopPropagation()
+                        reorderImage(index, -1)
                       }}
                       disabled={index === 0}
                       className="rounded-full p-1 bg-white/90 text-foreground hover:bg-white disabled:opacity-30 disabled:hover:bg-white/90 transition-colors"
@@ -344,8 +364,8 @@ export function KnifeFormFields({
                     {!isFirst && (
                       <button
                         onClick={(e) => {
-                          e.stopPropagation();
-                          setFirstImage(index);
+                          e.stopPropagation()
+                          setFirstImage(index)
                         }}
                         className="rounded-full px-1.5 py-0.5 bg-white/90 text-[9px] font-medium uppercase tracking-wide text-foreground hover:bg-white transition-colors"
                         aria-label="Set as cover image"
@@ -356,8 +376,8 @@ export function KnifeFormFields({
                     )}
                     <button
                       onClick={(e) => {
-                        e.stopPropagation();
-                        reorderImage(index, 1);
+                        e.stopPropagation()
+                        reorderImage(index, 1)
                       }}
                       disabled={index === form.images.length - 1}
                       className="rounded-full p-1 bg-white/90 text-foreground hover:bg-white disabled:opacity-30 disabled:hover:bg-white/90 transition-colors"
@@ -373,34 +393,38 @@ export function KnifeFormFields({
                     </div>
                   )}
                 </div>
-              );
+              )
             })}
           </div>
         ) : (
           <div className="flex w-full justify-center rounded-lg border border-dashed border-border bg-muted/30 px-6 py-8">
             <div className="text-center">
-              <div className="text-sm font-medium text-muted-foreground">No images yet</div>
-              <div className="mt-1 text-xs text-muted-foreground/70">Scrape a URL or paste image URLs above</div>
+              <div className="text-sm font-medium text-muted-foreground">
+                No images yet
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground/70">
+                Scrape a URL or paste image URLs above
+              </div>
             </div>
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }
 
 type KnifeScrapeEditorProps = {
-  initialData: KnifeFormData;
-  mode: 'add' | 'edit';
-  title: string;
-  description?: string;
-  breadcrumbs?: BreadcrumbItemData[];
-  onSave: (form: KnifeFormData, selectedImages: Set<string>) => Promise<void>;
-  onCancel: () => void;
-  isSaving?: boolean;
-  saveError?: string | null;
-  actions?: React.ReactNode;
-};
+  initialData: KnifeFormData
+  mode: 'add' | 'edit'
+  title: string
+  description?: string
+  breadcrumbs?: BreadcrumbItemData[]
+  onSave: (form: KnifeFormData, selectedImages: Set<string>) => Promise<void>
+  onCancel: () => void
+  isSaving?: boolean
+  saveError?: string | null
+  actions?: React.ReactNode
+}
 
 export function KnifeScrapeEditor({
   initialData,
@@ -414,75 +438,84 @@ export function KnifeScrapeEditor({
   saveError = null,
   actions,
 }: KnifeScrapeEditorProps) {
-  const [form, setForm] = useState<KnifeFormData>(initialData);
-  const [imageUrlInput, setImageUrlInput] = useState('');
-  const [url, setUrl] = useState(initialData.sourceUrl);
-  const [isScraping, setIsScraping] = useState(false);
-  const [scrapeError, setScrapeError] = useState<string | null>(null);
-  const [hasScraped, setHasScraped] = useState(false);
-  const [scrapedHtml, setScrapedHtml] = useState<string>('');
-  const [scrapedFinalUrl, setScrapedFinalUrl] = useState<string>('');
-  const [showPreview, setShowPreview] = useState(true);
-  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set(initialData.images));
-  const [lastScrapedProduct, setLastScrapedProduct] = useState<ScrapedProduct | null>(null);
+  const [form, setForm] = useState<KnifeFormData>(initialData)
+  const [imageUrlInput, setImageUrlInput] = useState('')
+  const [url, setUrl] = useState(initialData.sourceUrl)
+  const [isScraping, setIsScraping] = useState(false)
+  const [scrapeError, setScrapeError] = useState<string | null>(null)
+  const [hasScraped, setHasScraped] = useState(false)
+  const [scrapedHtml, setScrapedHtml] = useState<string>('')
+  const [scrapedFinalUrl, setScrapedFinalUrl] = useState<string>('')
+  const [showPreview, setShowPreview] = useState(true)
+  const [selectedImages, setSelectedImages] = useState<Set<string>>(
+    new Set(initialData.images),
+  )
+  const [lastScrapedProduct, setLastScrapedProduct] =
+    useState<ScrapedProduct | null>(null)
 
-  const updateField = <K extends keyof KnifeFormData>(field: K, value: KnifeFormData[K]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const updateField = <K extends keyof KnifeFormData>(
+    field: K,
+    value: KnifeFormData[K],
+  ) => {
+    setForm((prev) => ({ ...prev, [field]: value }))
+  }
 
   const addImageUrl = () => {
-    const trimmed = imageUrlInput.trim();
-    if (!trimmed) return;
+    const trimmed = imageUrlInput.trim()
+    if (!trimmed) return
     if (form.images.includes(trimmed)) {
-      setImageUrlInput('');
-      return;
+      setImageUrlInput('')
+      return
     }
-    updateField('images', [...form.images, trimmed]);
-    setSelectedImages((prev) => new Set(prev).add(trimmed));
-    setImageUrlInput('');
-  };
+    updateField('images', [...form.images, trimmed])
+    setSelectedImages((prev) => new Set(prev).add(trimmed))
+    setImageUrlInput('')
+  }
 
   const handleImageFileSelect = (file: File) => {
-    const reader = new FileReader();
+    const reader = new FileReader()
     reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
+      const dataUrl = e.target?.result as string
       if (dataUrl && !form.images.includes(dataUrl)) {
-        updateField('images', [...form.images, dataUrl]);
-        setSelectedImages((prev) => new Set(prev).add(dataUrl));
+        updateField('images', [...form.images, dataUrl])
+        setSelectedImages((prev) => new Set(prev).add(dataUrl))
       }
-    };
-    reader.readAsDataURL(file);
-  };
+    }
+    reader.readAsDataURL(file)
+  }
 
   const removeImage = (index: number) => {
-    const removed = form.images[index];
-    updateField('images', form.images.filter((_, i) => i !== index));
+    const removed = form.images[index]
+    updateField(
+      'images',
+      form.images.filter((_, i) => i !== index),
+    )
     setSelectedImages((prev) => {
-      const next = new Set(prev);
-      next.delete(removed);
-      return next;
-    });
-  };
+      const next = new Set(prev)
+      next.delete(removed)
+      return next
+    })
+  }
 
   const toggleImageSelection = (src: string) => {
     setSelectedImages((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(src)) {
-        next.delete(src);
+        next.delete(src)
       } else {
-        next.add(src);
+        next.add(src)
       }
-      return next;
-    });
-  };
+      return next
+    })
+  }
 
   const selectAllImages = () => {
-    setSelectedImages(new Set(form.images));
-  };
+    setSelectedImages(new Set(form.images))
+  }
 
   const deselectAllImages = () => {
-    setSelectedImages(new Set());
-  };
+    setSelectedImages(new Set())
+  }
 
   const applyScrapedProduct = (product: ScrapedProduct) => {
     setForm((prev) => ({
@@ -505,8 +538,8 @@ export function KnifeScrapeEditor({
       hardness: product.specs.hardness || prev.hardness,
       country: product.specs.country || prev.country,
       sourceUrl: product.sourceUrl || prev.sourceUrl,
-    }));
-  };
+    }))
+  }
 
   const applyOverwriteScraped = (product: ScrapedProduct) => {
     setForm((prev) => ({
@@ -529,70 +562,76 @@ export function KnifeScrapeEditor({
       hardness: product.specs.hardness || '',
       country: product.specs.country || '',
       sourceUrl: product.sourceUrl || prev.sourceUrl,
-    }));
-  };
+    }))
+  }
 
   const applyScrapedImages = (product: ScrapedProduct) => {
-    const newImages = Array.isArray(product.images) ? product.images : [];
+    const newImages = Array.isArray(product.images) ? product.images : []
     setForm((prev) => ({
       ...prev,
       images: newImages,
-    }));
-    setSelectedImages(new Set(newImages));
-  };
+    }))
+    setSelectedImages(new Set(newImages))
+  }
 
   const handleScrape = async () => {
-    if (!url.trim()) return;
-    setIsScraping(true);
-    setScrapeError(null);
-    setHasScraped(false);
-    setScrapedHtml('');
-    setScrapedFinalUrl('');
+    if (!url.trim()) return
+    setIsScraping(true)
+    setScrapeError(null)
+    setHasScraped(false)
+    setScrapedHtml('')
+    setScrapedFinalUrl('')
 
     try {
       const response = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
-      });
+      })
       const data = await readJsonResponse<{
-        error?: string;
-        product: ScrapedProduct;
-        html?: string;
-        finalUrl?: string;
-      }>(response);
+        error?: string
+        product: ScrapedProduct
+        html?: string
+        finalUrl?: string
+      }>(response)
 
       if (!response.ok) {
-        throw new Error(getApiErrorMessage(data, 'Failed to scrape product page'));
+        throw new Error(
+          getApiErrorMessage(data, 'Failed to scrape product page'),
+        )
       }
 
-      const product = data.product;
-      setLastScrapedProduct(product);
+      const product = data.product
+      setLastScrapedProduct(product)
 
       if (mode === 'add') {
-        applyScrapedProduct(product);
+        applyScrapedProduct(product)
       }
-      setScrapedHtml(typeof data.html === 'string' ? data.html : '');
-      setScrapedFinalUrl(typeof data.finalUrl === 'string' ? data.finalUrl : url.trim());
-      setHasScraped(true);
-      setShowPreview(true);
+      setScrapedHtml(typeof data.html === 'string' ? data.html : '')
+      setScrapedFinalUrl(
+        typeof data.finalUrl === 'string' ? data.finalUrl : url.trim(),
+      )
+      setHasScraped(true)
+      setShowPreview(true)
     } catch (error) {
-      setScrapeError(error instanceof Error ? error.message : 'Something went wrong');
+      setScrapeError(
+        error instanceof Error ? error.message : 'Something went wrong',
+      )
     } finally {
-      setIsScraping(false);
+      setIsScraping(false)
     }
-  };
+  }
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
-    await onSave(form, selectedImages);
-  };
+    if (!form.name.trim()) return
+    await onSave(form, selectedImages)
+  }
 
-  const canSave = form.name.trim().length > 0;
-  const showForm = mode === 'edit' || hasScraped;
+  const canSave = form.name.trim().length > 0
+  const showForm = mode === 'edit' || hasScraped
   const previewHtml = scrapedHtml
     ? `<base href="${scrapedFinalUrl || form.sourceUrl}">\n${scrapedHtml}`
-    : '';
+    : ''
 
   return (
     <div className="flex flex-col min-h-0 flex-1 w-full">
@@ -602,7 +641,12 @@ export function KnifeScrapeEditor({
         breadcrumbs={breadcrumbs}
         actions={
           actions ?? (
-            <Button variant="outline" size="sm" onClick={onCancel} disabled={isSaving}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+              disabled={isSaving}
+            >
               Cancel
             </Button>
           )
@@ -628,8 +672,14 @@ export function KnifeScrapeEditor({
                     className="pl-9"
                   />
                 </div>
-                <Button onClick={handleScrape} disabled={isScraping || !url.trim()} size="sm">
-                  {isScraping && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                <Button
+                  onClick={handleScrape}
+                  disabled={isScraping || !url.trim()}
+                  size="sm"
+                >
+                  {isScraping && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  )}
                   {isScraping ? 'Scraping' : 'Scrape'}
                 </Button>
               </div>
@@ -644,13 +694,16 @@ export function KnifeScrapeEditor({
 
             {mode === 'add' && !hasScraped && !scrapeError && !isScraping && (
               <p className="text-xs text-muted-foreground">
-                Paste a knife product page URL and hit Scrape. The app will pull the title, brand, images, and specs when available. You can edit everything before saving.
+                Paste a knife product page URL and hit Scrape. The app will pull
+                the title, brand, images, and specs when available. You can edit
+                everything before saving.
               </p>
             )}
 
             {mode === 'edit' && !hasScraped && !scrapeError && !isScraping && (
               <p className="text-xs text-muted-foreground">
-                Paste a product URL to load a preview of the source page. Existing fields are not changed.
+                Paste a product URL to load a preview of the source page.
+                Existing fields are not changed.
               </p>
             )}
 
@@ -713,7 +766,9 @@ export function KnifeScrapeEditor({
               <CardHeader className="border-b flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                  <CardTitle className="text-sm">Scraped page preview</CardTitle>
+                  <CardTitle className="text-sm">
+                    Scraped page preview
+                  </CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -722,7 +777,11 @@ export function KnifeScrapeEditor({
                     onClick={() => setShowPreview((prev) => !prev)}
                     title={showPreview ? 'Hide preview' : 'Show preview'}
                   >
-                    {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    {showPreview ? (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" />
+                    )}
                   </Button>
                   {form.sourceUrl && (
                     <a
@@ -749,7 +808,9 @@ export function KnifeScrapeEditor({
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
                     <EyeOff className="h-8 w-8 mb-3 opacity-40" />
                     <span className="text-xs">
-                      {hasScraped ? 'Preview hidden' : 'Scrape a URL to see the page preview'}
+                      {hasScraped
+                        ? 'Preview hidden'
+                        : 'Scrape a URL to see the page preview'}
                     </span>
                   </div>
                 )}
@@ -767,14 +828,23 @@ export function KnifeScrapeEditor({
       )}
 
       <div className="mt-6 flex items-center justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={onCancel} disabled={isSaving}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onCancel}
+          disabled={isSaving}
+        >
           Cancel
         </Button>
         <Button size="sm" onClick={handleSave} disabled={!canSave || isSaving}>
-          {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          {isSaving ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5" />
+          )}
           {isSaving ? 'Saving' : mode === 'edit' ? 'Save Changes' : 'Save Item'}
         </Button>
       </div>
     </div>
-  );
+  )
 }

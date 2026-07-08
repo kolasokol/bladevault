@@ -1,20 +1,20 @@
-'use client';
+'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Check, ChevronDown, Search, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 type FilterMultiSelectProps = {
-  label: string;
-  options: string[];
-  selectedValues: string[];
-  onToggleValue: (value: string) => void;
-  onSelectAll: () => void;
-  onClear: () => void;
-  className?: string;
-};
+  label: string
+  options: string[]
+  selectedValues: string[]
+  onToggleValue: (value: string) => void
+  onSelectAll: () => void
+  onClear: () => void
+  className?: string
+}
 
 export function FilterMultiSelect({
   label,
@@ -25,67 +25,69 @@ export function FilterMultiSelect({
   onClear,
   className,
 }: FilterMultiSelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const closeMenu = useCallback(() => {
-    setIsOpen(false);
-    setQuery('');
-  }, []);
+    setIsOpen(false)
+    setQuery('')
+  }, [])
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return
 
     const handlePointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
-        closeMenu();
+        closeMenu()
       }
-    };
+    }
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        closeMenu();
+        closeMenu()
       }
-    };
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [closeMenu, isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    searchInputRef.current?.focus();
-  }, [isOpen]);
-
-  const visibleOptions = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-
-    if (!normalizedQuery) {
-      return options;
     }
 
-    return options.filter((option) => option.toLowerCase().includes(normalizedQuery));
-  }, [options, query]);
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [closeMenu, isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    searchInputRef.current?.focus()
+  }, [isOpen])
+
+  const visibleOptions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return options
+    }
+
+    return options.filter((option) =>
+      option.toLowerCase().includes(normalizedQuery),
+    )
+  }, [options, query])
 
   const triggerLabel = useMemo(() => {
     if (selectedValues.length === 0) {
-      return label;
+      return label
     }
 
     if (selectedValues.length <= 2) {
-      return `${label}: ${selectedValues.join(', ')}`;
+      return `${label}: ${selectedValues.join(', ')}`
     }
 
-    return `${label}: ${selectedValues.length} selected`;
-  }, [label, selectedValues]);
+    return `${label}: ${selectedValues.length} selected`
+  }, [label, selectedValues])
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
@@ -97,15 +99,15 @@ export function FilterMultiSelect({
         aria-haspopup="listbox"
         onClick={() => {
           if (isOpen) {
-            closeMenu();
-            return;
+            closeMenu()
+            return
           }
 
-          setIsOpen(true);
+          setIsOpen(true)
         }}
         className={cn(
           'w-full justify-between gap-2 px-2.5 text-left',
-          selectedValues.length > 0 && 'border-[var(--bladevault-line)]'
+          selectedValues.length > 0 && 'border-[var(--bladevault-line)]',
         )}
       >
         <span className="truncate">{triggerLabel}</span>
@@ -115,7 +117,12 @@ export function FilterMultiSelect({
               {selectedValues.length}
             </span>
           )}
-          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', isOpen && 'rotate-180')} />
+          <ChevronDown
+            className={cn(
+              'h-3.5 w-3.5 transition-transform',
+              isOpen && 'rotate-180',
+            )}
+          />
         </span>
       </Button>
 
@@ -143,7 +150,12 @@ export function FilterMultiSelect({
                 </button>
               )}
             </div>
-            <Button type="button" variant="ghost" size="xs" onClick={onSelectAll}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              onClick={onSelectAll}
+            >
               All
             </Button>
             {selectedValues.length > 0 && (
@@ -153,7 +165,11 @@ export function FilterMultiSelect({
             )}
           </div>
 
-          <div className="max-h-64 overflow-y-auto" role="listbox" aria-multiselectable="true">
+          <div
+            className="max-h-64 overflow-y-auto"
+            role="listbox"
+            aria-multiselectable="true"
+          >
             {visibleOptions.length === 0 ? (
               <div className="rounded-lg px-2 py-3 text-xs text-muted-foreground">
                 No matching options.
@@ -161,7 +177,7 @@ export function FilterMultiSelect({
             ) : (
               <div className="space-y-1">
                 {visibleOptions.map((option) => {
-                  const isSelected = selectedValues.includes(option);
+                  const isSelected = selectedValues.includes(option)
 
                   return (
                     <button
@@ -172,20 +188,23 @@ export function FilterMultiSelect({
                       onClick={() => onToggleValue(option)}
                       className={cn(
                         'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground',
-                        isSelected && 'bg-accent/70 text-accent-foreground'
+                        isSelected && 'bg-accent/70 text-accent-foreground',
                       )}
                     >
                       <span
                         className={cn(
                           'flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border border-input',
-                          isSelected && 'border-primary bg-primary text-primary-foreground'
+                          isSelected &&
+                            'border-primary bg-primary text-primary-foreground',
                         )}
                       >
-                        <Check className={cn('h-3 w-3', !isSelected && 'opacity-0')} />
+                        <Check
+                          className={cn('h-3 w-3', !isSelected && 'opacity-0')}
+                        />
                       </span>
                       <span className="truncate">{option}</span>
                     </button>
-                  );
+                  )
                 })}
               </div>
             )}
@@ -193,5 +212,5 @@ export function FilterMultiSelect({
         </div>
       )}
     </div>
-  );
+  )
 }

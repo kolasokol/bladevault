@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "09:00"
+      time: '09:00'
     assignees:
       - kolasokol
     labels:
@@ -17,7 +17,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "09:00"
+      time: '09:00'
     assignees:
       - kolasokol
     labels:

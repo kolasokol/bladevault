@@ -1,23 +1,23 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { ArchiveX, FileDown, ImageIcon, Printer, X } from 'lucide-react';
-import { PageHeader } from '@/components/page-header';
-import { EmptyState } from '@/components/empty-state';
-import { getImageUrl, Knife } from '@/lib/data';
-import { useKnives } from '@/components/providers/knives-provider';
-import { cn } from '@/lib/utils';
+import { useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { ArchiveX, FileDown, ImageIcon, Printer, X } from 'lucide-react'
+import { PageHeader } from '@/components/page-header'
+import { EmptyState } from '@/components/empty-state'
+import { getImageUrl, Knife } from '@/lib/data'
+import { useKnives } from '@/components/providers/knives-provider'
+import { cn } from '@/lib/utils'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -25,7 +25,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 
 const compareRows = [
   { label: 'Model Number', key: 'specs.modelNumber' },
@@ -41,19 +41,19 @@ const compareRows = [
   { label: 'Blade Thickness', key: 'specs.bladeThickness' },
   { label: 'Weight', key: 'specs.weight' },
   { label: 'Country', key: 'specs.country' },
-] as const;
+] as const
 
-const COMPARE_LIMIT = 12;
-type CompareRowKey = (typeof compareRows)[number]['key'];
+const COMPARE_LIMIT = 12
+type CompareRowKey = (typeof compareRows)[number]['key']
 
 function getRowValue(knife: Knife, rowKey: CompareRowKey): string {
   if (rowKey.includes('.')) {
-    const specKey = rowKey.split('.')[1] as keyof Knife['specs'];
-    return knife.specs[specKey] ?? '-';
+    const specKey = rowKey.split('.')[1] as keyof Knife['specs']
+    return knife.specs[specKey] ?? '-'
   }
 
-  const knifeKey = rowKey as 'bladeStyle' | 'handleMaterial';
-  return knife[knifeKey] ?? '-';
+  const knifeKey = rowKey as 'bladeStyle' | 'handleMaterial'
+  return knife[knifeKey] ?? '-'
 }
 
 function escapeHtml(value: string): string {
@@ -62,59 +62,65 @@ function escapeHtml(value: string): string {
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+    .replaceAll("'", '&#39;')
 }
 
 export default function ComparePage() {
-  const { knives, compareIds, addToCompare, removeFromCompare, clearCompare } = useKnives();
+  const { knives, compareIds, addToCompare, removeFromCompare, clearCompare } =
+    useKnives()
   const [hoveredCell, setHoveredCell] = useState<{
-    knifeId: string;
-    rowKey: (typeof compareRows)[number]['key'];
-  } | null>(null);
+    knifeId: string
+    rowKey: (typeof compareRows)[number]['key']
+  } | null>(null)
 
   const comparedKnives = compareIds
     .map((id) => knives.find((k) => k.id === id))
-    .filter((k): k is Knife => Boolean(k));
+    .filter((k): k is Knife => Boolean(k))
 
   const handleSelect = (slotIndex: number, id: string) => {
-    if (!id) return;
-    if (compareIds.includes(id)) return;
-    if (compareIds.length >= COMPARE_LIMIT) return;
-    addToCompare(id);
-  };
+    if (!id) return
+    if (compareIds.includes(id)) return
+    if (compareIds.length >= COMPARE_LIMIT) return
+    addToCompare(id)
+  }
 
   const handleRemove = (id: string) => {
-    removeFromCompare(id);
-  };
+    removeFromCompare(id)
+  }
 
   const handleClearCompare = () => {
-    void clearCompare();
-  };
+    void clearCompare()
+  }
 
-  const hasComparedKnives = comparedKnives.length > 0;
-  const showAddSlot = compareIds.length < COMPARE_LIMIT;
-  const slotCount = compareIds.length + (showAddSlot ? 1 : 0);
+  const hasComparedKnives = comparedKnives.length > 0
+  const showAddSlot = compareIds.length < COMPARE_LIMIT
+  const slotCount = compareIds.length + (showAddSlot ? 1 : 0)
 
   const handleExportPdf = async () => {
-    if (!hasComparedKnives) return;
+    if (!hasComparedKnives) return
 
     const [{ jsPDF }, { default: autoTable }] = await Promise.all([
       import('jspdf'),
       import('jspdf-autotable'),
-    ]);
+    ])
 
     const doc = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
       format: 'a4',
-    });
+    })
 
-    const title = 'BladeVault Comparison Table';
-    const head = [['Feature', ...comparedKnives.map((knife) => `${knife.brand} ${knife.name}`)]];
+    const title = 'BladeVault Comparison Table'
+    const head = [
+      [
+        'Feature',
+        ...comparedKnives.map((knife) => `${knife.brand} ${knife.name}`),
+      ],
+    ]
     const body = compareRows.map((row) => [
       row.label,
       ...comparedKnives.map((knife) => getRowValue(knife, row.key)),
-    ]);
+    ])
 
     autoTable(doc, {
       startY: 18,
@@ -139,37 +145,43 @@ export default function ComparePage() {
         },
       },
       didDrawPage: () => {
-        doc.setFontSize(12);
-        doc.text(title, 14, 12);
+        doc.setFontSize(12)
+        doc.text(title, 14, 12)
       },
-    });
+    })
 
-    doc.save(`bladevault-comparison-${new Date().toISOString().slice(0, 10)}.pdf`);
-  };
+    doc.save(
+      `bladevault-comparison-${new Date().toISOString().slice(0, 10)}.pdf`,
+    )
+  }
 
   const handlePrint = () => {
-    if (!hasComparedKnives) return;
+    if (!hasComparedKnives) return
 
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1280,height=900');
-    if (!printWindow) return;
+    const printWindow = window.open(
+      '',
+      '_blank',
+      'noopener,noreferrer,width=1280,height=900',
+    )
+    if (!printWindow) return
 
     const generatedAt = new Intl.DateTimeFormat(undefined, {
       dateStyle: 'medium',
       timeStyle: 'short',
-    }).format(new Date());
+    }).format(new Date())
 
     const headerCells = comparedKnives
       .map((knife) => `<th>${escapeHtml(`${knife.brand} ${knife.name}`)}</th>`)
-      .join('');
+      .join('')
 
     const bodyRows = compareRows
       .map((row) => {
         const cells = comparedKnives
           .map((knife) => `<td>${escapeHtml(getRowValue(knife, row.key))}</td>`)
-          .join('');
-        return `<tr><th>${escapeHtml(row.label)}</th>${cells}</tr>`;
+          .join('')
+        return `<tr><th>${escapeHtml(row.label)}</th>${cells}</tr>`
       })
-      .join('');
+      .join('')
 
     const printableHtml = `<!DOCTYPE html>
 <html lang="en">
@@ -244,14 +256,14 @@ export default function ComparePage() {
     </tbody>
   </table>
 </body>
-</html>`;
+</html>`
 
-    printWindow.document.write(printableHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-  };
+    printWindow.document.write(printableHtml)
+    printWindow.document.close()
+    printWindow.focus()
+    printWindow.print()
+    printWindow.close()
+  }
 
   return (
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
@@ -282,7 +294,7 @@ export default function ComparePage() {
               variant="outline"
               size="sm"
               onClick={() => {
-                void handleExportPdf();
+                void handleExportPdf()
               }}
               disabled={!hasComparedKnives}
             >
@@ -304,9 +316,7 @@ export default function ComparePage() {
             <div className="flex min-w-max items-center">
               {comparedKnives.map((knife, index) => (
                 <div key={knife.id} className="flex items-center">
-                  {index > 0 && (
-                    <div className="mx-3 h-4 w-px bg-border" />
-                  )}
+                  {index > 0 && <div className="mx-3 h-4 w-px bg-border" />}
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleRemove(knife.id)}
@@ -333,7 +343,9 @@ export default function ComparePage() {
                     </span>
                     <Select
                       value=""
-                      onValueChange={(value) => handleSelect(slotCount - 1, value ?? '')}
+                      onValueChange={(value) =>
+                        handleSelect(slotCount - 1, value ?? '')
+                      }
                     >
                       <SelectTrigger className="w-48" size="sm">
                         <SelectValue placeholder="Select a knife" />
@@ -367,13 +379,15 @@ export default function ComparePage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-white hover:bg-white">
-                      <TableHead className="sticky left-0 z-10 w-40 bg-white text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">Feature</TableHead>
+                      <TableHead className="sticky left-0 z-10 w-40 bg-white text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">
+                        Feature
+                      </TableHead>
                       {comparedKnives.map((knife) => (
                         <TableHead
                           key={knife.id}
                           className={cn(
                             'min-w-[180px] bg-white transition-colors',
-                            hoveredCell?.knifeId === knife.id && 'bg-muted/60'
+                            hoveredCell?.knifeId === knife.id && 'bg-muted/60',
                           )}
                         >
                           <div className="group/image relative mb-2 aspect-video w-full overflow-hidden rounded-lg cursor-pointer">
@@ -403,7 +417,9 @@ export default function ComparePage() {
                             href={`/collection/${knife.id}`}
                             className="block hover:underline"
                           >
-                            <div className="text-sm font-medium">{knife.name}</div>
+                            <div className="text-sm font-medium">
+                              {knife.name}
+                            </div>
                             <div className="text-[10px] uppercase tracking-wider text-[var(--bladevault-title)]">
                               {knife.brand}
                             </div>
@@ -424,13 +440,13 @@ export default function ComparePage() {
                             idx % 2 === 0
                               ? 'bg-[var(--bladevault-surface-soft)]'
                               : 'bg-card',
-                            hoveredCell?.rowKey === row.key && 'bg-muted'
+                            hoveredCell?.rowKey === row.key && 'bg-muted',
                           )}
                         >
                           {row.label}
                         </TableCell>
                         {comparedKnives.map((knife) => {
-                          const value = getRowValue(knife, row.key);
+                          const value = getRowValue(knife, row.key)
                           return (
                             <TableCell
                               key={knife.id}
@@ -438,7 +454,7 @@ export default function ComparePage() {
                                 'text-sm text-foreground transition-colors',
                                 hoveredCell?.knifeId === knife.id &&
                                   hoveredCell?.rowKey === row.key &&
-                                  'bg-muted'
+                                  'bg-muted',
                               )}
                               onMouseEnter={() =>
                                 setHoveredCell({
@@ -450,7 +466,7 @@ export default function ComparePage() {
                             >
                               {value ?? '-'}
                             </TableCell>
-                          );
+                          )
                         })}
                       </TableRow>
                     ))}
@@ -462,5 +478,5 @@ export default function ComparePage() {
         </>
       )}
     </div>
-  );
+  )
 }

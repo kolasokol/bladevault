@@ -1,18 +1,18 @@
-const { spawn } = require('child_process');
-const path = require('path');
+const { spawn } = require('child_process')
+const path = require('path')
 
-const electronBinary = require('electron');
+const electronBinary = require('electron')
 
-const projectRoot = process.cwd();
+const projectRoot = process.cwd()
 
 function streamChildOutput(child) {
   child.stdout.on('data', (chunk) => {
-    process.stdout.write(chunk);
-  });
+    process.stdout.write(chunk)
+  })
 
   child.stderr.on('data', (chunk) => {
-    process.stderr.write(chunk);
-  });
+    process.stderr.write(chunk)
+  })
 }
 
 async function main() {
@@ -25,21 +25,21 @@ async function main() {
       NEXT_TELEMETRY_DISABLED: '1',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  })
 
-  streamChildOutput(child);
+  streamChildOutput(child)
 
   const timeout = setTimeout(() => {
-    child.kill();
-  }, 90000);
+    child.kill()
+  }, 90000)
 
   child.once('exit', (code) => {
-    clearTimeout(timeout);
-    process.exit(code ?? 0);
-  });
+    clearTimeout(timeout)
+    process.exit(code ?? 0)
+  })
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+  console.error(error instanceof Error ? error.message : error)
+  process.exit(1)
+})

@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Loader2,
   Link2,
@@ -12,140 +12,150 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
-} from 'lucide-react';
-import { useKnives } from '@/components/providers/knives-provider';
+} from 'lucide-react'
+import { useKnives } from '@/components/providers/knives-provider'
 
 import {
   KnifeFormData,
   EMPTY_KNIFE_FORM,
   KnifeFormFields,
   formDataToKnifeDraft,
-} from '@/components/knife-form';
-import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response';
-import { ScrapedProduct } from '@/lib/scrape';
-import { PageHeader } from '@/components/page-header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from '@/components/knife-form'
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
+import { ScrapedProduct } from '@/lib/scrape'
+import { PageHeader } from '@/components/page-header'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-const TABS = ['Scrape URL', 'Manual'] as const;
-type Tab = (typeof TABS)[number];
+const TABS = ['Scrape URL', 'Manual'] as const
+type Tab = (typeof TABS)[number]
 
 export function AddKnifeForm() {
-  const router = useRouter();
-  const { addKnife } = useKnives();
-  const [activeTab, setActiveTab] = useState<Tab>('Scrape URL');
-  const [form, setForm] = useState<KnifeFormData>(EMPTY_KNIFE_FORM);
-  const [imageUrlInput, setImageUrlInput] = useState('');
-  const [url, setUrl] = useState('');
-  const [isScraping, setIsScraping] = useState(false);
-  const [scrapeError, setScrapeError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [hasScraped, setHasScraped] = useState(false);
-  const [scrapedHtml, setScrapedHtml] = useState<string>('');
-  const [scrapedFinalUrl, setScrapedFinalUrl] = useState<string>('');
-  const [showPreview, setShowPreview] = useState(true);
-  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
-  const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter()
+  const { addKnife } = useKnives()
+  const [activeTab, setActiveTab] = useState<Tab>('Scrape URL')
+  const [form, setForm] = useState<KnifeFormData>(EMPTY_KNIFE_FORM)
+  const [imageUrlInput, setImageUrlInput] = useState('')
+  const [url, setUrl] = useState('')
+  const [isScraping, setIsScraping] = useState(false)
+  const [scrapeError, setScrapeError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [hasScraped, setHasScraped] = useState(false)
+  const [scrapedHtml, setScrapedHtml] = useState<string>('')
+  const [scrapedFinalUrl, setScrapedFinalUrl] = useState<string>('')
+  const [showPreview, setShowPreview] = useState(true)
+  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
+  const [isSaving, setIsSaving] = useState(false)
 
-  const updateField = <K extends keyof KnifeFormData>(field: K, value: KnifeFormData[K]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const updateField = <K extends keyof KnifeFormData>(
+    field: K,
+    value: KnifeFormData[K],
+  ) => {
+    setForm((prev) => ({ ...prev, [field]: value }))
+  }
 
   const addImageUrl = () => {
-    const trimmed = imageUrlInput.trim();
-    if (!trimmed) return;
+    const trimmed = imageUrlInput.trim()
+    if (!trimmed) return
     if (form.images.includes(trimmed)) {
-      setImageUrlInput('');
-      return;
+      setImageUrlInput('')
+      return
     }
-    updateField('images', [...form.images, trimmed]);
-    setSelectedImages((prev) => new Set(prev).add(trimmed));
-    setImageUrlInput('');
-  };
+    updateField('images', [...form.images, trimmed])
+    setSelectedImages((prev) => new Set(prev).add(trimmed))
+    setImageUrlInput('')
+  }
 
   const handleImageFileSelect = (file: File) => {
-    const reader = new FileReader();
+    const reader = new FileReader()
     reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
+      const dataUrl = e.target?.result as string
       if (dataUrl && !form.images.includes(dataUrl)) {
-        updateField('images', [...form.images, dataUrl]);
-        setSelectedImages((prev) => new Set(prev).add(dataUrl));
+        updateField('images', [...form.images, dataUrl])
+        setSelectedImages((prev) => new Set(prev).add(dataUrl))
       }
-    };
-    reader.readAsDataURL(file);
-  };
+    }
+    reader.readAsDataURL(file)
+  }
 
   const removeImage = (index: number) => {
-    const removed = form.images[index];
-    updateField('images', form.images.filter((_, i) => i !== index));
+    const removed = form.images[index]
+    updateField(
+      'images',
+      form.images.filter((_, i) => i !== index),
+    )
     setSelectedImages((prev) => {
-      const next = new Set(prev);
-      next.delete(removed);
-      return next;
-    });
-  };
+      const next = new Set(prev)
+      next.delete(removed)
+      return next
+    })
+  }
 
   const toggleImageSelection = (src: string) => {
     setSelectedImages((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(src)) {
-        next.delete(src);
+        next.delete(src)
       } else {
-        next.add(src);
+        next.add(src)
       }
-      return next;
-    });
-  };
+      return next
+    })
+  }
 
   const selectAllImages = () => {
-    setSelectedImages(new Set(form.images));
-  };
+    setSelectedImages(new Set(form.images))
+  }
 
   const deselectAllImages = () => {
-    setSelectedImages(new Set());
-  };
+    setSelectedImages(new Set())
+  }
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
-    setIsSaving(true);
+    if (!form.name.trim()) return
+    setIsSaving(true)
     try {
-      await addKnife(formDataToKnifeDraft(form, selectedImages));
-      router.push('/collection');
+      await addKnife(formDataToKnifeDraft(form, selectedImages))
+      router.push('/collection')
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Failed to save knife');
+      setSaveError(
+        error instanceof Error ? error.message : 'Failed to save knife',
+      )
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleScrape = async () => {
-    if (!url.trim()) return;
-    setIsScraping(true);
-    setScrapeError(null);
-    setHasScraped(false);
-    setScrapedHtml('');
-    setScrapedFinalUrl('');
+    if (!url.trim()) return
+    setIsScraping(true)
+    setScrapeError(null)
+    setHasScraped(false)
+    setScrapedHtml('')
+    setScrapedFinalUrl('')
 
     try {
       const response = await fetch('/api/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
-      });
+      })
       const data = await readJsonResponse<{
-        error?: string;
-        product: ScrapedProduct;
-        html?: string;
-        finalUrl?: string;
-      }>(response);
+        error?: string
+        product: ScrapedProduct
+        html?: string
+        finalUrl?: string
+      }>(response)
 
       if (!response.ok) {
-        throw new Error(getApiErrorMessage(data, 'Failed to scrape product page'));
+        throw new Error(
+          getApiErrorMessage(data, 'Failed to scrape product page'),
+        )
       }
 
-      const product = data.product;
+      const product = data.product
 
       setForm({
         brand: product.brand ?? '',
@@ -167,24 +177,30 @@ export function AddKnifeForm() {
         country: product.specs?.country ?? '',
         images: Array.isArray(product.images) ? product.images : [],
         sourceUrl: product.sourceUrl ?? url.trim(),
-      });
-      setSelectedImages(new Set(Array.isArray(product.images) ? product.images : []));
-      setScrapedHtml(typeof data.html === 'string' ? data.html : '');
-      setScrapedFinalUrl(typeof data.finalUrl === 'string' ? data.finalUrl : url.trim());
-      setHasScraped(true);
-      setShowPreview(true);
+      })
+      setSelectedImages(
+        new Set(Array.isArray(product.images) ? product.images : []),
+      )
+      setScrapedHtml(typeof data.html === 'string' ? data.html : '')
+      setScrapedFinalUrl(
+        typeof data.finalUrl === 'string' ? data.finalUrl : url.trim(),
+      )
+      setHasScraped(true)
+      setShowPreview(true)
     } catch (error) {
-      setScrapeError(error instanceof Error ? error.message : 'Something went wrong');
+      setScrapeError(
+        error instanceof Error ? error.message : 'Something went wrong',
+      )
     } finally {
-      setIsScraping(false);
+      setIsScraping(false)
     }
-  };
+  }
 
-  const canSave = form.name.trim().length > 0;
+  const canSave = form.name.trim().length > 0
 
   const previewHtml = scrapedHtml
     ? `<base href="${scrapedFinalUrl || form.sourceUrl}">\n${scrapedHtml}`
-    : '';
+    : ''
 
   const scrapeInput = (
     <Card size="sm">
@@ -205,7 +221,11 @@ export function AddKnifeForm() {
                 className="pl-9"
               />
             </div>
-            <Button onClick={handleScrape} disabled={isScraping || !url.trim()} size="sm">
+            <Button
+              onClick={handleScrape}
+              disabled={isScraping || !url.trim()}
+              size="sm"
+            >
               {isScraping && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {isScraping ? 'Scraping' : 'Scrape'}
             </Button>
@@ -221,12 +241,14 @@ export function AddKnifeForm() {
 
         {!hasScraped && !scrapeError && !isScraping && (
           <p className="text-xs text-muted-foreground">
-            Paste a knife product page URL and hit Scrape. The app will pull the title, brand, images, and specs when available. You can edit everything before saving.
+            Paste a knife product page URL and hit Scrape. The app will pull the
+            title, brand, images, and specs when available. You can edit
+            everything before saving.
           </p>
         )}
       </CardContent>
     </Card>
-  );
+  )
 
   return (
     <div className="flex flex-col min-h-0 flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
@@ -244,9 +266,9 @@ export function AddKnifeForm() {
       <Tabs
         value={activeTab}
         onValueChange={(value) => {
-          setActiveTab(value as Tab);
-          setScrapeError(null);
-          setSaveError(null);
+          setActiveTab(value as Tab)
+          setScrapeError(null)
+          setSaveError(null)
         }}
         className="flex flex-col flex-1 min-h-0 gap-6"
       >
@@ -282,7 +304,9 @@ export function AddKnifeForm() {
               <CardHeader className="border-b flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                  <CardTitle className="text-sm">Scraped page preview</CardTitle>
+                  <CardTitle className="text-sm">
+                    Scraped page preview
+                  </CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -291,7 +315,11 @@ export function AddKnifeForm() {
                     onClick={() => setShowPreview((prev) => !prev)}
                     title={showPreview ? 'Hide preview' : 'Show preview'}
                   >
-                    {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    {showPreview ? (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" />
+                    )}
                   </Button>
                   <a
                     href={form.sourceUrl}
@@ -351,10 +379,14 @@ export function AddKnifeForm() {
           Cancel
         </Button>
         <Button size="sm" onClick={handleSave} disabled={!canSave || isSaving}>
-          {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          {isSaving ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5" />
+          )}
           {isSaving ? 'Saving' : 'Save Item'}
         </Button>
       </div>
     </div>
-  );
+  )
 }

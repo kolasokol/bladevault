@@ -1,13 +1,13 @@
-import type {Metadata} from 'next';
-import './globals.css';
-import { SidebarShell } from '@/components/sidebar-shell';
-import { KnivesProvider } from '@/components/providers/knives-provider';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { Geist, Geist_Mono } from 'next/font/google';
-import { cn } from '@/lib/utils';
+import type { Metadata } from 'next'
+import './globals.css'
+import { SidebarShell } from '@/components/sidebar-shell'
+import { KnivesProvider } from '@/components/providers/knives-provider'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { Geist, Geist_Mono } from 'next/font/google'
+import { cn } from '@/lib/utils'
 
-const geistSans = Geist({ subsets: ['latin'], variable: '--font-sans' });
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono' });
+const geistSans = Geist({ subsets: ['latin'], variable: '--font-sans' })
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono' })
 
 export const metadata: Metadata = {
   title: 'BladeVault | Knife Collection',
@@ -16,12 +16,19 @@ export const metadata: Metadata = {
     icon: '/icon.svg',
     shortcut: '/icon.svg',
   },
-};
+}
 
-export default function RootLayout({children}: {children: React.ReactNode}) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en" className={cn(geistSans.variable, geistMono.variable)}>
-      <body className="bg-background text-foreground font-sans h-screen w-full flex overflow-hidden" suppressHydrationWarning>
+      <body
+        className="bg-background text-foreground font-sans h-screen w-full flex overflow-hidden"
+        suppressHydrationWarning
+      >
         <KnivesProvider>
           <TooltipProvider>
             <SidebarShell />
@@ -32,5 +39,5 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         </KnivesProvider>
       </body>
     </html>
-  );
+  )
 }

@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import dynamic from 'next/dynamic';
+import dynamic from 'next/dynamic'
 
 export const SidebarShell = dynamic(
   () => import('@/components/sidebar').then((mod) => mod.Sidebar),
@@ -9,5 +9,5 @@ export const SidebarShell = dynamic(
     loading: () => (
       <aside className="h-screen w-60 flex-shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground" />
     ),
-  }
-);
+  },
+)

@@ -1,26 +1,26 @@
-import { NextResponse } from 'next/server';
-import { getStorage } from '@/lib/storage';
+import { NextResponse } from 'next/server'
+import { getStorage } from '@/lib/storage'
 
 export async function GET() {
   try {
-    const storage = getStorage();
-    const knives = await storage.getAllKnives();
-    return NextResponse.json({ knives });
+    const storage = getStorage()
+    const knives = await storage.getAllKnives()
+    return NextResponse.json({ knives })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json()
 
     if (!body.name || typeof body.name !== 'string') {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-    const storage = getStorage();
+    const storage = getStorage()
     const knife = await storage.createKnife({
       name: body.name,
       brand: body.brand ?? '',
@@ -44,11 +44,11 @@ export async function POST(request: Request) {
       imageUrls: Array.isArray(body.imageUrls) ? body.imageUrls : [],
       sourceUrl: typeof body.sourceUrl === 'string' ? body.sourceUrl : '',
       pinned: typeof body.pinned === 'boolean' ? body.pinned : false,
-    });
+    })
 
-    return NextResponse.json({ knife });
+    return NextResponse.json({ knife })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

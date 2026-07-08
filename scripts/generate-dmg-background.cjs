@@ -23,8 +23,18 @@ function renderBackground(size, outputName) {
 
   execFileSync(
     'sips',
-    ['-s', 'format', 'png', '-z', String(height), String(size), sourcePath, '--out', targetPath],
-    { stdio: 'ignore' }
+    [
+      '-s',
+      'format',
+      'png',
+      '-z',
+      String(height),
+      String(size),
+      sourcePath,
+      '--out',
+      targetPath,
+    ],
+    { stdio: 'ignore' },
   )
 }
 

@@ -1,84 +1,106 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Pencil, Trash2, Loader2, AlertCircle, ExternalLink, Scale } from 'lucide-react';
-import { BookmarkIcon } from '@/components/bookmark-icon';
-import { useKnives } from '@/components/providers/knives-provider';
-import { Knife, KnifeUpdates } from '@/lib/data';
-import { knifeToFormData, KnifeScrapeEditor } from '@/components/knife-form';
-import { PageHeader } from '@/components/page-header';
-import { Gallery } from '@/components/gallery';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import {
+  Pencil,
+  Trash2,
+  Loader2,
+  AlertCircle,
+  ExternalLink,
+  Scale,
+} from 'lucide-react'
+import { BookmarkIcon } from '@/components/bookmark-icon'
+import { useKnives } from '@/components/providers/knives-provider'
+import { Knife, KnifeUpdates } from '@/lib/data'
+import { knifeToFormData, KnifeScrapeEditor } from '@/components/knife-form'
+import { PageHeader } from '@/components/page-header'
+import { Gallery } from '@/components/gallery'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { cn } from '@/lib/utils'
 import {
   activeKnifeActionStyle,
   activeKnifeOutlineClassName,
-} from '@/lib/knife-action-styles';
+} from '@/lib/knife-action-styles'
 
 export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
-  const router = useRouter();
-  const { knives, updateKnife, deleteKnife, compareIds, addToCompare, removeFromCompare } = useKnives();
+  const router = useRouter()
+  const {
+    knives,
+    updateKnife,
+    deleteKnife,
+    compareIds,
+    addToCompare,
+    removeFromCompare,
+  } = useKnives()
 
-  const knife = knives.find((k) => k.id === initialKnife.id) ?? initialKnife;
-  const pinned = knife.pinned;
-  const inCompare = compareIds.includes(knife.id);
+  const knife = knives.find((k) => k.id === initialKnife.id) ?? initialKnife
+  const pinned = knife.pinned
+  const inCompare = compareIds.includes(knife.id)
   const knifeBreadcrumbs = [
     { label: 'Collection', href: '/collection' },
     ...(knife.brand
-      ? [{ label: knife.brand, href: `/collection?brand=${encodeURIComponent(knife.brand)}` }]
+      ? [
+          {
+            label: knife.brand,
+            href: `/collection?brand=${encodeURIComponent(knife.brand)}`,
+          },
+        ]
       : []),
     { label: knife.name },
-  ];
+  ]
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isTogglingPin, setIsTogglingPin] = useState(false);
-  const [isTogglingCompare, setIsTogglingCompare] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isTogglingPin, setIsTogglingPin] = useState(false)
+  const [isTogglingCompare, setIsTogglingCompare] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleCancel = () => {
-    setError(null);
-    setIsEditing(false);
-  };
+    setError(null)
+    setIsEditing(false)
+  }
 
   const handleTogglePin = async () => {
-    setIsTogglingPin(true);
-    setError(null);
+    setIsTogglingPin(true)
+    setError(null)
     try {
-      await updateKnife(knife.id, { pinned: !pinned });
+      await updateKnife(knife.id, { pinned: !pinned })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update pin');
+      setError(err instanceof Error ? err.message : 'Failed to update pin')
     } finally {
-      setIsTogglingPin(false);
+      setIsTogglingPin(false)
     }
-  };
+  }
 
   const handleToggleCompare = async () => {
-    setIsTogglingCompare(true);
-    setError(null);
+    setIsTogglingCompare(true)
+    setError(null)
     try {
       if (inCompare) {
-        await removeFromCompare(knife.id);
+        await removeFromCompare(knife.id)
       } else {
-        await addToCompare(knife.id);
+        await addToCompare(knife.id)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update compare');
+      setError(err instanceof Error ? err.message : 'Failed to update compare')
     } finally {
-      setIsTogglingCompare(false);
+      setIsTogglingCompare(false)
     }
-  };
+  }
 
-  const handleSave = async (form: ReturnType<typeof knifeToFormData>, selectedImages: Set<string>) => {
-    setError(null);
-    setIsSaving(true);
+  const handleSave = async (
+    form: ReturnType<typeof knifeToFormData>,
+    selectedImages: Set<string>,
+  ) => {
+    setError(null)
+    setIsSaving(true)
 
     try {
       const updates: KnifeUpdates = {
@@ -103,32 +125,34 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
           hardness: form.hardness,
           country: form.country,
         },
-      };
-      await updateKnife(knife.id, updates);
-      setIsEditing(false);
+      }
+      await updateKnife(knife.id, updates)
+      setIsEditing(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save changes');
-      throw err;
+      setError(err instanceof Error ? err.message : 'Failed to save changes')
+      throw err
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleDelete = async () => {
-    const confirmed = window.confirm('Are you sure you want to delete this knife? This action cannot be undone.');
-    if (!confirmed) return;
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this knife? This action cannot be undone.',
+    )
+    if (!confirmed) return
 
-    setIsDeleting(true);
-    setError(null);
+    setIsDeleting(true)
+    setError(null)
 
     try {
-      await deleteKnife(knife.id);
-      router.push('/collection');
+      await deleteKnife(knife.id)
+      router.push('/collection')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete knife');
-      setIsDeleting(false);
+      setError(err instanceof Error ? err.message : 'Failed to delete knife')
+      setIsDeleting(false)
     }
-  };
+  }
 
   if (isEditing) {
     return (
@@ -152,7 +176,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 disabled={isSaving || isTogglingCompare}
                 className={cn(
                   'text-[var(--bladevault-olive)] hover:text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)] dark:hover:text-[var(--bladevault-gold)]',
-                  inCompare && activeKnifeOutlineClassName
+                  inCompare && activeKnifeOutlineClassName,
                 )}
                 style={inCompare ? activeKnifeActionStyle : undefined}
               >
@@ -170,7 +194,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 disabled={isSaving || isTogglingPin}
                 className={cn(
                   'text-[var(--bladevault-olive)] hover:text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)] dark:hover:text-[var(--bladevault-gold)]',
-                  pinned && activeKnifeOutlineClassName
+                  pinned && activeKnifeOutlineClassName,
                 )}
                 style={pinned ? activeKnifeActionStyle : undefined}
               >
@@ -181,14 +205,19 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 )}
                 {pinned ? 'Pinned' : 'Pin'}
               </Button>
-              <Button variant="outline" size="sm" onClick={handleCancel} disabled={isSaving}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancel}
+                disabled={isSaving}
+              >
                 Cancel
               </Button>
             </>
           }
         />
       </div>
-    );
+    )
   }
 
   const specRows = [
@@ -197,16 +226,22 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
     { label: 'Handle', value: knife.handleMaterial },
     { label: 'Handle Length', value: knife.specs.handleLength || 'N/A' },
     { label: 'Blade Style', value: knife.bladeStyle },
-    { label: 'Blade Coating / Finish', value: knife.specs.bladeCoating || 'N/A' },
+    {
+      label: 'Blade Coating / Finish',
+      value: knife.specs.bladeCoating || 'N/A',
+    },
     { label: 'Hardness', value: knife.specs.hardness || 'N/A' },
-    { label: 'Locking Mechanism', value: knife.specs.lockingMechanism || 'N/A' },
+    {
+      label: 'Locking Mechanism',
+      value: knife.specs.lockingMechanism || 'N/A',
+    },
     { label: 'Overall Length', value: knife.specs.overallLength },
     { label: 'Blade Length', value: knife.specs.bladeLength },
     { label: 'Blade Thickness', value: knife.specs.bladeThickness || 'N/A' },
     { label: 'Weight', value: knife.specs.weight },
     { label: 'Designer', value: knife.specs.designer || 'N/A' },
     { label: 'Origin', value: knife.specs.country },
-  ];
+  ]
 
   return (
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl 2xl:max-w-[100rem] mx-auto">
@@ -223,7 +258,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               disabled={isTogglingCompare}
               className={cn(
                 'text-[var(--bladevault-olive)] hover:text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)] dark:hover:text-[var(--bladevault-gold)]',
-                inCompare && activeKnifeOutlineClassName
+                inCompare && activeKnifeOutlineClassName,
               )}
               style={inCompare ? activeKnifeActionStyle : undefined}
             >
@@ -241,7 +276,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               disabled={isTogglingPin}
               className={cn(
                 'text-[var(--bladevault-olive)] hover:text-[var(--bladevault-olive)] dark:text-[var(--bladevault-gold)] dark:hover:text-[var(--bladevault-gold)]',
-                pinned && activeKnifeOutlineClassName
+                pinned && activeKnifeOutlineClassName,
               )}
               style={pinned ? activeKnifeActionStyle : undefined}
             >
@@ -252,7 +287,11 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               )}
               {pinned ? 'Pinned' : 'Pin'}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+            >
               <Pencil className="h-3.5 w-3.5" />
               Edit
             </Button>
@@ -263,7 +302,11 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               disabled={isDeleting}
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
-              {isDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              {isDeleting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
               Delete
             </Button>
           </>
@@ -288,23 +331,30 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
             </TabsList>
             <TabsContent value="overview" className="pt-4">
               <div className="max-w-2xl space-y-3">
-                {knife.description
-                  ? knife.description
-                      .split(/\n\s*\n/)
-                      .map((p) => p.trim())
-                      .filter(Boolean)
-                      .map((paragraph, index) => (
-                        <p key={index} className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                          {paragraph}
-                        </p>
-                      ))
-                  : (
-                    <p className="text-sm text-muted-foreground">No description provided.</p>
-                  )}
+                {knife.description ? (
+                  knife.description
+                    .split(/\n\s*\n/)
+                    .map((p) => p.trim())
+                    .filter(Boolean)
+                    .map((paragraph, index) => (
+                      <p
+                        key={index}
+                        className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line"
+                      >
+                        {paragraph}
+                      </p>
+                    ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No description provided.
+                  </p>
+                )}
               </div>
             </TabsContent>
             <TabsContent value="history" className="pt-4">
-              <p className="text-sm text-muted-foreground">History tracking coming soon.</p>
+              <p className="text-sm text-muted-foreground">
+                History tracking coming soon.
+              </p>
             </TabsContent>
           </Tabs>
         </div>
@@ -313,7 +363,10 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
           <Card size="sm">
             <CardHeader>
               <>
-                <Badge variant="secondary" className="mb-2 w-fit text-[10px] uppercase tracking-wide">
+                <Badge
+                  variant="secondary"
+                  className="mb-2 w-fit text-[10px] uppercase tracking-wide"
+                >
                   {knife.brand}
                 </Badge>
                 <CardTitle>{knife.name}</CardTitle>
@@ -350,10 +403,10 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 {specRows.map(({ label, value }) => (
                   <div key={label}>
                     <div className="flex items-center justify-between gap-4 py-1.5">
-                      <span className="text-xs text-muted-foreground">{label}</span>
-                      <span className="text-xs text-foreground">
-                        {value}
+                      <span className="text-xs text-muted-foreground">
+                        {label}
                       </span>
+                      <span className="text-xs text-foreground">{value}</span>
                     </div>
                     <Separator />
                   </div>
@@ -364,5 +417,5 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
         </div>
       </div>
     </div>
-  );
+  )
 }

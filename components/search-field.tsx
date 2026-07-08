@@ -1,14 +1,14 @@
-'use client';
+'use client'
 
-import { Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Search, X } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 
 type SearchFieldProps = {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  className?: string;
-};
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  className?: string
+}
 
 export function SearchField({
   value,
@@ -39,5 +39,5 @@ export function SearchField({
         )}
       </div>
     </div>
-  );
+  )
 }

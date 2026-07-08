@@ -1,11 +1,11 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname, useSearchParams } from "next/navigation";
-import packageJson from "@/package.json";
-import { useMemo, useState } from "react";
-import { BookmarkIcon } from "@/components/bookmark-icon";
+import Link from 'next/link'
+import Image from 'next/image'
+import { usePathname, useSearchParams } from 'next/navigation'
+import packageJson from '@/package.json'
+import { useMemo, useState } from 'react'
+import { BookmarkIcon } from '@/components/bookmark-icon'
 import {
   LayoutDashboard,
   Library,
@@ -17,63 +17,60 @@ import {
   ChevronRight,
   Cloud,
   CloudOff,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useKnives } from "@/components/providers/knives-provider";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useKnives } from '@/components/providers/knives-provider'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/tooltip'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import SettingsModal from "./settings-modal";
+} from '@/components/ui/collapsible'
+import SettingsModal from './settings-modal'
 
 const links = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/collection", label: "Collection", icon: Library },
-  { href: "/compare", label: "Compare", icon: Scale },
-];
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/collection', label: 'Collection', icon: Library },
+  { href: '/compare', label: 'Compare', icon: Scale },
+]
 
-const appVersion = `v.${packageJson.version}`;
+const appVersion = `v.${packageJson.version}`
 
 export function Sidebar() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { knives, compareIds, isAutoBackupActive } = useKnives();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [brandsOpen, setBrandsOpen] = useState(true);
-  const [pinnedOpen, setPinnedOpen] = useState(true);
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const { knives, compareIds, isAutoBackupActive } = useKnives()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [brandsOpen, setBrandsOpen] = useState(true)
+  const [pinnedOpen, setPinnedOpen] = useState(true)
 
-  const brands = useMemo(
-    () => {
-      const counts = new Map<string, number>();
+  const brands = useMemo(() => {
+    const counts = new Map<string, number>()
 
-      knives.forEach((knife) => {
-        counts.set(knife.brand, (counts.get(knife.brand) ?? 0) + 1);
-      });
+    knives.forEach((knife) => {
+      counts.set(knife.brand, (counts.get(knife.brand) ?? 0) + 1)
+    })
 
-      return Array.from(counts.entries())
-        .sort(([brandA], [brandB]) => brandA.localeCompare(brandB))
-        .map(([name, count]) => ({ name, count }));
-    },
-    [knives],
-  );
+    return Array.from(counts.entries())
+      .sort(([brandA], [brandB]) => brandA.localeCompare(brandB))
+      .map(([name, count]) => ({ name, count }))
+  }, [knives])
 
   const pinnedKnives = useMemo(
     () => knives.filter((knife) => knife.pinned),
     [knives],
-  );
+  )
 
   const toggleTheme = () => {
-    document.documentElement.classList.toggle("dark");
-  };
+    document.documentElement.classList.toggle('dark')
+  }
 
   return (
     <>
@@ -105,14 +102,14 @@ export function Sidebar() {
             <div className="flex items-center gap-2">
               <div
                 className={cn(
-                  "inline-flex w-fit items-center justify-center rounded-full border px-3 py-[0.22rem]",
-                  "border-[var(--bladevault-line)] bg-[var(--card)]",
+                  'inline-flex w-fit items-center justify-center rounded-full border px-3 py-[0.22rem]',
+                  'border-[var(--bladevault-line)] bg-[var(--card)]',
                 )}
               >
                 <Badge
                   className={cn(
-                    "h-auto rounded-full border-0 bg-transparent px-0 py-0 text-[9px] font-semibold uppercase tracking-[0.16em] shadow-none",
-                    "!text-[var(--bladevault-local)] dark:!text-[var(--bladevault-gold)]",
+                    'h-auto rounded-full border-0 bg-transparent px-0 py-0 text-[9px] font-semibold uppercase tracking-[0.16em] shadow-none',
+                    '!text-[var(--bladevault-local)] dark:!text-[var(--bladevault-gold)]',
                   )}
                   title="Your vault stays local. Use Cloud Backup in settings to sync a copy."
                 >
@@ -124,14 +121,14 @@ export function Sidebar() {
                 className="h-6 min-w-6 rounded-full border border-border/70 bg-card px-0 shadow-none"
                 title={
                   isAutoBackupActive
-                    ? "Cloud auto backup is active."
-                    : "Cloud auto backup is inactive."
+                    ? 'Cloud auto backup is active.'
+                    : 'Cloud auto backup is inactive.'
                 }
               >
                 {isAutoBackupActive ? (
                   <Cloud
                     className="h-3.5 w-3.5"
-                    style={{ stroke: "url(#sidebar-cloud-gradient)" }}
+                    style={{ stroke: 'url(#sidebar-cloud-gradient)' }}
                   />
                 ) : (
                   <CloudOff className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
@@ -143,7 +140,13 @@ export function Sidebar() {
 
         <svg width="0" height="0" className="absolute">
           <defs>
-            <linearGradient id="sidebar-cloud-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient
+              id="sidebar-cloud-gradient"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
               <stop offset="0%" stopColor="#e2c86e" />
               <stop offset="55%" stopColor="#c89c3d" />
               <stop offset="100%" stopColor="#9e6e1b" />
@@ -156,20 +159,20 @@ export function Sidebar() {
             Main
           </div>
           {links.map((link) => {
-            const Icon = link.icon;
+            const Icon = link.icon
             const isActive =
               pathname === link.href ||
-              (link.href !== "/" && pathname.startsWith(link.href));
+              (link.href !== '/' && pathname.startsWith(link.href))
 
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors",
+                  'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors',
                   isActive
-                    ? "bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    ? 'bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -178,10 +181,10 @@ export function Sidebar() {
                   {link.href === '/compare' && compareIds.length > 0 ? (
                     <span
                       className={cn(
-                        "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                        'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none',
                         isActive
-                          ? "bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)]"
-                          : "bg-muted text-foreground",
+                          ? 'bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)]'
+                          : 'bg-muted text-foreground',
                       )}
                     >
                       {compareIds.length}
@@ -189,7 +192,7 @@ export function Sidebar() {
                   ) : null}
                 </span>
               </Link>
-            );
+            )
           })}
 
           {pinnedKnives.length > 0 && (
@@ -202,8 +205,8 @@ export function Sidebar() {
                       Pinned
                       <ChevronRight
                         className={cn(
-                          "h-3 w-3 transition-transform",
-                          pinnedOpen && "rotate-90",
+                          'h-3 w-3 transition-transform',
+                          pinnedOpen && 'rotate-90',
                         )}
                       />
                     </button>
@@ -211,34 +214,54 @@ export function Sidebar() {
                 />
                 <CollapsibleContent className="space-y-0.5 pl-1 pt-1">
                   {pinnedKnives.map((knife) => {
-                    const knifeHref = `/collection/${knife.id}`;
-                    const isKnifeActive = pathname === knifeHref;
+                    const knifeHref = `/collection/${knife.id}`
+                    const isKnifeActive = pathname === knifeHref
 
                     return (
                       <Link
                         key={knife.id}
                         href={knifeHref}
                         className={cn(
-                          "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors",
+                          'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
                           isKnifeActive
-                            ? "bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                            ? 'bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                         )}
                       >
                         <BookmarkIcon active className="size-3 shrink-0" />
                         <span className="truncate">
-                          <span className={cn(isKnifeActive ? 'text-[var(--bladevault-line)]' : 'text-muted-foreground')}>
+                          <span
+                            className={cn(
+                              isKnifeActive
+                                ? 'text-[var(--bladevault-line)]'
+                                : 'text-muted-foreground',
+                            )}
+                          >
                             {knife.brand}
                           </span>
-                          <span className={cn('mx-1', isKnifeActive ? 'text-[var(--bladevault-line)]' : 'text-muted-foreground/50')}>
+                          <span
+                            className={cn(
+                              'mx-1',
+                              isKnifeActive
+                                ? 'text-[var(--bladevault-line)]'
+                                : 'text-muted-foreground/50',
+                            )}
+                          >
                             ·
                           </span>
-                          <span className={cn('font-medium', isKnifeActive ? 'text-[var(--bladevault-gold)]' : 'text-foreground')}>
+                          <span
+                            className={cn(
+                              'font-medium',
+                              isKnifeActive
+                                ? 'text-[var(--bladevault-gold)]'
+                                : 'text-foreground',
+                            )}
+                          >
                             {knife.name}
                           </span>
                         </span>
                       </Link>
-                    );
+                    )
                   })}
                 </CollapsibleContent>
               </Collapsible>
@@ -255,8 +278,8 @@ export function Sidebar() {
                       Brands
                       <ChevronRight
                         className={cn(
-                          "h-3 w-3 transition-transform",
-                          brandsOpen && "rotate-90",
+                          'h-3 w-3 transition-transform',
+                          brandsOpen && 'rotate-90',
                         )}
                       />
                     </button>
@@ -264,35 +287,35 @@ export function Sidebar() {
                 />
                 <CollapsibleContent className="space-y-0.5 pl-1 pt-1">
                   {brands.map((brand) => {
-                    const brandHref = `/collection?brand=${encodeURIComponent(brand.name)}`;
+                    const brandHref = `/collection?brand=${encodeURIComponent(brand.name)}`
                     const isBrandActive =
-                      pathname === "/collection" &&
-                      searchParams.get("brand") === brand.name;
+                      pathname === '/collection' &&
+                      searchParams.get('brand') === brand.name
 
                     return (
                       <Link
                         key={brand.name}
                         href={brandHref}
                         className={cn(
-                          "flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs transition-colors",
+                          'flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs transition-colors',
                           isBrandActive
-                            ? "bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                            ? 'bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)]'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                         )}
                       >
                         <span className="truncate">{brand.name}</span>
                         <span
                           className={cn(
-                            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                            'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none',
                             isBrandActive
-                              ? "bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)]"
-                              : "bg-muted text-foreground",
+                              ? 'bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)]'
+                              : 'bg-muted text-foreground',
                           )}
                         >
                           {brand.count}
                         </span>
                       </Link>
-                    );
+                    )
                   })}
                 </CollapsibleContent>
               </Collapsible>
@@ -301,11 +324,7 @@ export function Sidebar() {
         </nav>
 
         <div className="flex flex-col gap-2 border-t bg-muted/30 p-3">
-          <Button
-            size="sm"
-            render={<Link href="/add" />}
-            nativeButton={false}
-          >
+          <Button size="sm" render={<Link href="/add" />} nativeButton={false}>
             <PlusCircle className="h-3.5 w-3.5" />
             Add Knife
           </Button>
@@ -351,5 +370,5 @@ export function Sidebar() {
         onClose={() => setIsSettingsOpen(false)}
       />
     </>
-  );
+  )
 }

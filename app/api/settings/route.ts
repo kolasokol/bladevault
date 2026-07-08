@@ -1,44 +1,44 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
 import {
   getDockerHostDataMountPath,
   getLocalDataDirPath,
   isContainerizedRuntime,
-} from '@/lib/local-db';
-import { AppSettings, getSettings, saveSettings } from '@/lib/settings';
+} from '@/lib/local-db'
+import { AppSettings, getSettings, saveSettings } from '@/lib/settings'
 
 export async function GET() {
   try {
-    const settings = getSettings();
-    const localDataPath = getLocalDataDirPath();
-    const dockerHostDataMountPath = getDockerHostDataMountPath();
-    const isContainerized = isContainerizedRuntime();
+    const settings = getSettings()
+    const localDataPath = getLocalDataDirPath()
+    const dockerHostDataMountPath = getDockerHostDataMountPath()
+    const isContainerized = isContainerizedRuntime()
     return NextResponse.json({
       settings,
       localDataPath,
       dockerHostDataMountPath,
       isContainerized,
-    });
+    })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as Partial<AppSettings>;
-    const settings = saveSettings(body);
-    const localDataPath = getLocalDataDirPath();
-    const dockerHostDataMountPath = getDockerHostDataMountPath();
-    const isContainerized = isContainerizedRuntime();
+    const body = (await request.json()) as Partial<AppSettings>
+    const settings = saveSettings(body)
+    const localDataPath = getLocalDataDirPath()
+    const dockerHostDataMountPath = getDockerHostDataMountPath()
+    const isContainerized = isContainerizedRuntime()
     return NextResponse.json({
       settings,
       localDataPath,
       dockerHostDataMountPath,
       isContainerized,
-    });
+    })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

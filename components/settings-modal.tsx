@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react'
 import {
   AlertCircle,
   CheckCircle2,
@@ -12,10 +12,10 @@ import {
   RefreshCw,
   ShieldCheck,
   Upload,
-} from 'lucide-react';
-import { FcGoogle } from 'react-icons/fc';
-import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response';
-import { SETTINGS_UPDATED_EVENT, type AppSettings } from '@/lib/settings-shared';
+} from 'lucide-react'
+import { FcGoogle } from 'react-icons/fc'
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
+import { SETTINGS_UPDATED_EVENT, type AppSettings } from '@/lib/settings-shared'
 import {
   clearCloudAuthState,
   CloudAuthErrorMessage,
@@ -30,33 +30,45 @@ import {
   parseApiError,
   refreshCloudBackupAccessToken,
   setCloudAuthState,
-} from '@/lib/cloud-backup';
+} from '@/lib/cloud-backup'
 import {
   formatCloudBackupError,
   uploadCloudBackupArchive,
-} from '@/lib/cloud-backup-client';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from '@/lib/cloud-backup-client'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/components/ui/dialog'
 
-type StatusTone = 'idle' | 'loading' | 'success' | 'error';
+type StatusTone = 'idle' | 'loading' | 'success' | 'error'
 
 const settingsTabTriggerClassName =
-  'flex-none min-w-[9rem] rounded-lg border border-transparent px-4 py-1 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground data-active:border-[var(--bladevault-line)] data-active:bg-[var(--bladevault-olive)] data-active:text-[var(--bladevault-gold)] data-active:shadow-none dark:data-active:border-[var(--bladevault-line)] dark:data-active:bg-[var(--bladevault-olive)] dark:data-active:text-[var(--bladevault-gold)]';
+  'flex-none min-w-[9rem] rounded-lg border border-transparent px-4 py-1 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground data-active:border-[var(--bladevault-line)] data-active:bg-[var(--bladevault-olive)] data-active:text-[var(--bladevault-gold)] data-active:shadow-none dark:data-active:border-[var(--bladevault-line)] dark:data-active:bg-[var(--bladevault-olive)] dark:data-active:text-[var(--bladevault-gold)]'
 
 const settingsSecondaryButtonClassName =
-  'border-[var(--bladevault-line)] bg-accent text-foreground hover:bg-[var(--bladevault-olive)] hover:text-[var(--bladevault-gold)] dark:border-[var(--bladevault-line)] dark:bg-accent dark:text-foreground dark:hover:bg-[var(--bladevault-olive)] dark:hover:text-[var(--bladevault-gold)]';
+  'border-[var(--bladevault-line)] bg-accent text-foreground hover:bg-[var(--bladevault-olive)] hover:text-[var(--bladevault-gold)] dark:border-[var(--bladevault-line)] dark:bg-accent dark:text-foreground dark:hover:bg-[var(--bladevault-olive)] dark:hover:text-[var(--bladevault-gold)]'
 
-function StatusPill({ status, message }: { status: StatusTone; message?: string }) {
-  if (status === 'idle') return null;
+function StatusPill({
+  status,
+  message,
+}: {
+  status: StatusTone
+  message?: string
+}) {
+  if (status === 'idle') return null
 
   if (status === 'loading') {
     return (
@@ -64,7 +76,7 @@ function StatusPill({ status, message }: { status: StatusTone; message?: string 
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
         <span className="min-w-0 break-words">{message || 'Working...'}</span>
       </span>
-    );
+    )
   }
 
   if (status === 'success') {
@@ -73,372 +85,408 @@ function StatusPill({ status, message }: { status: StatusTone; message?: string 
         <CheckCircle2 className="h-3.5 w-3.5" />
         <span className="min-w-0 break-words">{message || 'Done'}</span>
       </span>
-    );
+    )
   }
 
   return (
     <span className="inline-flex max-w-full items-start gap-1.5 text-xs text-destructive">
       <AlertCircle className="h-3.5 w-3.5" />
-      <span className="min-w-0 break-words">{message || 'Something went wrong'}</span>
+      <span className="min-w-0 break-words">
+        {message || 'Something went wrong'}
+      </span>
     </span>
-  );
+  )
 }
 
 function formatSyncTime(value: string) {
-  if (!value) return 'Never';
+  if (!value) return 'Never'
 
   try {
     return new Intl.DateTimeFormat(undefined, {
       dateStyle: 'medium',
       timeStyle: 'short',
-    }).format(new Date(value));
+    }).format(new Date(value))
   } catch {
-    return value;
+    return value
   }
 }
 
-export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [localDataPath, setLocalDataPath] = useState('');
-  const [dockerHostDataMountPath, setDockerHostDataMountPath] = useState('');
-  const [isContainerized, setIsContainerized] = useState(false);
-  const [cloudSession, setCloudSession] = useState<CloudBackupSession | null>(null);
-  const [cloudConfig, setCloudConfig] = useState<CloudRuntimeConfig>(() => getCloudRuntimeConfig());
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+export default function SettingsModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean
+  onClose: () => void
+}) {
+  const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [localDataPath, setLocalDataPath] = useState('')
+  const [dockerHostDataMountPath, setDockerHostDataMountPath] = useState('')
+  const [isContainerized, setIsContainerized] = useState(false)
+  const [cloudSession, setCloudSession] = useState<CloudBackupSession | null>(
+    null,
+  )
+  const [cloudConfig, setCloudConfig] = useState<CloudRuntimeConfig>(() =>
+    getCloudRuntimeConfig(),
+  )
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  const [authStatus, setAuthStatus] = useState<StatusTone>('idle');
-  const [authMessage, setAuthMessage] = useState('');
-  const [sessionStatus, setSessionStatus] = useState<StatusTone>('idle');
-  const [sessionMessage, setSessionMessage] = useState('');
-  const [backupStatus, setBackupStatus] = useState<StatusTone>('idle');
-  const [backupMessage, setBackupMessage] = useState('');
-  const [restoreStatus, setRestoreStatus] = useState<StatusTone>('idle');
-  const [restoreMessage, setRestoreMessage] = useState('');
-  const [loadAttemptKey, setLoadAttemptKey] = useState(0);
+  const [authStatus, setAuthStatus] = useState<StatusTone>('idle')
+  const [authMessage, setAuthMessage] = useState('')
+  const [sessionStatus, setSessionStatus] = useState<StatusTone>('idle')
+  const [sessionMessage, setSessionMessage] = useState('')
+  const [backupStatus, setBackupStatus] = useState<StatusTone>('idle')
+  const [backupMessage, setBackupMessage] = useState('')
+  const [restoreStatus, setRestoreStatus] = useState<StatusTone>('idle')
+  const [restoreMessage, setRestoreMessage] = useState('')
+  const [loadAttemptKey, setLoadAttemptKey] = useState(0)
 
-  const authUrl = cloudConfig.authUrl;
-  const backupUrl = cloudConfig.backupUrl;
-  const authOrigin = authUrl ? new URL(authUrl).origin : '';
+  const authUrl = cloudConfig.authUrl
+  const backupUrl = cloudConfig.backupUrl
+  const authOrigin = authUrl ? new URL(authUrl).origin : ''
   const cloudConfigError = [
     !authUrl ? 'NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.' : null,
     !backupUrl ? 'NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.' : null,
   ]
     .filter(Boolean)
-    .join(' ');
+    .join(' ')
 
   const refreshCloudConfig = useCallback(async (force = false) => {
-    const nextConfig = await loadCloudRuntimeConfig(force);
-    setCloudConfig(nextConfig);
-    return nextConfig;
-  }, []);
+    const nextConfig = await loadCloudRuntimeConfig(force)
+    setCloudConfig(nextConfig)
+    return nextConfig
+  }, [])
 
-  const refreshCloudSession = useCallback(async (cancelled = false) => {
-    const state = getCloudAuthState();
-    if (!state?.sessionToken) {
-      if (!cancelled) {
-        setCloudSession(null);
-        setSessionStatus('idle');
-        setSessionMessage('');
-      }
-      return;
-    }
-
-    setSessionStatus('loading');
-    setSessionMessage('Checking cloud session...');
-
-    try {
-      const nextConfig = await refreshCloudConfig();
-      if (!nextConfig.authUrl) {
-        throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
-      }
-
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 8000);
-
-      const response = await fetch(`${nextConfig.authUrl}/api/me`, {
-        headers: createCloudAuthHeaders(),
-        signal: controller.signal,
-      });
-      window.clearTimeout(timeout);
-
-      if (!response.ok) {
-        throw new Error(await parseApiError(response));
-      }
-
-      const data = await readJsonResponse<CloudBackupSession | null>(response);
-      if (cancelled) return;
-
-      if (data?.user && data?.session) {
-        const existingState = getCloudAuthState();
-        if (existingState) {
-          setCloudAuthState({
-            ...existingState,
-            sessionToken: data.session.token,
-            expiresAt: data.session.expiresAt,
-            user: data.user,
-          });
+  const refreshCloudSession = useCallback(
+    async (cancelled = false) => {
+      const state = getCloudAuthState()
+      if (!state?.sessionToken) {
+        if (!cancelled) {
+          setCloudSession(null)
+          setSessionStatus('idle')
+          setSessionMessage('')
         }
-        setCloudSession(data);
-        setSessionStatus('success');
-        setSessionMessage(`Signed in as ${data.user.email}`);
-      } else {
-        setCloudSession(null);
-        setSessionStatus('idle');
-        setSessionMessage('');
+        return
       }
-    } catch (error) {
-      if (!cancelled) {
-        setCloudSession(null);
-        setSessionStatus('error');
-        setSessionMessage(formatCloudBackupError(error, getCloudRuntimeConfig().authUrl));
+
+      setSessionStatus('loading')
+      setSessionMessage('Checking cloud session...')
+
+      try {
+        const nextConfig = await refreshCloudConfig()
+        if (!nextConfig.authUrl) {
+          throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.')
+        }
+
+        const controller = new AbortController()
+        const timeout = window.setTimeout(() => controller.abort(), 8000)
+
+        const response = await fetch(`${nextConfig.authUrl}/api/me`, {
+          headers: createCloudAuthHeaders(),
+          signal: controller.signal,
+        })
+        window.clearTimeout(timeout)
+
+        if (!response.ok) {
+          throw new Error(await parseApiError(response))
+        }
+
+        const data = await readJsonResponse<CloudBackupSession | null>(response)
+        if (cancelled) return
+
+        if (data?.user && data?.session) {
+          const existingState = getCloudAuthState()
+          if (existingState) {
+            setCloudAuthState({
+              ...existingState,
+              sessionToken: data.session.token,
+              expiresAt: data.session.expiresAt,
+              user: data.user,
+            })
+          }
+          setCloudSession(data)
+          setSessionStatus('success')
+          setSessionMessage(`Signed in as ${data.user.email}`)
+        } else {
+          setCloudSession(null)
+          setSessionStatus('idle')
+          setSessionMessage('')
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCloudSession(null)
+          setSessionStatus('error')
+          setSessionMessage(
+            formatCloudBackupError(error, getCloudRuntimeConfig().authUrl),
+          )
+        }
       }
-    }
-  }, [refreshCloudConfig]);
+    },
+    [refreshCloudConfig],
+  )
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return
 
-    let cancelled = false;
+    let cancelled = false
 
     async function load() {
-      setIsLoading(true);
-      setLoadError(null);
+      setIsLoading(true)
+      setLoadError(null)
 
       try {
         const [response, nextCloudConfig] = await Promise.all([
           fetch('/api/settings'),
           refreshCloudConfig(true),
-        ]);
+        ])
         const data = await readJsonResponse<{
-          error?: string;
-          settings?: AppSettings;
-          localDataPath?: string;
-          dockerHostDataMountPath?: string | null;
-          isContainerized?: boolean;
-        }>(response);
+          error?: string
+          settings?: AppSettings
+          localDataPath?: string
+          dockerHostDataMountPath?: string | null
+          isContainerized?: boolean
+        }>(response)
         if (!response.ok) {
-          throw new Error(getApiErrorMessage(data, 'Failed to load settings'));
+          throw new Error(getApiErrorMessage(data, 'Failed to load settings'))
         }
 
-        const nextSettings = data.settings;
+        const nextSettings = data.settings
         if (!nextSettings) {
-          throw new Error('BladeVault did not return settings data.');
+          throw new Error('BladeVault did not return settings data.')
         }
 
-        if (cancelled) return;
-        setSettings(nextSettings);
-        setLocalDataPath(data.localDataPath || '');
-        setDockerHostDataMountPath(data.dockerHostDataMountPath || '');
-        setIsContainerized(Boolean(data.isContainerized));
-        setCloudConfig(nextCloudConfig);
-        void refreshCloudSession(cancelled);
+        if (cancelled) return
+        setSettings(nextSettings)
+        setLocalDataPath(data.localDataPath || '')
+        setDockerHostDataMountPath(data.dockerHostDataMountPath || '')
+        setIsContainerized(Boolean(data.isContainerized))
+        setCloudConfig(nextCloudConfig)
+        void refreshCloudSession(cancelled)
       } catch (error) {
         if (!cancelled) {
-          setLoadError(error instanceof Error ? error.message : 'Failed to load settings');
+          setLoadError(
+            error instanceof Error ? error.message : 'Failed to load settings',
+          )
         }
       } finally {
         if (!cancelled) {
-          setIsLoading(false);
+          setIsLoading(false)
         }
       }
     }
 
-    load();
+    load()
     return () => {
-      cancelled = true;
-    };
-  }, [isOpen, loadAttemptKey, refreshCloudConfig, refreshCloudSession]);
+      cancelled = true
+    }
+  }, [isOpen, loadAttemptKey, refreshCloudConfig, refreshCloudSession])
 
   const saveSettings = useCallback(async (updates: Partial<AppSettings>) => {
     const response = await fetch('/api/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
-    });
+    })
 
     const data = await readJsonResponse<{
-      error?: string;
-      settings?: AppSettings;
-    }>(response);
+      error?: string
+      settings?: AppSettings
+    }>(response)
     if (!response.ok) {
-      throw new Error(getApiErrorMessage(data, 'Failed to save settings'));
+      throw new Error(getApiErrorMessage(data, 'Failed to save settings'))
     }
 
-    const nextSettings = data.settings;
+    const nextSettings = data.settings
     if (!nextSettings) {
-      throw new Error('BladeVault did not return settings data.');
+      throw new Error('BladeVault did not return settings data.')
     }
-    setSettings(nextSettings);
+    setSettings(nextSettings)
 
     window.dispatchEvent(
       new CustomEvent<Partial<AppSettings>>(SETTINGS_UPDATED_EVENT, {
         detail: updates,
-      })
-    );
+      }),
+    )
 
-    return nextSettings;
-  }, []);
+    return nextSettings
+  }, [])
 
   const handleGoogleSignIn = async () => {
-    if (!settings) return;
+    if (!settings) return
 
-    setAuthStatus('loading');
-    setAuthMessage('Opening Google sign-in...');
+    setAuthStatus('loading')
+    setAuthMessage('Opening Google sign-in...')
 
     try {
-      const nextConfig = await refreshCloudConfig();
-      const nextAuthOrigin = nextConfig.authUrl ? new URL(nextConfig.authUrl).origin : '';
+      const nextConfig = await refreshCloudConfig()
+      const nextAuthOrigin = nextConfig.authUrl
+        ? new URL(nextConfig.authUrl).origin
+        : ''
       if (!nextConfig.authUrl || !nextAuthOrigin) {
-        throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
+        throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.')
       }
 
-      const clientOrigin = typeof window !== 'undefined' ? window.location.origin : '/';
-      const startUrl = new URL('/auth/popup/start', nextConfig.authUrl);
-      startUrl.searchParams.set('client_origin', clientOrigin);
+      const clientOrigin =
+        typeof window !== 'undefined' ? window.location.origin : '/'
+      const startUrl = new URL('/auth/popup/start', nextConfig.authUrl)
+      startUrl.searchParams.set('client_origin', clientOrigin)
 
       const popup = window.open(
         startUrl.toString(),
         'bladevault-google-auth',
-        'width=500,height=640,menubar=no,toolbar=no'
-      );
+        'width=500,height=640,menubar=no,toolbar=no',
+      )
 
       if (!popup) {
-        throw new Error('Popup was blocked. Allow popups and try again.');
+        throw new Error('Popup was blocked. Allow popups and try again.')
       }
 
-      const result = await new Promise<CloudAuthSuccessMessage>((resolve, reject) => {
-        let settled = false;
+      const result = await new Promise<CloudAuthSuccessMessage>(
+        (resolve, reject) => {
+          let settled = false
 
-        const cleanup = () => {
-          if (settled) return;
-          settled = true;
-          window.removeEventListener('message', onMessage);
-          window.clearInterval(closedPoll);
-          window.clearTimeout(timeout);
-        };
-
-        const onMessage = (event: MessageEvent) => {
-          if (event.origin !== nextAuthOrigin) return;
-          const data = event.data as CloudAuthSuccessMessage | CloudAuthErrorMessage;
-          if (!data || typeof data !== 'object' || !('type' in data)) return;
-
-          if (data.type === 'bladevault-auth-error') {
-            cleanup();
-            reject(new Error(data.error.message || 'Google sign-in failed.'));
-            return;
+          const cleanup = () => {
+            if (settled) return
+            settled = true
+            window.removeEventListener('message', onMessage)
+            window.clearInterval(closedPoll)
+            window.clearTimeout(timeout)
           }
-          if (data.type !== 'bladevault-auth-success') return;
 
-          cleanup();
-          resolve(data);
-        };
+          const onMessage = (event: MessageEvent) => {
+            if (event.origin !== nextAuthOrigin) return
+            const data = event.data as
+              CloudAuthSuccessMessage | CloudAuthErrorMessage
+            if (!data || typeof data !== 'object' || !('type' in data)) return
 
-        const closedPoll = window.setInterval(() => {
-          if (popup.closed) {
-            cleanup();
-            reject(new Error('Google sign-in was closed before completion.'));
+            if (data.type === 'bladevault-auth-error') {
+              cleanup()
+              reject(new Error(data.error.message || 'Google sign-in failed.'))
+              return
+            }
+            if (data.type !== 'bladevault-auth-success') return
+
+            cleanup()
+            resolve(data)
           }
-        }, 500);
 
-        const timeout = window.setTimeout(() => {
-          cleanup();
-          try {
-            popup.close();
-          } catch {
-            // ignore
-          }
-          reject(new Error('Google sign-in timed out. Please try again.'));
-        }, 5 * 60 * 1000);
+          const closedPoll = window.setInterval(() => {
+            if (popup.closed) {
+              cleanup()
+              reject(new Error('Google sign-in was closed before completion.'))
+            }
+          }, 500)
 
-        window.addEventListener('message', onMessage);
-      });
+          const timeout = window.setTimeout(
+            () => {
+              cleanup()
+              try {
+                popup.close()
+              } catch {
+                // ignore
+              }
+              reject(new Error('Google sign-in timed out. Please try again.'))
+            },
+            5 * 60 * 1000,
+          )
+
+          window.addEventListener('message', onMessage)
+        },
+      )
 
       const nextAuthState: CloudAuthState = {
         accessToken: result.accessToken,
         sessionToken: result.sessionToken,
         expiresAt: result.expiresAt,
         user: result.user,
-      };
-      setCloudAuthState(nextAuthState);
-      await refreshCloudSession();
-      setAuthStatus('success');
-      setAuthMessage('Signed in. Cloud backup is ready.');
+      }
+      setCloudAuthState(nextAuthState)
+      await refreshCloudSession()
+      setAuthStatus('success')
+      setAuthMessage('Signed in. Cloud backup is ready.')
     } catch (error) {
-      setAuthStatus('error');
-      setAuthMessage(formatCloudBackupError(error, getCloudRuntimeConfig().authUrl));
+      setAuthStatus('error')
+      setAuthMessage(
+        formatCloudBackupError(error, getCloudRuntimeConfig().authUrl),
+      )
     }
-  };
+  }
 
   const handleLogout = async () => {
-    if (!settings) return;
+    if (!settings) return
 
-    setSessionStatus('loading');
-    setSessionMessage('Signing out...');
+    setSessionStatus('loading')
+    setSessionMessage('Signing out...')
 
     try {
-      const nextConfig = await refreshCloudConfig();
+      const nextConfig = await refreshCloudConfig()
       if (!nextConfig.authUrl) {
-        throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.');
+        throw new Error('NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.')
       }
 
       const response = await fetch(`${nextConfig.authUrl}/api/auth/sign-out`, {
         method: 'POST',
         headers: createCloudAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({}),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(await parseApiError(response));
+        throw new Error(await parseApiError(response))
       }
 
-      setCloudSession(null);
-      clearCloudAuthState();
-      setSessionStatus('success');
-      setSessionMessage('Signed out');
+      setCloudSession(null)
+      clearCloudAuthState()
+      setSessionStatus('success')
+      setSessionMessage('Signed out')
     } catch (error) {
-      setSessionStatus('error');
-      setSessionMessage(formatCloudBackupError(error, getCloudRuntimeConfig().authUrl));
+      setSessionStatus('error')
+      setSessionMessage(
+        formatCloudBackupError(error, getCloudRuntimeConfig().authUrl),
+      )
     }
-  };
+  }
 
   const handleBackup = async () => {
-    if (!settings) return;
+    if (!settings) return
 
-    setBackupStatus('loading');
-    setBackupMessage('Uploading your local data folder...');
+    setBackupStatus('loading')
+    setBackupMessage('Uploading your local data folder...')
 
     try {
-      const { syncedAt } = await uploadCloudBackupArchive();
-      setSettings((prev) => (prev ? { ...prev, cloudBackupLastSyncedAt: syncedAt } : prev));
-      setBackupStatus('success');
-      setBackupMessage('Cloud backup is up to date.');
+      const { syncedAt } = await uploadCloudBackupArchive()
+      setSettings((prev) =>
+        prev ? { ...prev, cloudBackupLastSyncedAt: syncedAt } : prev,
+      )
+      setBackupStatus('success')
+      setBackupMessage('Cloud backup is up to date.')
     } catch (error) {
-      setBackupStatus('error');
-      setBackupMessage(formatCloudBackupError(error, getCloudRuntimeConfig().backupUrl));
+      setBackupStatus('error')
+      setBackupMessage(
+        formatCloudBackupError(error, getCloudRuntimeConfig().backupUrl),
+      )
     }
-  };
+  }
 
   const handleRestore = async () => {
-    if (!settings) return;
+    if (!settings) return
     if (
       !window.confirm(
-        'Restore from cloud and replace your current local vault on this device?'
+        'Restore from cloud and replace your current local vault on this device?',
       )
     ) {
-      return;
+      return
     }
 
-    setRestoreStatus('loading');
-    setRestoreMessage('Downloading your cloud backup...');
+    setRestoreStatus('loading')
+    setRestoreMessage('Downloading your cloud backup...')
 
     try {
-      const nextConfig = await refreshCloudConfig();
+      const nextConfig = await refreshCloudConfig()
       if (!nextConfig.backupUrl) {
-        throw new Error('NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.');
+        throw new Error('NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.')
       }
 
-      const accessToken = await refreshCloudBackupAccessToken();
+      const accessToken = await refreshCloudBackupAccessToken()
 
       const importResponse = await fetch('/api/cloud-backup/archive', {
         method: 'POST',
@@ -447,31 +495,44 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
           backupUrl: nextConfig.backupUrl,
           accessToken,
         }),
-      });
+      })
 
-      const importData = await readJsonResponse<{ error?: string }>(importResponse);
+      const importData = await readJsonResponse<{ error?: string }>(
+        importResponse,
+      )
       if (!importResponse.ok) {
-        throw new Error(getApiErrorMessage(importData, 'Failed to restore cloud backup locally'));
+        throw new Error(
+          getApiErrorMessage(
+            importData,
+            'Failed to restore cloud backup locally',
+          ),
+        )
       }
 
-      setRestoreStatus('success');
-      setRestoreMessage('Cloud backup restored locally. Reloading your vault...');
-      window.setTimeout(() => window.location.reload(), 600);
+      setRestoreStatus('success')
+      setRestoreMessage(
+        'Cloud backup restored locally. Reloading your vault...',
+      )
+      window.setTimeout(() => window.location.reload(), 600)
     } catch (error) {
-      setRestoreStatus('error');
-      setRestoreMessage(formatCloudBackupError(error, getCloudRuntimeConfig().backupUrl));
+      setRestoreStatus('error')
+      setRestoreMessage(
+        formatCloudBackupError(error, getCloudRuntimeConfig().backupUrl),
+      )
     }
-  };
+  }
 
   const handleAutoBackupToggle = async (checked: boolean) => {
-    if (!settings) return;
+    if (!settings) return
 
     try {
-      await saveSettings({ cloudAutoBackupEnabled: checked });
+      await saveSettings({ cloudAutoBackupEnabled: checked })
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Failed to save settings');
+      setLoadError(
+        error instanceof Error ? error.message : 'Failed to save settings',
+      )
     }
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -492,7 +553,12 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
             </div>
 
             <div className="flex items-center justify-end gap-2">
-              <Button variant="outline" size="sm" className="rounded-xl" onClick={onClose}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={onClose}
+              >
                 Close
               </Button>
               <Button
@@ -505,10 +571,16 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
             </div>
           </div>
         ) : (
-          <Tabs defaultValue="general" className="flex w-full flex-col overflow-hidden">
+          <Tabs
+            defaultValue="general"
+            className="flex w-full flex-col overflow-hidden"
+          >
             <div className="border-b px-7 pt-4">
               <TabsList className="h-auto flex-wrap gap-1.5 rounded-xl bg-muted/70 p-1">
-                <TabsTrigger value="general" className={settingsTabTriggerClassName}>
+                <TabsTrigger
+                  value="general"
+                  className={settingsTabTriggerClassName}
+                >
                   General
                 </TabsTrigger>
                 <TabsTrigger
@@ -537,14 +609,16 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                       <div>
                         <CardTitle className="text-sm">Local Vault</CardTitle>
                         <CardDescription>
-                          BladeVault stays local-first and stores your collection on this device.
+                          BladeVault stays local-first and stores your
+                          collection on this device.
                         </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-muted-foreground">
                     <p>
-                      Knives, compare picks, and downloaded images are saved in your local
+                      Knives, compare picks, and downloaded images are saved in
+                      your local
                       <strong className="text-foreground"> data/ </strong>
                       folder by default.
                     </p>
@@ -568,22 +642,29 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                     ) : null}
                     {isContainerized && !dockerHostDataMountPath ? (
                       <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
-                        Host mount path is not available from this container runtime. On Docker
-                        Desktop for macOS or Windows, set
-                        <strong className="text-foreground"> BLADEVAULT_HOST_DATA_DIR </strong>
+                        Host mount path is not available from this container
+                        runtime. On Docker Desktop for macOS or Windows, set
+                        <strong className="text-foreground">
+                          {' '}
+                          BLADEVAULT_HOST_DATA_DIR{' '}
+                        </strong>
                         to show the native host folder here.
                       </div>
                     ) : null}
                     <p>
-                      Use the <strong className="text-foreground">Cloud Backup</strong> tab to sign
-                      in through BladeVault Auth and store an off-device copy of your full local
-                      data folder.
+                      Use the{' '}
+                      <strong className="text-foreground">Cloud Backup</strong>{' '}
+                      tab to sign in through BladeVault Auth and store an
+                      off-device copy of your full local data folder.
                     </p>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="cloud-backup" className="mt-0 w-full space-y-6">
+              <TabsContent
+                value="cloud-backup"
+                className="mt-0 w-full space-y-6"
+              >
                 <div className="grid w-full gap-6 2xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)] 2xl:items-start">
                   <div className="min-w-0 space-y-6">
                     <Card size="sm" className="w-full rounded-2xl">
@@ -593,9 +674,12 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                             <Cloud className="h-4 w-4 text-muted-foreground" />
                           </div>
                           <div>
-                            <CardTitle className="text-sm">Cloud Backup Service</CardTitle>
+                            <CardTitle className="text-sm">
+                              Cloud Backup Service
+                            </CardTitle>
                             <CardDescription>
-                              Sign in through the auth domain, then send your full local data folder to the backup server.
+                              Sign in through the auth domain, then send your
+                              full local data folder to the backup server.
                             </CardDescription>
                           </div>
                         </div>
@@ -603,19 +687,25 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                       <CardContent className="space-y-5">
                         <div className="grid gap-3 text-xs text-muted-foreground md:grid-cols-2 lg:grid-cols-3">
                           <div className="min-h-24 rounded-xl border bg-card px-4 py-3">
-                            <div className="text-[10px] uppercase tracking-wider">Session</div>
+                            <div className="text-[10px] uppercase tracking-wider">
+                              Session
+                            </div>
                             <div className="mt-2 text-base font-medium text-foreground">
                               {cloudSession ? 'Connected' : 'Not signed in'}
                             </div>
                           </div>
                           <div className="min-h-24 rounded-xl border bg-card px-4 py-3">
-                            <div className="text-[10px] uppercase tracking-wider">Email</div>
+                            <div className="text-[10px] uppercase tracking-wider">
+                              Email
+                            </div>
                             <div className="mt-2 break-all text-base font-medium text-foreground">
                               {cloudSession?.user.email || '—'}
                             </div>
                           </div>
                           <div className="min-h-24 rounded-xl border bg-card px-4 py-3 md:col-span-2 lg:col-span-1">
-                            <div className="text-[10px] uppercase tracking-wider">Last Sync</div>
+                            <div className="text-[10px] uppercase tracking-wider">
+                              Last Sync
+                            </div>
                             <div className="mt-2 text-base font-medium text-foreground">
                               {formatSyncTime(settings.cloudBackupLastSyncedAt)}
                             </div>
@@ -623,7 +713,10 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         </div>
 
                         <div className="flex flex-col gap-3 rounded-xl border bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                          <StatusPill status={sessionStatus} message={sessionMessage} />
+                          <StatusPill
+                            status={sessionStatus}
+                            message={sessionMessage}
+                          />
                           <Button
                             variant="outline"
                             size="sm"
@@ -639,7 +732,9 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                           <label className="flex items-start gap-3">
                             <Checkbox
                               checked={settings.cloudAutoBackupEnabled}
-                              onCheckedChange={(checked) => handleAutoBackupToggle(checked === true)}
+                              onCheckedChange={(checked) =>
+                                handleAutoBackupToggle(checked === true)
+                              }
                               disabled={!cloudSession}
                               aria-label="Enable auto backup"
                             />
@@ -648,8 +743,9 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                                 Enable auto backup
                               </span>
                               <span className="block text-xs text-muted-foreground">
-                                Off by default. When enabled, BladeVault silently uploads a full
-                                backup after you add, edit, or delete a knife while you are signed in.
+                                Off by default. When enabled, BladeVault
+                                silently uploads a full backup after you add,
+                                edit, or delete a knife while you are signed in.
                               </span>
                             </span>
                           </label>
@@ -660,9 +756,13 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                     {cloudSession && (
                       <Card size="sm" className="w-full rounded-2xl">
                         <CardHeader>
-                          <CardTitle className="text-sm">Sync Actions</CardTitle>
+                          <CardTitle className="text-sm">
+                            Sync Actions
+                          </CardTitle>
                           <CardDescription>
-                            While signed in, BladeVault can auto-upload after knife changes, and you can also upload or restore manually here.
+                            While signed in, BladeVault can auto-upload after
+                            knife changes, and you can also upload or restore
+                            manually here.
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -697,8 +797,14 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                           </div>
 
                           <div className="space-y-2 rounded-xl border bg-muted/20 px-4 py-3">
-                            <StatusPill status={backupStatus} message={backupMessage} />
-                            <StatusPill status={restoreStatus} message={restoreMessage} />
+                            <StatusPill
+                              status={backupStatus}
+                              message={backupMessage}
+                            />
+                            <StatusPill
+                              status={restoreStatus}
+                              message={restoreMessage}
+                            />
                           </div>
                         </CardContent>
                       </Card>
@@ -707,23 +813,30 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
 
                   <div className="min-w-0 space-y-6">
                     {cloudSession ? (
-                      <Card size="sm" className="w-full rounded-2xl xl:sticky xl:top-0">
+                      <Card
+                        size="sm"
+                        className="w-full rounded-2xl xl:sticky xl:top-0"
+                      >
                         <CardHeader>
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border bg-card">
-                            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg border bg-card">
+                              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <div className="min-w-0">
+                              <CardTitle className="text-sm">Account</CardTitle>
+                              <CardDescription className="break-all">
+                                Signed in as{' '}
+                                {cloudSession.user.name ||
+                                  cloudSession.user.email}
+                              </CardDescription>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <CardTitle className="text-sm">Account</CardTitle>
-                            <CardDescription className="break-all">
-                              Signed in as {cloudSession.user.name || cloudSession.user.email}
-                            </CardDescription>
-                          </div>
-                        </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="rounded-xl border bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
-                            Cloud backups are tied to this BladeVault account and use the current auth and backup domains shown on the left.
+                            Cloud backups are tied to this BladeVault account
+                            and use the current auth and backup domains shown on
+                            the left.
                           </div>
                           <Button
                             variant="outline"
@@ -737,22 +850,31 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                         </CardContent>
                       </Card>
                     ) : (
-                      <Card size="sm" className="w-full rounded-2xl xl:sticky xl:top-0">
-                      <CardHeader>
-                        <CardTitle className="text-sm">Sign In To Cloud Backup</CardTitle>
-                        <CardDescription>
-                            Cloud backup stays off until you sign in. Use Google on the auth domain if you want to enable off-device sync.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {cloudConfigError && (
-                          <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                            {cloudConfigError}
-                          </div>
-                        )}
-                        <div className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
-                          Your first Google sign-in creates the account automatically. After that,
-                            BladeVault can upload and restore your full local data folder, including downloaded images.
+                      <Card
+                        size="sm"
+                        className="w-full rounded-2xl xl:sticky xl:top-0"
+                      >
+                        <CardHeader>
+                          <CardTitle className="text-sm">
+                            Sign In To Cloud Backup
+                          </CardTitle>
+                          <CardDescription>
+                            Cloud backup stays off until you sign in. Use Google
+                            on the auth domain if you want to enable off-device
+                            sync.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {cloudConfigError && (
+                            <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                              {cloudConfigError}
+                            </div>
+                          )}
+                          <div className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
+                            Your first Google sign-in creates the account
+                            automatically. After that, BladeVault can upload and
+                            restore your full local data folder, including
+                            downloaded images.
                           </div>
 
                           <Button
@@ -766,9 +888,13 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
                           </Button>
 
                           <div className="space-y-2 rounded-xl border bg-muted/20 px-4 py-3">
-                            <StatusPill status={authStatus} message={authMessage} />
+                            <StatusPill
+                              status={authStatus}
+                              message={authMessage}
+                            />
                             <p className="text-xs text-muted-foreground">
-                              The popup returns a session token for the auth API and a JWT for the backup server.
+                              The popup returns a session token for the auth API
+                              and a JWT for the backup server.
                             </p>
                           </div>
                         </CardContent>
@@ -787,7 +913,12 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
             )}
 
             <div className="flex items-center justify-end gap-2 border-t bg-muted/20 px-7 py-4">
-              <Button variant="outline" size="sm" className="rounded-xl" onClick={onClose}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={onClose}
+              >
                 Close
               </Button>
             </div>
@@ -795,5 +926,5 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
         )}
       </DialogContent>
     </Dialog>
-  );
+  )
 }

@@ -29,7 +29,7 @@ export async function readJsonResponse<T>(response: Response): Promise<T> {
   } catch {
     const status = response.status ? ` (HTTP ${response.status})` : ''
     throw new Error(
-      `BladeVault received an invalid server response${status}. ${summarizeResponseText(text)}`
+      `BladeVault received an invalid server response${status}. ${summarizeResponseText(text)}`,
     )
   }
 }

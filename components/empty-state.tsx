@@ -1,4 +1,9 @@
-import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardTitle,
+} from '@/components/ui/card'
 
 export function EmptyState({
   title,
@@ -6,10 +11,10 @@ export function EmptyState({
   action,
   icon,
 }: {
-  title: string;
-  description?: string;
-  action?: React.ReactNode;
-  icon?: React.ReactNode;
+  title: string
+  description?: string
+  action?: React.ReactNode
+  icon?: React.ReactNode
 }) {
   return (
     <Card className="border-dashed bg-muted/50">
@@ -17,10 +22,12 @@ export function EmptyState({
         {icon && <div className="mb-3 text-muted-foreground">{icon}</div>}
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {description && (
-          <CardDescription className="mt-1 max-w-sm">{description}</CardDescription>
+          <CardDescription className="mt-1 max-w-sm">
+            {description}
+          </CardDescription>
         )}
         {action && <div className="mt-4">{action}</div>}
       </CardContent>
     </Card>
-  );
+  )
 }

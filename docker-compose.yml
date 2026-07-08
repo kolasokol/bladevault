@@ -6,7 +6,7 @@ services:
     image: ghcr.io/kolasokol/bladevault:latest
     container_name: bladevault
     ports:
-      - "5500:3000"
+      - '5500:3000'
     volumes:
       - bladevault-data:/app/data
     environment:

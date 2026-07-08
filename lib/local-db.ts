@@ -1,54 +1,66 @@
-import Database from 'better-sqlite3';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
-import { normalizeKnifeTextFields } from '@/lib/knife-text';
+import Database from 'better-sqlite3'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+import { normalizeKnifeTextFields } from '@/lib/knife-text'
 
-const LEGACY_DATA_DIR = 'data';
+function joinProjectPath(...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ process.cwd(), ...segments)
+}
+
+const LEGACY_DATA_DIR = joinProjectPath('data')
+
+function joinRuntimePath(basePath: string, ...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ basePath, ...segments)
+}
 
 function getDefaultHomeDataDir(): string {
-  const homeDir = os.homedir().trim();
-  return homeDir ? path.join(homeDir, 'BladeVault', 'data') : LEGACY_DATA_DIR;
+  const homeDir = os.homedir().trim()
+  return homeDir
+    ? joinRuntimePath(homeDir, 'BladeVault', 'data')
+    : LEGACY_DATA_DIR
 }
 
 function hasExistingDb(dataDir: string): boolean {
-  return fs.existsSync(path.join(dataDir, 'bladevault.sqlite'));
+  return fs.existsSync(joinRuntimePath(dataDir, 'bladevault.sqlite'))
 }
 
 function resolveDataDir(): string {
-  const configuredDataDir = process.env.BLADEVAULT_DATA_DIR?.trim();
+  const configuredDataDir = process.env.BLADEVAULT_DATA_DIR?.trim()
   if (configuredDataDir) {
-    return configuredDataDir;
+    return path.isAbsolute(configuredDataDir)
+      ? configuredDataDir
+      : joinProjectPath(configuredDataDir)
   }
 
-  const homeDataDir = getDefaultHomeDataDir();
+  const homeDataDir = getDefaultHomeDataDir()
   if (hasExistingDb(homeDataDir)) {
-    return homeDataDir;
+    return homeDataDir
   }
 
   if (hasExistingDb(LEGACY_DATA_DIR)) {
-    return LEGACY_DATA_DIR;
+    return LEGACY_DATA_DIR
   }
 
-  return homeDataDir;
+  return homeDataDir
 }
 
-export const DATA_DIR = resolveDataDir();
-export const DB_PATH = path.join(DATA_DIR, 'bladevault.sqlite');
+export const DATA_DIR = resolveDataDir()
+export const DB_PATH = joinRuntimePath(DATA_DIR, 'bladevault.sqlite')
 
-let db: Database.Database | null = null;
-let restoreInProgress = false;
+let db: Database.Database | null = null
+let restoreInProgress = false
 
 export function beginLocalRestore(): void {
-  restoreInProgress = true;
+  restoreInProgress = true
 }
 
 export function endLocalRestore(): void {
-  restoreInProgress = false;
+  restoreInProgress = false
 }
 
 export function getLocalDataDirPath(): string {
-  return path.resolve(DATA_DIR);
+  return DATA_DIR
 }
 
 export function isContainerizedRuntime(): boolean {
@@ -56,80 +68,78 @@ export function isContainerizedRuntime(): boolean {
     fs.existsSync('/.dockerenv') ||
     fs.existsSync('/run/.containerenv') ||
     Boolean(process.env.KUBERNETES_SERVICE_HOST)
-  );
+  )
 }
 
 function decodeMountInfoPath(value: string): string {
   return value.replace(/\\([0-7]{3})/g, (_, octalValue: string) =>
-    String.fromCharCode(Number.parseInt(octalValue, 8))
-  );
+    String.fromCharCode(Number.parseInt(octalValue, 8)),
+  )
 }
 
 function readMountInfoForPath(targetPath: string) {
   try {
-    const lines = fs.readFileSync('/proc/self/mountinfo', 'utf8').split('\n');
-    const resolvedTarget = path.resolve(targetPath);
-    let bestMatch:
-      | {
-          mountPoint: string;
-          root: string;
-          source: string;
-        }
-      | null = null;
+    const lines = fs.readFileSync('/proc/self/mountinfo', 'utf8').split('\n')
+    const resolvedTarget = path.normalize(targetPath)
+    let bestMatch: {
+      mountPoint: string
+      root: string
+      source: string
+    } | null = null
 
     for (const line of lines) {
-      if (!line) continue;
+      if (!line) continue
 
-      const separatorIndex = line.indexOf(' - ');
-      if (separatorIndex === -1) continue;
+      const separatorIndex = line.indexOf(' - ')
+      if (separatorIndex === -1) continue
 
-      const left = line.slice(0, separatorIndex).split(' ');
-      const right = line.slice(separatorIndex + 3).split(' ');
+      const left = line.slice(0, separatorIndex).split(' ')
+      const right = line.slice(separatorIndex + 3).split(' ')
 
-      if (left.length < 5 || right.length < 2) continue;
+      if (left.length < 5 || right.length < 2) continue
 
-      const mountPoint = decodeMountInfoPath(left[4]);
+      const mountPoint = decodeMountInfoPath(left[4])
       if (
         resolvedTarget !== mountPoint &&
         !resolvedTarget.startsWith(`${mountPoint}${path.sep}`)
       ) {
-        continue;
+        continue
       }
 
       if (bestMatch && mountPoint.length <= bestMatch.mountPoint.length) {
-        continue;
+        continue
       }
 
       bestMatch = {
         mountPoint,
         root: decodeMountInfoPath(left[3]),
         source: decodeMountInfoPath(right[1]),
-      };
+      }
     }
 
-    return bestMatch;
+    return bestMatch
   } catch {
-    return null;
+    return null
   }
 }
 
 export function getDockerHostDataMountPath(): string | null {
-  const configuredMountPath = process.env.BLADEVAULT_HOST_DATA_DIR?.trim();
+  const configuredMountPath = process.env.BLADEVAULT_HOST_DATA_DIR?.trim()
   if (configuredMountPath) {
-    return configuredMountPath;
+    return configuredMountPath
   }
 
   if (!isContainerizedRuntime()) {
-    return null;
+    return null
   }
 
-  const mountInfo = readMountInfoForPath(getLocalDataDirPath());
+  const mountInfo = readMountInfoForPath(getLocalDataDirPath())
   if (!mountInfo || mountInfo.mountPoint !== getLocalDataDirPath()) {
-    return null;
+    return null
   }
 
   if (mountInfo.root && mountInfo.root !== '/') {
-    return mountInfo.root;
+    return mountInfo.root
   }
 
   if (
@@ -137,102 +147,112 @@ export function getDockerHostDataMountPath(): string | null {
     mountInfo.source !== 'none' &&
     !mountInfo.source.startsWith('/dev/')
   ) {
-    return mountInfo.source;
+    return mountInfo.source
   }
 
-  return null;
+  return null
 }
 
 export function getLocalDb(): Database.Database {
   if (restoreInProgress) {
-    throw new Error('Local database restore is in progress. Please try again in a moment.');
+    throw new Error(
+      'Local database restore is in progress. Please try again in a moment.',
+    )
   }
 
   if (!db) {
-    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    initSchema(db);
+    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
+    db = new Database(DB_PATH)
+    db.pragma('journal_mode = WAL')
+    initSchema(db)
   }
-  return db;
+  return db
 }
 
 export function closeLocalDb(): void {
-  if (!db) return;
-  db.close();
-  db = null;
+  if (!db) return
+  db.close()
+  db = null
 }
 
 function migrateSchema(database: Database.Database) {
   const columns = database
     .prepare("SELECT name FROM pragma_table_info('knives')")
-    .all() as Array<{ name: string }>;
-  const hasSourceUrl = columns.some((col) => col.name === 'source_url');
+    .all() as Array<{ name: string }>
+  const hasSourceUrl = columns.some((col) => col.name === 'source_url')
   if (!hasSourceUrl) {
-    database.exec(`ALTER TABLE knives ADD COLUMN source_url TEXT NOT NULL DEFAULT ''`);
+    database.exec(
+      `ALTER TABLE knives ADD COLUMN source_url TEXT NOT NULL DEFAULT ''`,
+    )
   }
-  const hasPinned = columns.some((col) => col.name === 'pinned');
+  const hasPinned = columns.some((col) => col.name === 'pinned')
   if (!hasPinned) {
-    database.exec(`ALTER TABLE knives ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0`);
+    database.exec(
+      `ALTER TABLE knives ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0`,
+    )
   }
 
   const tables = database
     .prepare("SELECT name FROM sqlite_master WHERE type='table'")
-    .all() as Array<{ name: string }>;
-  const hasCompareList = tables.some((t) => t.name === 'compare_list');
+    .all() as Array<{ name: string }>
+  const hasCompareList = tables.some((t) => t.name === 'compare_list')
   if (!hasCompareList) {
     database.exec(`
       CREATE TABLE compare_list (
         knife_id TEXT PRIMARY KEY,
         added_at TEXT NOT NULL
       );
-    `);
+    `)
   }
 
-  normalizeKnifeRows(database);
+  normalizeKnifeRows(database)
 }
 
 function normalizeKnifeRows(database: Database.Database) {
-  const rows = database.prepare(`
+  const rows = database
+    .prepare(
+      `
     SELECT id, name, brand, blade_style, handle_material, specs, description, source_url
     FROM knives
-  `).all() as Array<{
-    id: string;
-    name: string;
-    brand: string;
-    blade_style: string;
-    handle_material: string;
-    specs: string;
-    description: string;
-    source_url: string;
-  }>;
+  `,
+    )
+    .all() as Array<{
+    id: string
+    name: string
+    brand: string
+    blade_style: string
+    handle_material: string
+    specs: string
+    description: string
+    source_url: string
+  }>
 
   if (rows.length === 0) {
-    return;
+    return
   }
 
   const updateKnife = database.prepare(`
     UPDATE knives
     SET name = ?, brand = ?, blade_style = ?, handle_material = ?, specs = ?, description = ?, source_url = ?
     WHERE id = ?
-  `);
+  `)
 
   const normalizeRows = database.transaction((items: typeof rows) => {
     for (const row of items) {
       const specs = JSON.parse(row.specs) as Partial<{
-        weight: string;
-        overallLength: string;
-        bladeLength: string;
-        bladeThickness?: string;
-        bladeCoating?: string;
-        bladeMaterial?: string;
-        lockingMechanism?: string;
-        designer?: string;
-        modelNumber?: string;
-        handleLength?: string;
-        hardness?: string;
-        country: string;
-      }>;
+        weight: string
+        overallLength: string
+        bladeLength: string
+        bladeThickness?: string
+        bladeCoating?: string
+        bladeMaterial?: string
+        lockingMechanism?: string
+        designer?: string
+        modelNumber?: string
+        handleLength?: string
+        hardness?: string
+        country: string
+      }>
       const normalized = normalizeKnifeTextFields({
         name: row.name,
         brand: row.brand,
@@ -241,9 +261,9 @@ function normalizeKnifeRows(database: Database.Database) {
         description: row.description,
         sourceUrl: row.source_url,
         specs,
-      });
+      })
 
-      const normalizedSpecs = JSON.stringify(normalized.specs ?? {});
+      const normalizedSpecs = JSON.stringify(normalized.specs ?? {})
       const hasChanges =
         normalized.name !== row.name ||
         normalized.brand !== row.brand ||
@@ -251,10 +271,10 @@ function normalizeKnifeRows(database: Database.Database) {
         normalized.handleMaterial !== row.handle_material ||
         normalized.description !== row.description ||
         normalized.sourceUrl !== row.source_url ||
-        normalizedSpecs !== row.specs;
+        normalizedSpecs !== row.specs
 
       if (!hasChanges) {
-        continue;
+        continue
       }
 
       updateKnife.run(
@@ -265,12 +285,12 @@ function normalizeKnifeRows(database: Database.Database) {
         normalizedSpecs,
         normalized.description,
         normalized.sourceUrl,
-        row.id
-      );
+        row.id,
+      )
     }
-  });
+  })
 
-  normalizeRows(rows);
+  normalizeRows(rows)
 }
 
 function initSchema(database: Database.Database) {
@@ -289,14 +309,14 @@ function initSchema(database: Database.Database) {
       source_url TEXT NOT NULL DEFAULT '',
       pinned INTEGER NOT NULL DEFAULT 0
     );
-  `);
+  `)
 
   database.exec(`
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
-  `);
+  `)
 
-  migrateSchema(database);
+  migrateSchema(database)
 }

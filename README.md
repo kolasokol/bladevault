@@ -163,6 +163,7 @@ podman run -d `
 ```
 
 Open [http://localhost:5500](http://localhost:5500) after the container starts.
+
 ## Run DMG on macOS:
 
 If you downloaded the macOS DMG:
@@ -245,9 +246,6 @@ until you move the file.
 
 ---
 
-
-
-
 ## 💾 Your Data
 
 #### Local mode (default)
@@ -279,7 +277,6 @@ The app remains local-first. Cloud backup keeps an off-device copy without askin
 ---
 
 ## 📄 License
-
 
 ---
 
