@@ -4,6 +4,23 @@ const isMacHost = process.platform === 'darwin'
 const isMacSigningEnabled = process.env.BLADEVAULT_MAC_SIGN === '1'
 const isMacNotarizeEnabled = process.env.BLADEVAULT_MAC_NOTARIZE === '1'
 const isUnsignedMacBuild = isMacHost && !isMacSigningEnabled
+const dmgWindow = {
+  width: 920,
+  height: 720,
+}
+const dmgContents = [
+  {
+    x: 250,
+    y: 558,
+    type: 'file',
+  },
+  {
+    x: 670,
+    y: 558,
+    type: 'link',
+    path: '/Applications',
+  },
+]
 
 const config = {
   appId: 'com.bladevault.desktop',
@@ -34,24 +51,12 @@ const config = {
   dmg: {
     background: 'background.png',
     window: {
-      width: 540,
-      height: 420,
+      width: dmgWindow.width,
+      height: dmgWindow.height,
     },
-    contents: [
-      {
-        x: 150,
-        y: 334,
-        type: 'file',
-      },
-      {
-        x: 390,
-        y: 334,
-        type: 'link',
-        path: '/Applications',
-      },
-    ],
-    iconSize: 92,
-    iconTextSize: 14,
+    contents: dmgContents,
+    iconSize: 108,
+    iconTextSize: 15,
     title: '${productName} ${version}',
   },
   afterSign:

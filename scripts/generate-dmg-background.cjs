@@ -1,58 +1,27 @@
 const fs = require('fs')
 const path = require('path')
-const { execFileSync } = require('child_process')
+const sharp = require('sharp')
 
 const projectRoot = process.cwd()
 const buildRoot = path.join(projectRoot, 'build')
 const sourcePath = path.join(buildRoot, 'dmg-background.svg')
-const backgroundWidth = 540
-const backgroundHeight = 420
-
-function commandExists(command) {
-  try {
-    execFileSync('which', [command], { stdio: 'ignore' })
-    return true
-  } catch {
-    return false
-  }
-}
+const backgroundWidth = 920
+const backgroundHeight = 720
 
 function renderBackground(size, outputName) {
   const targetPath = path.join(buildRoot, outputName)
   const height = Math.round(size * (backgroundHeight / backgroundWidth))
 
-  execFileSync(
-    'sips',
-    [
-      '-s',
-      'format',
-      'png',
-      '-z',
-      String(height),
-      String(size),
-      sourcePath,
-      '--out',
-      targetPath,
-    ],
-    { stdio: 'ignore' },
-  )
+  return sharp(sourcePath).resize(size, height).png().toFile(targetPath)
 }
 
-function generateDmgBackground() {
-  if (process.platform !== 'darwin') {
-    return
-  }
-
+async function generateDmgBackground() {
   if (!fs.existsSync(sourcePath)) {
     throw new Error(`Missing DMG background source at ${sourcePath}`)
   }
 
-  if (!commandExists('sips')) {
-    throw new Error('sips is required to generate the DMG background on macOS')
-  }
-
-  renderBackground(540, 'background.png')
-  renderBackground(1080, 'background@2x.png')
+  await renderBackground(920, 'background.png')
+  await renderBackground(1840, 'background@2x.png')
 }
 
 module.exports = {
@@ -60,5 +29,8 @@ module.exports = {
 }
 
 if (require.main === module) {
-  generateDmgBackground()
+  generateDmgBackground().catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
 }

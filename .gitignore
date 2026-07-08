@@ -15,6 +15,7 @@ pnpm-workspace.yaml
 # Generated DMG assets
 build/background.png
 build/background@2x.png
+build/Run First Launch.app/
 
 # Environment secrets
 .env*

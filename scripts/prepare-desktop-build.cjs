@@ -23,13 +23,20 @@ function copyDirectory(source, destination) {
   fs.cpSync(source, destination, { recursive: true })
 }
 
-ensureExists(standaloneRoot, 'standalone build output')
-ensureExists(nextStaticRoot, 'Next static output')
+async function main() {
+  ensureExists(standaloneRoot, 'standalone build output')
+  ensureExists(nextStaticRoot, 'Next static output')
 
-copyDirectory(nextStaticRoot, standaloneStaticRoot)
+  copyDirectory(nextStaticRoot, standaloneStaticRoot)
 
-if (fs.existsSync(publicRoot)) {
-  copyDirectory(publicRoot, standalonePublicRoot)
+  if (fs.existsSync(publicRoot)) {
+    copyDirectory(publicRoot, standalonePublicRoot)
+  }
+
+  await generateDmgBackground()
 }
 
-generateDmgBackground()
+main().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})

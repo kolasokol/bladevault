@@ -1,58 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="540" height="420" viewBox="0 0 540 420" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="720" viewBox="0 0 920 720" role="img" aria-labelledby="title desc">
   <title id="title">BladeVault DMG background</title>
-  <desc id="desc">Installer instructions for dragging BladeVault into Applications and launching it from Terminal.</desc>
+  <desc id="desc">Installer instructions for dragging BladeVault into Applications.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#FAFAF8"/>
-      <stop offset="100%" stop-color="#F0F1EC"/>
+      <stop offset="100%" stop-color="#EEF0E8"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#B6D53D"/>
-      <stop offset="100%" stop-color="#8FB820"/>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FAFBF8"/>
+      <stop offset="100%" stop-color="#F4F6F0"/>
     </linearGradient>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#18191D" flood-opacity="0.10"/>
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#18191D" flood-opacity="0.10"/>
     </filter>
     <style>
       .sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-      .mono { font-family: 'SF Mono', SFMono-Regular, ui-monospace, Menlo, Monaco, monospace; }
-      .title { fill: #18191D; font-size: 28px; font-weight: 700; }
-      .subtitle { fill: #5F6470; font-size: 14px; }
-      .step-label { fill: #86A91E; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; }
-      .step-title { fill: #18191D; font-size: 21px; font-weight: 650; }
-      .step-body { fill: #464B57; font-size: 13px; }
-      .code { fill: #18191D; font-size: 11.25px; }
-      .muted { fill: #6B7180; font-size: 12px; }
+      .title { fill: #18191D; font-size: 44px; font-weight: 700; }
+      .subtitle { fill: #5F6470; font-size: 22px; }
+      .step-label { fill: #86A91E; font-size: 17px; font-weight: 700; letter-spacing: 2.4px; }
+      .step-title { fill: #18191D; font-size: 24px; font-weight: 650; }
+      .step-body { fill: #525865; font-size: 17px; }
+      .muted { fill: #707684; font-size: 15px; }
+      .chip { fill: #FFFFFF; font-size: 15px; font-weight: 700; }
+      .lane-label { fill: #6B7180; font-size: 14px; letter-spacing: 1.6px; font-weight: 700; }
     </style>
   </defs>
 
-  <rect width="540" height="420" fill="url(#bg)"/>
-  <circle cx="510" cy="38" r="78" fill="#FFFFFF" opacity="0.45"/>
-  <circle cx="32" cy="380" r="96" fill="#FFFFFF" opacity="0.32"/>
+  <rect width="920" height="720" fill="url(#bg)"/>
+  <circle cx="846" cy="104" r="172" fill="#FFFFFF" opacity="0.44"/>
+  <circle cx="120" cy="648" r="180" fill="#FFFFFF" opacity="0.34"/>
+  <circle cx="764" cy="626" r="122" fill="#FFFFFF" opacity="0.18"/>
 
-  <rect x="24" y="20" width="492" height="238" rx="28" fill="#FFFFFF" opacity="0.96" filter="url(#shadow)"/>
-  <rect x="24" y="20" width="492" height="238" rx="28" fill="none" stroke="#D8DCD1"/>
+  <rect x="64" y="54" width="792" height="316" rx="30" fill="#FFFFFF" opacity="0.98" filter="url(#shadow)"/>
+  <rect x="64" y="54" width="792" height="316" rx="30" fill="none" stroke="#D8DCD1"/>
 
-  <rect x="42" y="38" width="124" height="28" rx="14" fill="url(#accent)"/>
-  <text class="sans" x="104" y="57" text-anchor="middle" font-size="13" font-weight="700" fill="#18191D">BLADEVAULT DMG</text>
+  <text class="sans title" x="460" y="124" text-anchor="middle">Install BladeVault</text>
+  <text class="sans subtitle" x="460" y="158" text-anchor="middle">Drag BladeVault into Applications to install it.</text>
 
-  <text class="sans title" x="270" y="88" text-anchor="middle">Install BladeVault</text>
-  <text class="sans subtitle" x="270" y="112" text-anchor="middle">A quick two-step setup for the first launch on macOS.</text>
+  <rect x="96" y="190" width="728" height="118" rx="24" fill="url(#panel)" stroke="#DCE0D7"/>
 
-  <text class="sans step-label" x="48" y="140">STEP 1</text>
-  <text class="sans step-title" x="48" y="166">Drag BladeVault.app into Applications.</text>
-  <text class="sans step-body" x="48" y="188">Then open BladeVault from Applications after the copy finishes.</text>
+  <text class="sans step-label" x="126" y="226">INSTALL</text>
+  <text class="sans step-title" x="126" y="260">Drag BladeVault.app</text>
+  <text class="sans step-body" x="126" y="286">onto the Applications folder below.</text>
 
-  <text class="sans step-label" x="48" y="212">STEP 2</text>
-  <text class="sans step-body" x="48" y="234">If macOS blocks the first launch, open Terminal and run:</text>
+  <rect x="158" y="430" width="214" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
+  <rect x="548" y="430" width="214" height="152" rx="28" fill="#FFFFFF" opacity="0.42" stroke="#E2E6DD"/>
 
-  <rect x="48" y="244" width="444" height="50" rx="16" fill="#F7F8F4" stroke="#D9DDD3"/>
-  <text class="mono code" x="64" y="264">xattr -d com.apple.quarantine "/Applications/BladeVault.app"</text>
-  <text class="mono code" x="64" y="282">open "/Applications/BladeVault.app"</text>
+  <text class="sans lane-label" x="250" y="478" text-anchor="middle">BLADEVAULT</text>
+  <text class="sans lane-label" x="670" y="478" text-anchor="middle">APPLICATIONS</text>
 
-  <g transform="translate(0 2)" opacity="0.9">
-    <path d="M221 356 H292" fill="none" stroke="#70757F" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 9"/>
-    <path d="M282 341 L304 356 L282 371" fill="none" stroke="#70757F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g opacity="0.86">
+    <path d="M360 548 H560" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-dasharray="18 14"/>
+    <path d="M528 518 L578 548 L528 578" fill="none" stroke="#7A808B" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>
