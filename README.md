@@ -168,6 +168,9 @@ Open [http://localhost:5500](http://localhost:5500) after the container starts.
 
 If you downloaded the macOS DMG:
 
+Permanent latest-release download:
+[BladeVault.dmg](https://github.com/kolasokol/bladevault/releases/latest/download/BladeVault.dmg)
+
 1. Open the `.dmg` file.
 2. Drag `BladeVault.app` into `Applications`.
 3. In the DMG window, double-click `Open BladeVault.command`.
@@ -189,6 +192,9 @@ If macOS still blocks the first launch, try starting it once from Terminal:
 ## Run Installer on Windows:
 
 If you downloaded the Windows installer:
+
+Permanent latest-release download:
+[BladeVault.exe](https://github.com/kolasokol/bladevault/releases/latest/download/BladeVault.exe)
 
 1. Open the `.exe` file.
 2. Follow the installer prompts.

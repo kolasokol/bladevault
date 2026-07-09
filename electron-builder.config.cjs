@@ -42,9 +42,6 @@ const config = {
     'node_modules/**/*.node',
     'node_modules/better-sqlite3/**/*',
   ],
-  artifactName: isUnsignedMacBuild
-    ? 'BladeVault-${version}-${os}-${arch}-unsigned.${ext}'
-    : 'BladeVault-${version}-${os}-${arch}.${ext}',
   directories: {
     output: 'dist/desktop',
     buildResources: 'build',
@@ -53,6 +50,7 @@ const config = {
   mac: {
     category: 'public.app-category.utilities',
     target: ['dmg'],
+    artifactName: 'BladeVault.${ext}',
     identity: isUnsignedMacBuild ? null : undefined,
     hardenedRuntime: isMacSigningEnabled,
     gatekeeperAssess: false,
@@ -83,6 +81,7 @@ const config = {
     ],
   },
   nsis: {
+    artifactName: 'BladeVault.${ext}',
     oneClick: false,
     allowToChangeInstallationDirectory: true,
   },

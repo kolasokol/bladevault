@@ -43,7 +43,6 @@ const compareRows = [
   { label: 'Country', key: 'specs.country' },
 ] as const
 
-const COMPARE_LIMIT = 12
 type CompareRowKey = (typeof compareRows)[number]['key']
 
 function getRowValue(knife: Knife, rowKey: CompareRowKey): string {
@@ -76,11 +75,13 @@ export default function ComparePage() {
   const comparedKnives = compareIds
     .map((id) => knives.find((k) => k.id === id))
     .filter((k): k is Knife => Boolean(k))
+  const availableKnives = knives
+    .filter((knife) => !compareIds.includes(knife.id))
+    .sort((a, b) => a.brand.localeCompare(b.brand))
 
-  const handleSelect = (slotIndex: number, id: string) => {
+  const handleSelect = (id: string) => {
     if (!id) return
     if (compareIds.includes(id)) return
-    if (compareIds.length >= COMPARE_LIMIT) return
     addToCompare(id)
   }
 
@@ -93,8 +94,7 @@ export default function ComparePage() {
   }
 
   const hasComparedKnives = comparedKnives.length > 0
-  const showAddSlot = compareIds.length < COMPARE_LIMIT
-  const slotCount = compareIds.length + (showAddSlot ? 1 : 0)
+  const showAddSlot = availableKnives.length > 0
 
   const handleExportPdf = async () => {
     if (!hasComparedKnives) return
@@ -269,7 +269,7 @@ export default function ComparePage() {
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
       <PageHeader
         title="Comparison Check"
-        description="Select up to 12 knives to compare specifications side-by-side."
+        description="Select knives to compare specifications side-by-side."
       />
 
       {knives.length === 0 ? (
@@ -343,22 +343,17 @@ export default function ComparePage() {
                     </span>
                     <Select
                       value=""
-                      onValueChange={(value) =>
-                        handleSelect(slotCount - 1, value ?? '')
-                      }
+                      onValueChange={(value) => handleSelect(value ?? '')}
                     >
                       <SelectTrigger className="w-48" size="sm">
                         <SelectValue placeholder="Select a knife" />
                       </SelectTrigger>
                       <SelectContent>
-                        {knives
-                          .filter((k) => !compareIds.includes(k.id))
-                          .sort((a, b) => a.brand.localeCompare(b.brand))
-                          .map((knife) => (
-                            <SelectItem key={knife.id} value={knife.id}>
-                              {knife.brand} {knife.name}
-                            </SelectItem>
-                          ))}
+                        {availableKnives.map((knife) => (
+                          <SelectItem key={knife.id} value={knife.id}>
+                            {knife.brand} {knife.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
