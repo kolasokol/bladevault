@@ -1,7 +1,7 @@
 import { readJsonResponse } from '@/lib/api-response'
 
-export const FALLBACK_CLOUD_AUTH_URL = 'https://auth.tkweb.dev'
-export const FALLBACK_CLOUD_BACKUP_URL = 'https://backup.tkweb.dev'
+export const FALLBACK_CLOUD_AUTH_URL = 'https://auth.bladevault.pro'
+export const FALLBACK_CLOUD_BACKUP_URL = 'https://backup.bladevault.pro'
 
 export const DEFAULT_CLOUD_AUTH_URL =
   process.env.NEXT_PUBLIC_BLADEVAULT_AUTH_URL?.trim() || FALLBACK_CLOUD_AUTH_URL
