@@ -46,15 +46,17 @@ If you only want to try the app, Docker is the quickest setup. If you want to de
 
 ## Demo Video
 
-<video src="https://video.bladevault.pro/overview.mp4" controls preload="metadata" width="100%"></video>
+<div align="center">
 
-<p>
-  <a href="https://video.bladevault.pro/overview.mp4">Direct video link</a>
-</p>
+  <a href="https://youtu.be/yurbpv0JY80">
+    <img src="https://img.youtube.com/vi/yurbpv0JY80/maxresdefault.jpg" alt="BladeVault demo video" width="80%" />
+  </a>
 
-<p>
-  <a href="https://youtu.be/yurbpv0JY80">YouTube mirror</a>
-</p>
+  <p>
+    <a href="https://video.bladevault.pro/overview.mp4">Direct video link</a> · <a href="https://youtu.be/yurbpv0JY80">YouTube mirror</a>
+  </p>
+
+</div>
 
 ---
 
