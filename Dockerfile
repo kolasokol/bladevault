@@ -24,6 +24,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 ENV BLADEVAULT_DATA_DIR=/app/data
+# Tell Playwright's interactive scraper to use a virtual display when no real
+# X server is available (e.g. inside Docker).
+ENV DISPLAY=:99
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
@@ -34,8 +37,14 @@ COPY --from=builder /app/.next/static ./.next/static
 # Chromium can launch in the runner image.
 COPY --from=builder /app/node_modules/playwright-core ./node_modules/playwright-core
 
+# xvfb provides a virtual framebuffer so the interactive headed browser can run
+# in a container without a real display.
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends xvfb && \
+  rm -rf /var/lib/apt/lists/*
+
 RUN mkdir -p /app/data
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1280x800x24 >/dev/null 2>&1 & node server.js"]

@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server'
-import {
-  scrapeProduct,
-  isShopifyProductPage,
-  getShopifyJsonUrl,
-  extractShopifyProduct,
-  isSecurityChallengePage,
-} from '@/lib/scrape'
+import { scrapeAndEnrichProduct } from '@/lib/scrape'
 
 export async function POST(request: Request) {
   try {
@@ -53,52 +47,8 @@ export async function POST(request: Request) {
       finalUrl = response.url
     }
 
-    if (isSecurityChallengePage(html)) {
-      return NextResponse.json(
-        {
-          error:
-            'This retailer is showing a security verification page (bot protection). BladeVault cannot automatically scrape this URL. Try adding the knife manually, or paste the product details into the form.',
-        },
-        { status: 403 },
-      )
-    }
-
-    const { product, confidence } = scrapeProduct(html, finalUrl, normalizedUrl)
-
-    // Shopify stores expose a .json endpoint with all product images and metadata.
-    // Use it to augment the rendered-page data when available.
-    if (isShopifyProductPage(finalUrl, html)) {
-      const jsonUrl = getShopifyJsonUrl(finalUrl)
-      if (jsonUrl) {
-        try {
-          const jsonResponse = await fetch(jsonUrl, {
-            headers: {
-              'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-              Accept: 'application/json',
-              'Accept-Language': 'en-US,en;q=0.9',
-            },
-          })
-
-          if (jsonResponse.ok) {
-            const json = await jsonResponse.json()
-            const shopifyProduct = extractShopifyProduct(json)
-            if (shopifyProduct) {
-              if (shopifyProduct.name) product.name = shopifyProduct.name
-              if (shopifyProduct.brand) product.brand = shopifyProduct.brand
-              if (shopifyProduct.description)
-                product.description = shopifyProduct.description
-              if (shopifyProduct.images?.length)
-                product.images = shopifyProduct.images
-            }
-          }
-        } catch {
-          // Ignore Shopify JSON fetch errors and fall back to rendered-page data.
-        }
-      }
-    }
-
-    return NextResponse.json({ product, confidence, html, finalUrl })
+    const result = await scrapeAndEnrichProduct(html, finalUrl, normalizedUrl)
+    return NextResponse.json(result)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ error: message }, { status: 500 })

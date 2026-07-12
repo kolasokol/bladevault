@@ -110,6 +110,60 @@ export function isSecurityChallengePage(html: string): boolean {
   return markers.some((marker) => normalized.includes(marker))
 }
 
+export type EnrichedScrapeResult = ScrapeResult & {
+  html: string
+  finalUrl: string
+}
+
+export async function scrapeAndEnrichProduct(
+  html: string,
+  finalUrl: string,
+  sourceUrl?: string,
+): Promise<EnrichedScrapeResult> {
+  if (isSecurityChallengePage(html)) {
+    throw new Error(
+      'This retailer is showing a security verification page (bot protection). BladeVault cannot automatically scrape this URL. Try adding the knife manually, or paste the product details into the form.',
+    )
+  }
+
+  const { product, confidence } = scrapeProduct(html, finalUrl, sourceUrl)
+
+  // Shopify stores expose a .json endpoint with all product images and metadata.
+  // Use it to augment the rendered-page data when available.
+  if (isShopifyProductPage(finalUrl, html)) {
+    const jsonUrl = getShopifyJsonUrl(finalUrl)
+    if (jsonUrl) {
+      try {
+        const jsonResponse = await fetch(jsonUrl, {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            Accept: 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+          },
+        })
+
+        if (jsonResponse.ok) {
+          const json = await jsonResponse.json()
+          const shopifyProduct = extractShopifyProduct(json)
+          if (shopifyProduct) {
+            if (shopifyProduct.name) product.name = shopifyProduct.name
+            if (shopifyProduct.brand) product.brand = shopifyProduct.brand
+            if (shopifyProduct.description)
+              product.description = shopifyProduct.description
+            if (shopifyProduct.images?.length)
+              product.images = shopifyProduct.images
+          }
+        }
+      } catch {
+        // Ignore Shopify JSON fetch errors and fall back to rendered-page data.
+      }
+    }
+  }
+
+  return { product, confidence, html, finalUrl }
+}
+
 function cleanText(text: string | undefined): string {
   return text?.replace(/\s+/g, ' ').trim() ?? ''
 }

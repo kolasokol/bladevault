@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Loader2,
@@ -12,6 +12,9 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  Monitor,
+  X,
+  RefreshCw,
 } from 'lucide-react'
 import { useKnives } from '@/components/providers/knives-provider'
 
@@ -48,6 +51,11 @@ export function AddKnifeForm() {
   const [showPreview, setShowPreview] = useState(true)
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
   const [isSaving, setIsSaving] = useState(false)
+  const [interactiveSessionId, setInteractiveSessionId] = useState<string | null>(null)
+  const interactiveSessionIdRef = useRef<string | null>(null)
+  const [interactiveStatus, setInteractiveStatus] = useState<'starting' | 'waiting' | 'scraping' | null>(null)
+  const [interactiveIsChallenge, setInteractiveIsChallenge] = useState<boolean | null>(null)
+  const [interactiveError, setInteractiveError] = useState<string | null>(null)
 
   const updateField = <K extends keyof KnifeFormData>(
     field: K,
@@ -128,6 +136,41 @@ export function AddKnifeForm() {
     }
   }
 
+  const applyScrapedProduct = (
+    product: ScrapedProduct,
+    html: string,
+    finalUrl: string,
+  ) => {
+    setForm({
+      brand: product.brand ?? '',
+      name: product.name ?? '',
+      handleMaterial: product.handleMaterial ?? '',
+      bladeStyle: product.bladeStyle ?? '',
+      description: product.description ?? '',
+      weight: product.specs?.weight ?? '',
+      overallLength: product.specs?.overallLength ?? '',
+      bladeLength: product.specs?.bladeLength ?? '',
+      bladeThickness: product.specs?.bladeThickness ?? '',
+      bladeCoating: product.specs?.bladeCoating ?? '',
+      bladeMaterial: product.specs?.bladeMaterial ?? '',
+      lockingMechanism: product.specs?.lockingMechanism ?? '',
+      designer: product.specs?.designer ?? '',
+      modelNumber: product.specs?.modelNumber ?? '',
+      handleLength: product.specs?.handleLength ?? '',
+      hardness: product.specs?.hardness ?? '',
+      country: product.specs?.country ?? '',
+      images: Array.isArray(product.images) ? product.images : [],
+      sourceUrl: product.sourceUrl ?? url.trim(),
+    })
+    setSelectedImages(
+      new Set(Array.isArray(product.images) ? product.images : []),
+    )
+    setScrapedHtml(html)
+    setScrapedFinalUrl(finalUrl)
+    setHasScraped(true)
+    setShowPreview(true)
+  }
+
   const handleScrape = async () => {
     if (!url.trim()) return
     setIsScraping(true)
@@ -155,38 +198,11 @@ export function AddKnifeForm() {
         )
       }
 
-      const product = data.product
-
-      setForm({
-        brand: product.brand ?? '',
-        name: product.name ?? '',
-        handleMaterial: product.handleMaterial ?? '',
-        bladeStyle: product.bladeStyle ?? '',
-        description: product.description ?? '',
-        weight: product.specs?.weight ?? '',
-        overallLength: product.specs?.overallLength ?? '',
-        bladeLength: product.specs?.bladeLength ?? '',
-        bladeThickness: product.specs?.bladeThickness ?? '',
-        bladeCoating: product.specs?.bladeCoating ?? '',
-        bladeMaterial: product.specs?.bladeMaterial ?? '',
-        lockingMechanism: product.specs?.lockingMechanism ?? '',
-        designer: product.specs?.designer ?? '',
-        modelNumber: product.specs?.modelNumber ?? '',
-        handleLength: product.specs?.handleLength ?? '',
-        hardness: product.specs?.hardness ?? '',
-        country: product.specs?.country ?? '',
-        images: Array.isArray(product.images) ? product.images : [],
-        sourceUrl: product.sourceUrl ?? url.trim(),
-      })
-      setSelectedImages(
-        new Set(Array.isArray(product.images) ? product.images : []),
-      )
-      setScrapedHtml(typeof data.html === 'string' ? data.html : '')
-      setScrapedFinalUrl(
+      applyScrapedProduct(
+        data.product,
+        typeof data.html === 'string' ? data.html : '',
         typeof data.finalUrl === 'string' ? data.finalUrl : url.trim(),
       )
-      setHasScraped(true)
-      setShowPreview(true)
     } catch (error) {
       setScrapeError(
         error instanceof Error ? error.message : 'Something went wrong',
@@ -195,6 +211,157 @@ export function AddKnifeForm() {
       setIsScraping(false)
     }
   }
+
+  const isBotProtectionError = (message: string | null) => {
+    if (!message) return false
+    const lower = message.toLowerCase()
+    return (
+      lower.includes('bot protection') ||
+      lower.includes('security verification') ||
+      lower.includes('cloudflare')
+    )
+  }
+
+  const resetInteractiveState = () => {
+    setInteractiveSessionId(null)
+    setInteractiveStatus(null)
+    setInteractiveIsChallenge(null)
+    setInteractiveError(null)
+  }
+
+  const startInteractiveScrape = async () => {
+    if (!url.trim()) return
+    setInteractiveStatus('starting')
+    setInteractiveError(null)
+
+    try {
+      const response = await fetch('/api/scrape/interactive/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url.trim() }),
+      })
+      const data = await readJsonResponse<{ error?: string; sessionId?: string }>(
+        response,
+      )
+
+      if (!response.ok) {
+        throw new Error(
+          getApiErrorMessage(data, 'Failed to start interactive browser'),
+        )
+      }
+
+      if (typeof data.sessionId !== 'string') {
+        throw new Error('Invalid response from interactive scrape start')
+      }
+
+      setInteractiveSessionId(data.sessionId)
+      setInteractiveStatus('waiting')
+    } catch (error) {
+      setInteractiveError(
+        error instanceof Error ? error.message : 'Something went wrong',
+      )
+      setInteractiveStatus(null)
+    }
+  }
+
+  const captureInteractiveScrape = async () => {
+    if (!interactiveSessionId) return
+    setInteractiveStatus('scraping')
+
+    try {
+      const response = await fetch(
+        `/api/scrape/interactive/${interactiveSessionId}/scrape`,
+        {
+          method: 'POST',
+        },
+      )
+      const data = await readJsonResponse<{
+        error?: string
+        product: ScrapedProduct
+        html?: string
+        finalUrl?: string
+      }>(response)
+
+      if (!response.ok) {
+        throw new Error(
+          getApiErrorMessage(data, 'Failed to capture product page'),
+        )
+      }
+
+      applyScrapedProduct(
+        data.product,
+        typeof data.html === 'string' ? data.html : '',
+        typeof data.finalUrl === 'string' ? data.finalUrl : url.trim(),
+      )
+      resetInteractiveState()
+    } catch (error) {
+      setInteractiveError(
+        error instanceof Error ? error.message : 'Something went wrong',
+      )
+      setInteractiveStatus('waiting')
+    }
+  }
+
+  const cancelInteractiveScrape = async () => {
+    if (!interactiveSessionId) {
+      resetInteractiveState()
+      return
+    }
+
+    try {
+      await fetch(`/api/scrape/interactive/${interactiveSessionId}/cancel`, {
+        method: 'POST',
+      })
+    } catch {
+      // ignore cancel errors
+    } finally {
+      resetInteractiveState()
+    }
+  }
+
+  useEffect(() => {
+    interactiveSessionIdRef.current = interactiveSessionId
+  }, [interactiveSessionId])
+
+  useEffect(() => {
+    if (!interactiveSessionId || interactiveStatus !== 'waiting') return
+
+    let cancelled = false
+    const currentSessionId = interactiveSessionId
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(
+          `/api/scrape/interactive/${currentSessionId}/status`,
+        )
+        if (cancelled) return
+        const data = await readJsonResponse<{
+          status?: string
+          isSecurityChallenge?: boolean
+        }>(response)
+        setInteractiveIsChallenge(data.isSecurityChallenge ?? null)
+      } catch {
+        // ignore polling errors
+      }
+    }
+
+    checkStatus()
+    const interval = setInterval(checkStatus, 2500)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [interactiveSessionId, interactiveStatus])
+
+  useEffect(() => {
+    return () => {
+      const sessionId = interactiveSessionIdRef.current
+      if (sessionId) {
+        void fetch(`/api/scrape/interactive/${sessionId}/cancel`, {
+          method: 'POST',
+        })
+      }
+    }
+  }, [])
 
   const canSave = form.name.trim().length > 0
 
@@ -233,19 +400,97 @@ export function AddKnifeForm() {
         </div>
 
         {scrapeError && (
-          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>{scrapeError}</span>
+          <div className="space-y-2">
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{scrapeError}</span>
+            </div>
+            {isBotProtectionError(scrapeError) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={startInteractiveScrape}
+                disabled={interactiveStatus === 'starting'}
+              >
+                {interactiveStatus === 'starting' ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Monitor className="h-3.5 w-3.5" />
+                )}
+                Try interactive browser
+              </Button>
+            )}
           </div>
         )}
 
-        {!hasScraped && !scrapeError && !isScraping && (
-          <p className="text-xs text-muted-foreground">
-            Paste a knife product page URL and hit Scrape. The app will pull the
-            title, brand, images, and specs when available. You can edit
-            everything before saving.
-          </p>
+        {(interactiveStatus === 'waiting' ||
+          interactiveStatus === 'scraping') && (
+          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 space-y-2">
+            <div className="flex items-start gap-2 text-xs">
+              <Monitor className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
+              <div className="space-y-1">
+                <p>
+                  A browser window has opened. Complete the retailer&apos;s
+                  verification, then click <strong>Continue</strong> to scrape
+                  the page.
+                </p>
+                {interactiveIsChallenge === true && (
+                  <p className="text-amber-600 dark:text-amber-400">
+                    Challenge page still detected.
+                  </p>
+                )}
+                {interactiveIsChallenge === false && (
+                  <p className="text-emerald-600 dark:text-emerald-400">
+                    Product page detected.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="flex-1"
+                onClick={captureInteractiveScrape}
+                disabled={interactiveStatus === 'scraping'}
+              >
+                {interactiveStatus === 'scraping' ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                Continue
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={cancelInteractiveScrape}
+                disabled={interactiveStatus === 'scraping'}
+              >
+                <X className="h-3.5 w-3.5" />
+                Cancel
+              </Button>
+            </div>
+          </div>
         )}
+
+        {interactiveError && (
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{interactiveError}</span>
+          </div>
+        )}
+
+        {!hasScraped &&
+          !scrapeError &&
+          !isScraping &&
+          interactiveStatus === null && (
+            <p className="text-xs text-muted-foreground">
+              Paste a knife product page URL and hit Scrape. The app will pull
+              the title, brand, images, and specs when available. You can edit
+              everything before saving.
+            </p>
+          )}
       </CardContent>
     </Card>
   )

@@ -152,6 +152,7 @@ podman run -d \
 
 This creates a persistent `BladeVault/data` folder in your home directory for the SQLite database and downloaded images.
 
+
 For Windows (PowerShell) Docker:
 
 ```powershell
