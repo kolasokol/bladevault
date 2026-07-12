@@ -11,6 +11,7 @@ import { FilterMultiSelect } from '@/components/filter-multi-select'
 import { SearchField } from '@/components/search-field'
 import { useKnives } from '@/components/providers/knives-provider'
 import { Knife, matchesKnifeSearch } from '@/lib/data'
+import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
@@ -91,6 +92,7 @@ function CollectionContent() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState('')
+  const debouncedQuery = useDebouncedValue(query, 200)
 
   const selectedFilters = useMemo(
     () =>
@@ -124,7 +126,7 @@ function CollectionContent() {
 
   const filteredKnives = useMemo(() => {
     return knives.filter((knife) => {
-      if (!matchesKnifeSearch(knife, query)) return false
+      if (!matchesKnifeSearch(knife, debouncedQuery)) return false
 
       return filterDefinitions.every((definition) => {
         const selectedValues = selectedFilters[definition.key]
@@ -137,7 +139,7 @@ function CollectionContent() {
         return Boolean(value && selectedValues.includes(value))
       })
     })
-  }, [knives, query, selectedFilters])
+  }, [knives, debouncedQuery, selectedFilters])
 
   const setFilterValues = (key: FilterKey, values: string[]) => {
     const params = new URLSearchParams(searchParams.toString())

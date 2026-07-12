@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/page-header'
@@ -10,10 +10,12 @@ import { KnifeCard } from '@/components/knife-card'
 import { SearchField } from '@/components/search-field'
 import { useKnives } from '@/components/providers/knives-provider'
 import { matchesKnifeSearch } from '@/lib/data'
+import { useDebouncedValue } from '@/lib/use-debounced-value'
 
 export default function Dashboard() {
   const { knives } = useKnives()
   const [query, setQuery] = useState('')
+  const debouncedQuery = useDebouncedValue(query, 200)
 
   const brandCount = new Set(knives.map((k) => k.brand)).size
   const latest =
@@ -27,7 +29,10 @@ export default function Dashboard() {
         })
       : '-'
 
-  const visibleKnives = knives.filter((k) => matchesKnifeSearch(k, query))
+  const visibleKnives = useMemo(
+    () => knives.filter((k) => matchesKnifeSearch(k, debouncedQuery)),
+    [knives, debouncedQuery],
+  )
 
   return (
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
