@@ -44,6 +44,12 @@ If you only want to try the app, Docker is the quickest setup. If you want to de
 
 ---
 
+## Demo Video
+
+[![Watch the BladeVault demo on YouTube](https://img.youtube.com/vi/yurbpv0JY80/hqdefault.jpg)](https://youtu.be/yurbpv0JY80)
+
+---
+
 ## ✨ Features
 
 - **Dashboard** — Get a quick overview of your recently added knives.
