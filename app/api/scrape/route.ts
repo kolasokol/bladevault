@@ -4,6 +4,7 @@ import {
   isShopifyProductPage,
   getShopifyJsonUrl,
   extractShopifyProduct,
+  isSecurityChallengePage,
 } from '@/lib/scrape'
 
 export async function POST(request: Request) {
@@ -50,6 +51,16 @@ export async function POST(request: Request) {
 
       html = await response.text()
       finalUrl = response.url
+    }
+
+    if (isSecurityChallengePage(html)) {
+      return NextResponse.json(
+        {
+          error:
+            'This retailer is showing a security verification page (bot protection). BladeVault cannot automatically scrape this URL. Try adding the knife manually, or paste the product details into the form.',
+        },
+        { status: 403 },
+      )
     }
 
     const { product, confidence } = scrapeProduct(html, finalUrl, normalizedUrl)

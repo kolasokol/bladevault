@@ -88,6 +88,28 @@ function resolveUrl(
   }
 }
 
+// Detect Cloudflare and other bot/security challenge interstitials so we can
+// surface a helpful error instead of parsing the challenge page as a product.
+export function isSecurityChallengePage(html: string): boolean {
+  if (!html || html.length < 100) return false
+  const normalized = html.toLowerCase()
+  const markers = [
+    'just a moment...',
+    'challenges.cloudflare.com',
+    'enable javascript and cookies',
+    'performing security verification',
+    'security service to protect against malicious bots',
+    'checking your browser before accessing',
+    'ddos protection by cloudflare',
+    'please wait while we verify',
+    'please turn javascript on',
+    'please enable cookies',
+    '/_guard/',
+    'interstitial?continue',
+  ]
+  return markers.some((marker) => normalized.includes(marker))
+}
+
 function cleanText(text: string | undefined): string {
   return text?.replace(/\s+/g, ' ').trim() ?? ''
 }

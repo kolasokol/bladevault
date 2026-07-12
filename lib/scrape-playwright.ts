@@ -37,8 +37,37 @@ async function acquireBrowser(): Promise<BrowserState> {
 
   const context = await browser.newContext({
     userAgent: userAgent(),
-    viewport: { width: 1280, height: 800 },
+    viewport: { width: 1366, height: 768 },
+    screen: { width: 1366, height: 768 },
     locale: 'en-US',
+    timezoneId: 'America/New_York',
+    extraHTTPHeaders: {
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Upgrade-Insecure-Requests': '1',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+    },
+  })
+
+  await context.addInitScript(() => {
+    // Reduce obvious automation fingerprints that some bot walls inspect.
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined })
+    Object.defineProperty(navigator, 'plugins', {
+      get: () => [
+        { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer' },
+        { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai' },
+        { name: 'Native Client', filename: 'internal-nacl-plugin' },
+      ],
+    })
+    const w = window as unknown as Record<string, unknown>
+    w.chrome = (w.chrome as Record<string, unknown>) || { runtime: {} }
+    delete w.__playwright
+    delete w.__pw_manual
   })
 
   state = { browser, context, refs: 1 }
