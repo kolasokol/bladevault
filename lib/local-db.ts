@@ -243,6 +243,17 @@ function migrateSchema(database: Database.Database) {
       `ALTER TABLE knives ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0`,
     )
   }
+  const hasUpdatedAt = columns.some((col) => col.name === 'updated_at')
+  if (!hasUpdatedAt) {
+    database.exec(`ALTER TABLE knives ADD COLUMN updated_at TEXT`)
+  }
+  database
+    .prepare(
+      `UPDATE knives
+       SET updated_at = added_at
+       WHERE updated_at IS NULL OR TRIM(updated_at) = ''`,
+    )
+    .run()
 
   const tables = database
     .prepare("SELECT name FROM sqlite_master WHERE type='table'")
@@ -264,11 +275,11 @@ function normalizeKnifeRows(database: Database.Database) {
   const rows = database
     .prepare(
       `
-    SELECT id, name, brand, blade_style, handle_material, specs, description, source_url
+    SELECT id, name, brand, blade_style, handle_material, specs, description, source_url, added_at, updated_at
     FROM knives
   `,
     )
-    .all() as Array<{
+  .all() as Array<{
     id: string
     name: string
     brand: string
@@ -277,6 +288,8 @@ function normalizeKnifeRows(database: Database.Database) {
     specs: string
     description: string
     source_url: string
+    added_at: string
+    updated_at: string | null
   }>
 
   if (rows.length === 0) {
@@ -285,7 +298,7 @@ function normalizeKnifeRows(database: Database.Database) {
 
   const updateKnife = database.prepare(`
     UPDATE knives
-    SET name = ?, brand = ?, blade_style = ?, handle_material = ?, specs = ?, description = ?, source_url = ?
+    SET name = ?, brand = ?, blade_style = ?, handle_material = ?, specs = ?, description = ?, source_url = ?, updated_at = ?
     WHERE id = ?
   `)
 
@@ -303,6 +316,7 @@ function normalizeKnifeRows(database: Database.Database) {
         modelNumber?: string
         handleLength?: string
         hardness?: string
+        price?: string
         country: string
       }>
       const normalized = normalizeKnifeTextFields({
@@ -316,6 +330,8 @@ function normalizeKnifeRows(database: Database.Database) {
       })
 
       const normalizedSpecs = JSON.stringify(normalized.specs ?? {})
+      const normalizedUpdatedAt =
+        row.updated_at?.trim() || row.added_at || new Date().toISOString()
       const hasChanges =
         normalized.name !== row.name ||
         normalized.brand !== row.brand ||
@@ -323,7 +339,8 @@ function normalizeKnifeRows(database: Database.Database) {
         normalized.handleMaterial !== row.handle_material ||
         normalized.description !== row.description ||
         normalized.sourceUrl !== row.source_url ||
-        normalizedSpecs !== row.specs
+        normalizedSpecs !== row.specs ||
+        normalizedUpdatedAt !== (row.updated_at ?? '')
 
       if (!hasChanges) {
         continue
@@ -337,6 +354,7 @@ function normalizeKnifeRows(database: Database.Database) {
         normalizedSpecs,
         normalized.description,
         normalized.sourceUrl,
+        normalizedUpdatedAt,
         row.id,
       )
     }
@@ -358,6 +376,7 @@ function initSchema(database: Database.Database) {
       specs TEXT NOT NULL,
       description TEXT NOT NULL,
       added_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
       source_url TEXT NOT NULL DEFAULT '',
       pinned INTEGER NOT NULL DEFAULT 0
     );

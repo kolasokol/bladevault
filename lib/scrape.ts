@@ -19,6 +19,7 @@ export type ScrapedProduct = {
     modelNumber: string
     handleLength: string
     hardness: string
+    price: string
     country: string
   }
   sourceUrl: string
@@ -43,6 +44,7 @@ export type ScrapeConfidence = {
     modelNumber: boolean
     handleLength: boolean
     hardness: boolean
+    price: boolean
     country: boolean
   }
 }
@@ -71,6 +73,7 @@ const EMPTY_PRODUCT: ScrapedProduct = {
     modelNumber: '',
     handleLength: '',
     hardness: '',
+    price: '',
     country: '',
   },
   sourceUrl: '',
@@ -482,6 +485,7 @@ const SPEC_PATTERNS: Array<[keyof ScrapedProduct['specs'], RegExp]> = [
   ['designer', /designer|designed\s*by/i],
   ['modelNumber', /model\s*(number|#|no\.?)|\bsku\b/i],
   ['hardness', /hardness|hrc|rockwell/i],
+  ['price', /\b(?:price|msrp|retail\s*price)\b/i],
   ['country', /country\s*(of\s*origin)?|made\s*in|origin/i],
 ]
 
@@ -703,6 +707,7 @@ function extractSpecs($: cheerio.CheerioAPI): ScrapedProduct['specs'] {
     modelNumber: '',
     handleLength: '',
     hardness: '',
+    price: '',
     country: '',
   }
 
@@ -1076,6 +1081,7 @@ function buildConfidence(product: ScrapedProduct): ScrapeConfidence {
       modelNumber: Boolean(product.specs.modelNumber),
       handleLength: Boolean(product.specs.handleLength),
       hardness: Boolean(product.specs.hardness),
+      price: Boolean(product.specs.price),
       country: Boolean(product.specs.country),
     },
   }

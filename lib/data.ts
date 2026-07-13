@@ -17,18 +17,20 @@ export type Knife = {
     modelNumber?: string
     handleLength?: string
     hardness?: string
+    price?: string
     country: string
   }
   addedAt: string
+  updatedAt: string
   description: string
   sourceUrl: string
   pinned: boolean
 }
 
-export type KnifeDraft = Omit<Knife, 'id' | 'addedAt'>
+export type KnifeDraft = Omit<Knife, 'id' | 'addedAt' | 'updatedAt'>
 
 export type KnifeUpdates = Partial<
-  Omit<Knife, 'id' | 'addedAt' | 'images' | 'specs' | 'pinned'>
+  Omit<Knife, 'id' | 'addedAt' | 'updatedAt' | 'images' | 'specs' | 'pinned'>
 > & {
   specs?: Partial<Knife['specs']>
   images?: string[]

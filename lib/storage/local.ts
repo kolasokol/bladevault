@@ -42,6 +42,8 @@ function extensionFromDataUrl(dataUrl: string): string {
 }
 
 export function rowToKnife(row: Record<string, unknown>): Knife {
+  const addedAt = String(row.added_at)
+
   return {
     id: String(row.id),
     name: String(row.name),
@@ -53,7 +55,11 @@ export function rowToKnife(row: Record<string, unknown>): Knife {
       (JSON.parse(String(row.specs)) as Knife['specs'] | null) ??
       ({} as Knife['specs']),
     description: String(row.description),
-    addedAt: String(row.added_at),
+    addedAt,
+    updatedAt:
+      typeof row.updated_at === 'string' && row.updated_at.trim()
+        ? row.updated_at
+        : addedAt,
     sourceUrl: String(row.source_url ?? ''),
     pinned: Boolean(row.pinned),
   }
@@ -187,6 +193,7 @@ export class LocalStorage implements Storage {
     const normalizedInput = normalizeKnifeTextFields(input)
     const id = await this.ensureUniqueId(generateId(normalizedInput.name))
     const addedAt = new Date().toISOString()
+    const updatedAt = addedAt
 
     const imagePaths: string[] = []
     for (let i = 0; i < normalizedInput.imageUrls.length; i++) {
@@ -214,14 +221,15 @@ export class LocalStorage implements Storage {
       specs: normalizedInput.specs,
       description: normalizedInput.description,
       addedAt,
+      updatedAt,
       sourceUrl: normalizedInput.sourceUrl ?? '',
       pinned: normalizedInput.pinned ?? false,
     }
 
     getDb()
       .prepare(
-        `INSERT INTO knives (id, name, brand, steel, blade_style, handle_material, images, specs, description, added_at, source_url, pinned)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO knives (id, name, brand, steel, blade_style, handle_material, images, specs, description, added_at, updated_at, source_url, pinned)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         newKnife.id,
@@ -234,6 +242,7 @@ export class LocalStorage implements Storage {
         JSON.stringify(newKnife.specs),
         newKnife.description,
         newKnife.addedAt,
+        newKnife.updatedAt,
         newKnife.sourceUrl,
         newKnife.pinned ? 1 : 0,
       )
@@ -304,6 +313,7 @@ export class LocalStorage implements Storage {
       }
     }
 
+    const updatedAt = new Date().toISOString()
     const updated: Knife = {
       ...existing,
       name: normalizedUpdates.name ?? existing.name,
@@ -315,6 +325,7 @@ export class LocalStorage implements Storage {
       sourceUrl: normalizedUpdates.sourceUrl ?? existing.sourceUrl,
       images: processedImages,
       pinned: normalizedUpdates.pinned ?? existing.pinned,
+      updatedAt,
       specs: {
         ...existing.specs,
         ...(normalizedUpdates.specs ?? {}),
@@ -324,7 +335,7 @@ export class LocalStorage implements Storage {
     getDb()
       .prepare(
         `UPDATE knives
-         SET name = ?, brand = ?, steel = ?, blade_style = ?, handle_material = ?, images = ?, specs = ?, description = ?, source_url = ?, pinned = ?
+         SET name = ?, brand = ?, steel = ?, blade_style = ?, handle_material = ?, images = ?, specs = ?, description = ?, updated_at = ?, source_url = ?, pinned = ?
          WHERE id = ?`,
       )
       .run(
@@ -336,6 +347,7 @@ export class LocalStorage implements Storage {
         JSON.stringify(updated.images),
         JSON.stringify(updated.specs),
         updated.description,
+        updated.updatedAt,
         updated.sourceUrl,
         updated.pinned ? 1 : 0,
         id,
@@ -385,11 +397,13 @@ export class LocalStorage implements Storage {
 
   async migrateKnife(knife: Knife, images: string[]): Promise<void> {
     const normalizedKnife = normalizeKnifeTextFields(knife)
+    const restoredUpdatedAt =
+      normalizedKnife.updatedAt?.trim() || normalizedKnife.addedAt
 
     getDb()
       .prepare(
-        `INSERT OR REPLACE INTO knives (id, name, brand, steel, blade_style, handle_material, images, specs, description, added_at, source_url, pinned)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT OR REPLACE INTO knives (id, name, brand, steel, blade_style, handle_material, images, specs, description, added_at, updated_at, source_url, pinned)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         normalizedKnife.id,
@@ -402,6 +416,7 @@ export class LocalStorage implements Storage {
         JSON.stringify(normalizedKnife.specs),
         normalizedKnife.description,
         normalizedKnife.addedAt,
+        restoredUpdatedAt,
         normalizedKnife.sourceUrl,
         normalizedKnife.pinned ? 1 : 0,
       )

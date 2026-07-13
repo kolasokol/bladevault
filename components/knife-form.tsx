@@ -46,6 +46,7 @@ export type KnifeFormData = {
   modelNumber: string
   handleLength: string
   hardness: string
+  price: string
   country: string
   images: string[]
   sourceUrl: string
@@ -68,6 +69,7 @@ export const EMPTY_KNIFE_FORM: KnifeFormData = {
   modelNumber: '',
   handleLength: '',
   hardness: '',
+  price: '',
   country: '',
   images: [],
   sourceUrl: '',
@@ -91,6 +93,7 @@ export function knifeToFormData(knife: Knife): KnifeFormData {
     modelNumber: knife.specs.modelNumber ?? '',
     handleLength: knife.specs.handleLength ?? '',
     hardness: knife.specs.hardness ?? '',
+    price: knife.specs.price ?? '',
     country: knife.specs.country,
     images: knife.images,
     sourceUrl: knife.sourceUrl,
@@ -120,6 +123,7 @@ export function formDataToKnifeDraft(
       modelNumber: form.modelNumber,
       handleLength: form.handleLength,
       hardness: form.hardness,
+      price: form.price,
       country: form.country,
     },
     description: form.description,
@@ -218,6 +222,7 @@ export function KnifeFormFields({
           'e.g. Compression lock',
         )}
         {inputField('Designer', 'designer', 'e.g. Chris Reeve')}
+        {inputField('Price', 'price', 'e.g. $525')}
         {inputField('Country', 'country', 'e.g. USA')}
       </div>
 
@@ -536,6 +541,7 @@ export function KnifeScrapeEditor({
       modelNumber: product.specs.modelNumber || prev.modelNumber,
       handleLength: product.specs.handleLength || prev.handleLength,
       hardness: product.specs.hardness || prev.hardness,
+      price: product.specs.price || prev.price,
       country: product.specs.country || prev.country,
       sourceUrl: product.sourceUrl || prev.sourceUrl,
     }))
@@ -560,6 +566,7 @@ export function KnifeScrapeEditor({
       modelNumber: product.specs.modelNumber || '',
       handleLength: product.specs.handleLength || '',
       hardness: product.specs.hardness || '',
+      price: product.specs.price || '',
       country: product.specs.country || '',
       sourceUrl: product.sourceUrl || prev.sourceUrl,
     }))
