@@ -7,7 +7,10 @@ export const SidebarShell = dynamic(
   {
     ssr: false,
     loading: () => (
-      <aside className="h-screen w-60 flex-shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground" />
+      <>
+        <div className="h-16 border-b border-sidebar-border bg-sidebar lg:hidden" />
+        <aside className="hidden h-full min-h-0 w-60 flex-shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex" />
+      </>
     ),
   },
 )

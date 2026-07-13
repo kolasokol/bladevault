@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Cloud,
   CloudOff,
+  Menu,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useKnives } from '@/components/providers/knives-provider'
@@ -48,10 +50,14 @@ const appVersion = `v.${packageJson.version}`
 export function Sidebar() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const searchParamsKey = searchParams.toString()
+  const routeKey = searchParamsKey ? `${pathname}?${searchParamsKey}` : pathname
   const { knives, compareIds, isAutoBackupActive } = useKnives()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [brandsOpen, setBrandsOpen] = useState(true)
   const [pinnedOpen, setPinnedOpen] = useState(true)
+  const [mobileNavSession, setMobileNavSession] = useState<string | null>(null)
+  const isMobileNavOpen = mobileNavSession === routeKey
 
   const brands = useMemo(() => {
     const counts = new Map<string, number>()
@@ -95,25 +101,60 @@ export function Sidebar() {
     }
   }
 
-  return (
-    <>
-      <aside className="flex h-screen w-60 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-        <div className="flex items-center gap-2.5 px-4 py-4">
-          <div className="relative h-12 w-12">
-            <Image
-              src="/logo.svg"
-              alt="BladeVault logo"
-              fill
-              sizes="48px"
-              unoptimized
-              className="object-contain p-1"
-              priority
-            />
-          </div>
-          <span className="text-2xl font-semibold tracking-tight text-foreground">
-            <span>Blade</span>
-            <span style={{ color: 'var(--bladevault-title)' }}>Vault</span>
-          </span>
+  const closeMobileNav = () => {
+    setMobileNavSession(null)
+  }
+
+  const openSettings = () => {
+    setMobileNavSession(null)
+    setIsSettingsOpen(true)
+  }
+
+  const renderSidebarContent = (isMobile: boolean) => {
+    const handleNavigate = isMobile ? closeMobileNav : undefined
+
+    return (
+      <aside
+        className={cn(
+          'flex min-h-0 flex-col bg-sidebar text-sidebar-foreground',
+          isMobile
+            ? 'h-full w-[min(20rem,calc(100vw-2.5rem))] max-w-full border-r border-sidebar-border shadow-2xl'
+            : 'hidden h-full w-60 shrink-0 border-r border-sidebar-border lg:flex',
+        )}
+      >
+        <div className="flex items-center justify-between gap-3 px-4 py-4">
+          <Link
+            href="/"
+            onClick={handleNavigate}
+            className="flex min-w-0 items-center gap-2.5"
+          >
+            <div className="relative h-12 w-12 shrink-0">
+              <Image
+                src="/logo.svg"
+                alt="BladeVault logo"
+                fill
+                sizes="48px"
+                unoptimized
+                className="object-contain p-1"
+                priority
+              />
+            </div>
+            <span className="truncate text-2xl font-semibold tracking-tight text-foreground">
+              <span>Blade</span>
+              <span style={{ color: 'var(--bladevault-title)' }}>Vault</span>
+            </span>
+          </Link>
+
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={closeMobileNav}
+              aria-label="Close navigation"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         <div className="px-4 pb-2">
@@ -161,23 +202,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        <svg width="0" height="0" className="absolute">
-          <defs>
-            <linearGradient
-              id="sidebar-cloud-gradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="100%"
-            >
-              <stop offset="0%" stopColor="#e2c86e" />
-              <stop offset="55%" stopColor="#c89c3d" />
-              <stop offset="100%" stopColor="#9e6e1b" />
-            </linearGradient>
-          </defs>
-        </svg>
-
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2">
           <div className="px-2 pb-1.5 pt-2 text-[10px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
             Main
           </div>
@@ -191,6 +216,7 @@ export function Sidebar() {
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={handleNavigate}
                 className={cn(
                   'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors',
                   isActive
@@ -244,6 +270,7 @@ export function Sidebar() {
                       <Link
                         key={knife.id}
                         href={knifeHref}
+                        onClick={handleNavigate}
                         className={cn(
                           'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
                           isKnifeActive
@@ -319,6 +346,7 @@ export function Sidebar() {
                       <Link
                         key={brand.name}
                         href={brandHref}
+                        onClick={handleNavigate}
                         className={cn(
                           'flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs transition-colors',
                           isBrandActive
@@ -347,7 +375,11 @@ export function Sidebar() {
         </nav>
 
         <div className="flex flex-col gap-2 border-t bg-muted/30 p-3">
-          <Button size="sm" render={<Link href="/add" />} nativeButton={false}>
+          <Button
+            size="sm"
+            render={<Link href="/add" onClick={handleNavigate} />}
+            nativeButton={false}
+          >
             <PlusCircle className="h-3.5 w-3.5" />
             Add Knife
           </Button>
@@ -377,7 +409,7 @@ export function Sidebar() {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => setIsSettingsOpen(true)}
+                    onClick={openSettings}
                   >
                     <Settings className="h-3.5 w-3.5" />
                   </Button>
@@ -388,6 +420,70 @@ export function Sidebar() {
           </div>
         </div>
       </aside>
+    )
+  }
+
+  return (
+    <>
+      <svg width="0" height="0" className="absolute">
+        <defs>
+          <linearGradient
+            id="sidebar-cloud-gradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="100%"
+          >
+            <stop offset="0%" stopColor="#e2c86e" />
+            <stop offset="55%" stopColor="#c89c3d" />
+            <stop offset="100%" stopColor="#9e6e1b" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <div className="flex items-center justify-between gap-3 border-b border-sidebar-border bg-sidebar px-4 py-3 lg:hidden">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+          <div className="relative h-10 w-10 shrink-0">
+            <Image
+              src="/logo.svg"
+              alt="BladeVault logo"
+              fill
+              sizes="40px"
+              unoptimized
+              className="object-contain p-1"
+              priority
+            />
+          </div>
+          <span className="truncate text-xl font-semibold tracking-tight text-foreground">
+            <span>Blade</span>
+            <span style={{ color: 'var(--bladevault-title)' }}>Vault</span>
+          </span>
+        </Link>
+
+        <Button
+          variant="outline"
+          size="icon-sm"
+          onClick={() => setMobileNavSession(routeKey)}
+          aria-label="Open navigation"
+          aria-expanded={isMobileNavOpen}
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {isMobileNavOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/45 lg:hidden"
+          onClick={closeMobileNav}
+        >
+          <div onClick={(event) => event.stopPropagation()}>
+            {renderSidebarContent(true)}
+          </div>
+        </div>
+      )}
+
+      {renderSidebarContent(false)}
+
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

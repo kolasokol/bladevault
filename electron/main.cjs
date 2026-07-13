@@ -279,7 +279,7 @@ async function createMainWindow() {
     backgroundColor: '#121510',
     height: 960,
     minHeight: 760,
-    minWidth: 1180,
+    minWidth: 760,
     show: false,
     title: 'BladeVault',
     width: 1440,

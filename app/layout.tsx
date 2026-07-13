@@ -40,17 +40,18 @@ export default function RootLayout({
       className={cn(
         geistSans.variable,
         geistMono.variable,
+        'h-full',
         theme === 'dark' && 'dark',
       )}
       suppressHydrationWarning
     >
       <body
-        className="bg-background text-foreground font-sans h-screen w-full flex overflow-hidden"
+        className="bg-background text-foreground flex h-dvh min-h-0 w-full flex-col overflow-hidden font-sans lg:flex-row"
       >
         <KnivesProvider>
           <TooltipProvider>
             <SidebarShell />
-            <main className="flex-1 flex flex-col overflow-y-auto">
+            <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
               {children}
             </main>
           </TooltipProvider>
