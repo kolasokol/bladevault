@@ -28,11 +28,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { readJsonResponse } from '@/lib/api-response'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { type AppSettings } from '@/lib/settings-shared'
 import SettingsModal from './settings-modal'
 
 const links = [
@@ -68,8 +70,29 @@ export function Sidebar() {
     [knives],
   )
 
-  const toggleTheme = () => {
-    document.documentElement.classList.toggle('dark')
+  const toggleTheme = async () => {
+    const root = document.documentElement
+    const nextIsDark = !root.classList.contains('dark')
+
+    root.classList.toggle('dark', nextIsDark)
+
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          theme: nextIsDark ? 'dark' : 'light',
+        } satisfies Pick<AppSettings, 'theme'>),
+      })
+
+      const data = await readJsonResponse<{ error?: string }>(response)
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save theme preference')
+      }
+    } catch (error) {
+      root.classList.toggle('dark', !nextIsDark)
+      console.error('Failed to save theme preference', error)
+    }
   }
 
   return (
