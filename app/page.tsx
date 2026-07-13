@@ -12,6 +12,8 @@ import { useKnives } from '@/components/providers/knives-provider'
 import { matchesKnifeSearch } from '@/lib/data'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 
+const RECENTLY_ADDED_LIMIT = 12
+
 export default function Dashboard() {
   const { knives } = useKnives()
   const [query, setQuery] = useState('')
@@ -33,6 +35,9 @@ export default function Dashboard() {
     () => knives.filter((k) => matchesKnifeSearch(k, debouncedQuery)),
     [knives, debouncedQuery],
   )
+
+  const recentKnives = visibleKnives.slice(0, RECENTLY_ADDED_LIMIT)
+  const hasMore = visibleKnives.length > RECENTLY_ADDED_LIMIT
 
   return (
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
@@ -93,10 +98,19 @@ export default function Dashboard() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {visibleKnives.map((knife) => (
-            <KnifeCard key={knife.id} knife={knife} />
-          ))}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {recentKnives.map((knife) => (
+              <KnifeCard key={knife.id} knife={knife} />
+            ))}
+          </div>
+          {hasMore && (
+            <div className="flex justify-center">
+              <Button variant="outline" size="sm" render={<Link href="/collection">View all</Link>} nativeButton={false}>
+                View all {visibleKnives.length} knives
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
