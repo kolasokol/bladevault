@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, shell } = require('electron')
+const { app, BrowserWindow, Menu, clipboard, dialog, shell } = require('electron')
 const { spawn } = require('child_process')
 const fs = require('fs')
 const path = require('path')
@@ -231,6 +231,129 @@ function stopEmbeddedServer() {
   serverProcess = null
 }
 
+function getEditableContextMenuTemplate(editFlags) {
+  return [
+    {
+      role: 'undo',
+      enabled: editFlags.canUndo,
+    },
+    {
+      role: 'redo',
+      enabled: editFlags.canRedo,
+    },
+    {
+      type: 'separator',
+    },
+    {
+      role: 'cut',
+      enabled: editFlags.canCut,
+    },
+    {
+      role: 'copy',
+      enabled: editFlags.canCopy,
+    },
+    {
+      role: 'paste',
+      enabled: editFlags.canPaste,
+    },
+    {
+      role: 'delete',
+      enabled: editFlags.canDelete,
+    },
+    {
+      type: 'separator',
+    },
+    {
+      role: 'selectAll',
+      enabled: editFlags.canSelectAll,
+    },
+  ]
+}
+
+function buildAppContextMenu(window, params) {
+  const hasSelection = params.selectionText.trim().length > 0
+  const canCopySelection = params.isEditable
+    ? params.editFlags.canCopy
+    : hasSelection
+  const template = [
+    ...getEditableContextMenuTemplate({
+      ...params.editFlags,
+      canCopy: canCopySelection,
+    }),
+    {
+      type: 'separator',
+    },
+    {
+      label: 'Open Link in Browser',
+      enabled: Boolean(params.linkURL),
+      click: () => {
+        if (!params.linkURL) {
+          return
+        }
+
+        void shell.openExternal(params.linkURL)
+      },
+    },
+    {
+      label: 'Copy Link Address',
+      enabled: Boolean(params.linkURL),
+      click: () => {
+        if (!params.linkURL) {
+          return
+        }
+
+        clipboard.writeText(params.linkURL)
+      },
+    },
+    {
+      type: 'separator',
+    },
+    {
+      label: 'Back',
+      enabled: window.webContents.canGoBack(),
+      click: () => {
+        if (!window.webContents.canGoBack()) {
+          return
+        }
+
+        window.webContents.goBack()
+      },
+    },
+    {
+      label: 'Forward',
+      enabled: window.webContents.canGoForward(),
+      click: () => {
+        if (!window.webContents.canGoForward()) {
+          return
+        }
+
+        window.webContents.goForward()
+      },
+    },
+    {
+      label: 'Reload',
+      accelerator: 'CmdOrCtrl+R',
+      click: () => {
+        window.webContents.reload()
+      },
+    },
+  ]
+
+  return Menu.buildFromTemplate(template)
+}
+
+function wireAppContextMenu(window) {
+  window.webContents.on('context-menu', (_event, params) => {
+    const menu = buildAppContextMenu(window, params)
+    menu.popup({
+      window,
+      x: params.x,
+      y: params.y,
+      frame: params.frame ?? undefined,
+    })
+  })
+}
+
 function wireMainWindowSecurity(window) {
   window.webContents.on('will-navigate', (event, url) => {
     if (isLocalAppUrl(url)) {
@@ -315,6 +438,10 @@ async function createMainWindow() {
 app.on('before-quit', () => {
   isQuitting = true
   stopEmbeddedServer()
+})
+
+app.on('browser-window-created', (_event, window) => {
+  wireAppContextMenu(window)
 })
 
 app.on('window-all-closed', () => {
