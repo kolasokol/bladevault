@@ -719,18 +719,10 @@ export default function SettingsModal({
                       </div>
                       <div>
                         <CardTitle className="text-sm">Local Vault</CardTitle>
-                        <CardDescription>
-                          BladeVault stays local-first and stores your
-                          collection on this device.
-                        </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-muted-foreground">
-                    <p>
-                      Knives, compare picks, and downloaded images are saved in
-                      your local data folder by default.
-                    </p>
                     <div className="rounded-xl border bg-card px-4 py-3">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                         Current Local Data Folder
@@ -743,13 +735,8 @@ export default function SettingsModal({
                       <div className="flex flex-col gap-4">
                         <div className="space-y-1">
                           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Choose Another Folder
+                            Change Local data folder
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            Pick a different folder to keep BladeVault on
-                            another drive, or point BladeVault at an existing
-                            local vault.
-                          </p>
                         </div>
 
                         <div className="flex flex-col gap-3 lg:flex-row">
@@ -864,12 +851,6 @@ export default function SettingsModal({
                         to show the native host folder here.
                       </div>
                     ) : null}
-                    <p>
-                      Use the{' '}
-                      <strong className="text-foreground">Cloud Backup</strong>{' '}
-                      tab to sign in through BladeVault Auth and store an
-                      off-device copy of your full local data folder.
-                    </p>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1105,10 +1086,6 @@ export default function SettingsModal({
                               status={authStatus}
                               message={authMessage}
                             />
-                            <p className="text-xs text-muted-foreground">
-                              The popup returns a session token for the auth API
-                              and a JWT for the backup server.
-                            </p>
                           </div>
                         </CardContent>
                       </Card>
