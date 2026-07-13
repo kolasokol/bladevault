@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArchiveX, FileDown, ImageIcon, Printer, X } from 'lucide-react'
@@ -64,6 +64,96 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;')
 }
 
+function buildPrintableHtml(comparedKnives: Knife[], generatedAt: string) {
+  const headerCells = comparedKnives
+    .map((knife) => `<th>${escapeHtml(`${knife.brand} ${knife.name}`)}</th>`)
+    .join('')
+
+  const bodyRows = compareRows
+    .map((row) => {
+      const cells = comparedKnives
+        .map((knife) => `<td>${escapeHtml(getRowValue(knife, row.key))}</td>`)
+        .join('')
+      return `<tr><th>${escapeHtml(row.label)}</th>${cells}</tr>`
+    })
+    .join('')
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BladeVault Comparison</title>
+  <style>
+    body {
+      margin: 24px;
+      color: #111827;
+      font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+    }
+    p {
+      margin: 0 0 18px;
+      color: #4b5563;
+      font-size: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+    }
+    thead th {
+      background: #111827;
+      color: #ffffff;
+      text-align: left;
+      border: 1px solid #d1d5db;
+      padding: 8px;
+      word-wrap: break-word;
+    }
+    tbody th {
+      background: #f3f4f6;
+      text-align: left;
+      font-weight: 600;
+    }
+    td, tbody th {
+      border: 1px solid #d1d5db;
+      padding: 7px 8px;
+      word-wrap: break-word;
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+    @media print {
+      body {
+        margin: 12mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>BladeVault Comparison</h1>
+  <p>Generated ${escapeHtml(generatedAt)}</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        ${headerCells}
+      </tr>
+    </thead>
+    <tbody>
+      ${bodyRows}
+    </tbody>
+  </table>
+</body>
+</html>`
+}
+
 export default function ComparePage() {
   const { knives, compareIds, addToCompare, removeFromCompare, clearCompare } =
     useKnives()
@@ -71,6 +161,14 @@ export default function ComparePage() {
     knifeId: string
     rowKey: (typeof compareRows)[number]['key']
   } | null>(null)
+  const printFrameRef = useRef<HTMLIFrameElement | null>(null)
+
+  useEffect(() => {
+    return () => {
+      printFrameRef.current?.remove()
+      printFrameRef.current = null
+    }
+  }, [])
 
   const comparedKnives = compareIds
     .map((id) => knives.find((k) => k.id === id))
@@ -158,111 +256,66 @@ export default function ComparePage() {
   const handlePrint = () => {
     if (!hasComparedKnives) return
 
-    const printWindow = window.open(
-      '',
-      '_blank',
-      'noopener,noreferrer,width=1280,height=900',
-    )
-    if (!printWindow) return
-
     const generatedAt = new Intl.DateTimeFormat(undefined, {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(new Date())
+    const printableHtml = buildPrintableHtml(comparedKnives, generatedAt)
 
-    const headerCells = comparedKnives
-      .map((knife) => `<th>${escapeHtml(`${knife.brand} ${knife.name}`)}</th>`)
-      .join('')
+    printFrameRef.current?.remove()
 
-    const bodyRows = compareRows
-      .map((row) => {
-        const cells = comparedKnives
-          .map((knife) => `<td>${escapeHtml(getRowValue(knife, row.key))}</td>`)
-          .join('')
-        return `<tr><th>${escapeHtml(row.label)}</th>${cells}</tr>`
-      })
-      .join('')
+    const iframe = document.createElement('iframe')
+    printFrameRef.current = iframe
+    iframe.setAttribute('aria-hidden', 'true')
+    iframe.title = 'BladeVault Print Frame'
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    iframe.style.opacity = '0'
+    iframe.style.pointerEvents = 'none'
 
-    const printableHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BladeVault Comparison</title>
-  <style>
-    body {
-      margin: 24px;
-      color: #111827;
-      font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      print-color-adjust: exact;
-      -webkit-print-color-adjust: exact;
-    }
-    h1 {
-      margin: 0 0 6px;
-      font-size: 24px;
-    }
-    p {
-      margin: 0 0 18px;
-      color: #4b5563;
-      font-size: 12px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      font-size: 12px;
-    }
-    thead th {
-      background: #111827;
-      color: #ffffff;
-      text-align: left;
-      border: 1px solid #d1d5db;
-      padding: 8px;
-      word-wrap: break-word;
-    }
-    tbody th {
-      background: #f3f4f6;
-      text-align: left;
-      font-weight: 600;
-    }
-    td, tbody th {
-      border: 1px solid #d1d5db;
-      padding: 7px 8px;
-      word-wrap: break-word;
-      vertical-align: top;
-    }
-    tbody tr:nth-child(even) td {
-      background: #f9fafb;
-    }
-    @media print {
-      body {
-        margin: 12mm;
-      }
-    }
-  </style>
-</head>
-<body>
-  <h1>BladeVault Comparison</h1>
-  <p>Generated ${escapeHtml(generatedAt)}</p>
-  <table>
-    <thead>
-      <tr>
-        <th>Feature</th>
-        ${headerCells}
-      </tr>
-    </thead>
-    <tbody>
-      ${bodyRows}
-    </tbody>
-  </table>
-</body>
-</html>`
+    iframe.addEventListener(
+      'load',
+      () => {
+        const frameWindow = iframe.contentWindow
+        if (!frameWindow) {
+          iframe.remove()
+          if (printFrameRef.current === iframe) {
+            printFrameRef.current = null
+          }
+          return
+        }
 
-    printWindow.document.write(printableHtml)
-    printWindow.document.close()
-    printWindow.focus()
-    printWindow.print()
-    printWindow.close()
+        let fallbackTimer = 0
+        const cleanup = () => {
+          frameWindow.removeEventListener('afterprint', cleanup)
+          window.clearTimeout(fallbackTimer)
+          iframe.remove()
+          if (printFrameRef.current === iframe) {
+            printFrameRef.current = null
+          }
+        }
+
+        frameWindow.addEventListener('afterprint', cleanup, { once: true })
+        fallbackTimer = window.setTimeout(cleanup, 10_000)
+
+        frameWindow.focus()
+        window.setTimeout(() => {
+          try {
+            frameWindow.print()
+          } catch {
+            cleanup()
+          }
+        }, 50)
+      },
+      { once: true },
+    )
+
+    document.body.appendChild(iframe)
+    iframe.srcdoc = printableHtml
   }
 
   return (
