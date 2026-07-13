@@ -7,6 +7,7 @@ import {
   Cloud,
   Database,
   Download,
+  FolderOpen,
   Loader2,
   LogOut,
   RefreshCw,
@@ -52,6 +53,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 
 type StatusTone = 'idle' | 'loading' | 'success' | 'error'
 
@@ -111,6 +113,10 @@ function formatSyncTime(value: string) {
   }
 }
 
+function applyThemePreference(theme: AppSettings['theme']) {
+  document.documentElement.classList.toggle('dark', theme === 'dark')
+}
+
 export default function SettingsModal({
   isOpen,
   onClose,
@@ -120,6 +126,11 @@ export default function SettingsModal({
 }) {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [localDataPath, setLocalDataPath] = useState('')
+  const [configuredLocalDataPath, setConfiguredLocalDataPath] = useState('')
+  const [defaultLocalDataPath, setDefaultLocalDataPath] = useState('')
+  const [pendingLocalDataPath, setPendingLocalDataPath] = useState('')
+  const [moveExistingLocalData, setMoveExistingLocalData] = useState(true)
+  const [dataDirManagedByEnv, setDataDirManagedByEnv] = useState(false)
   const [dockerHostDataMountPath, setDockerHostDataMountPath] = useState('')
   const [isContainerized, setIsContainerized] = useState(false)
   const [cloudSession, setCloudSession] = useState<CloudBackupSession | null>(
@@ -139,6 +150,8 @@ export default function SettingsModal({
   const [backupMessage, setBackupMessage] = useState('')
   const [restoreStatus, setRestoreStatus] = useState<StatusTone>('idle')
   const [restoreMessage, setRestoreMessage] = useState('')
+  const [localDataStatus, setLocalDataStatus] = useState<StatusTone>('idle')
+  const [localDataMessage, setLocalDataMessage] = useState('')
   const [loadAttemptKey, setLoadAttemptKey] = useState(0)
 
   const authUrl = cloudConfig.authUrl
@@ -150,6 +163,13 @@ export default function SettingsModal({
   ]
     .filter(Boolean)
     .join(' ')
+  const canChooseLocalDataFolder =
+    typeof window !== 'undefined' &&
+    Boolean(window.bladevaultDesktop?.selectDirectory)
+  const normalizedPendingLocalDataPath = pendingLocalDataPath.trim()
+  const isLocalDataFolderDirty =
+    normalizedPendingLocalDataPath !== '' &&
+    normalizedPendingLocalDataPath !== localDataPath
 
   const refreshCloudConfig = useCallback(async (force = false) => {
     const nextConfig = await loadCloudRuntimeConfig(force)
@@ -233,13 +253,18 @@ export default function SettingsModal({
     async function load() {
       setIsLoading(true)
       setLoadError(null)
+      setLocalDataStatus('idle')
+      setLocalDataMessage('')
 
       try {
         const [response, nextCloudConfig] = await Promise.all([
-          fetch('/api/settings'),
+          fetch('/api/settings', { cache: 'no-store' }),
           refreshCloudConfig(true),
         ])
         const data = await readJsonResponse<{
+          configuredLocalDataPath?: string | null
+          dataDirManagedByEnv?: boolean
+          defaultLocalDataPath?: string
           error?: string
           settings?: AppSettings
           localDataPath?: string
@@ -258,6 +283,10 @@ export default function SettingsModal({
         if (cancelled) return
         setSettings(nextSettings)
         setLocalDataPath(data.localDataPath || '')
+        setConfiguredLocalDataPath(data.configuredLocalDataPath || '')
+        setDefaultLocalDataPath(data.defaultLocalDataPath || '')
+        setPendingLocalDataPath(data.localDataPath || '')
+        setDataDirManagedByEnv(Boolean(data.dataDirManagedByEnv))
         setDockerHostDataMountPath(data.dockerHostDataMountPath || '')
         setIsContainerized(Boolean(data.isContainerized))
         setCloudConfig(nextCloudConfig)
@@ -301,15 +330,97 @@ export default function SettingsModal({
       throw new Error('BladeVault did not return settings data.')
     }
     setSettings(nextSettings)
+    applyThemePreference(nextSettings.theme)
 
     window.dispatchEvent(
       new CustomEvent<Partial<AppSettings>>(SETTINGS_UPDATED_EVENT, {
-        detail: updates,
+        detail: nextSettings,
       }),
     )
 
     return nextSettings
   }, [])
+
+  const handleChooseLocalDataFolder = async () => {
+    const nextPath = await window.bladevaultDesktop?.selectDirectory()
+    if (!nextPath) {
+      return
+    }
+
+    setPendingLocalDataPath(nextPath)
+    setLocalDataStatus('idle')
+    setLocalDataMessage('')
+  }
+
+  const handleSaveLocalDataFolder = async () => {
+    setLocalDataStatus('loading')
+    setLocalDataMessage(
+      moveExistingLocalData
+        ? 'Moving your local vault to the new folder...'
+        : 'Updating your local data folder...',
+    )
+
+    try {
+      const response = await fetch('/api/settings/local-data-path', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          moveExistingData: moveExistingLocalData,
+          path: normalizedPendingLocalDataPath,
+        }),
+      })
+
+      const data = await readJsonResponse<{
+        configuredLocalDataPath?: string | null
+        defaultLocalDataPath?: string
+        dockerHostDataMountPath?: string | null
+        error?: string
+        isContainerized?: boolean
+        localDataPath?: string
+        message?: string
+        settings?: AppSettings
+        warning?: string
+      }>(response)
+      if (!response.ok) {
+        throw new Error(
+          getApiErrorMessage(data, 'Failed to update local data folder'),
+        )
+      }
+
+      const nextSettings = data.settings
+      if (!nextSettings) {
+        throw new Error('BladeVault did not return settings data.')
+      }
+
+      setSettings(nextSettings)
+      setLocalDataPath(data.localDataPath || normalizedPendingLocalDataPath)
+      setConfiguredLocalDataPath(data.configuredLocalDataPath || '')
+      setDefaultLocalDataPath(data.defaultLocalDataPath || '')
+      setPendingLocalDataPath(data.localDataPath || normalizedPendingLocalDataPath)
+      setDockerHostDataMountPath(data.dockerHostDataMountPath || '')
+      setIsContainerized(Boolean(data.isContainerized))
+      applyThemePreference(nextSettings.theme)
+      window.dispatchEvent(
+        new CustomEvent<Partial<AppSettings>>(SETTINGS_UPDATED_EVENT, {
+          detail: nextSettings,
+        }),
+      )
+
+      setLocalDataStatus('success')
+      setLocalDataMessage(
+        data.warning ||
+          `${data.message || 'Local data folder updated.'} Reloading your vault...`,
+      )
+      window.setTimeout(() => window.location.reload(), 700)
+    } catch (error) {
+      setLocalDataStatus('error')
+      setLocalDataMessage(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update local data folder',
+      )
+    }
+  }
 
   const handleGoogleSignIn = async () => {
     if (!settings) return
@@ -618,9 +729,7 @@ export default function SettingsModal({
                   <CardContent className="space-y-3 text-sm text-muted-foreground">
                     <p>
                       Knives, compare picks, and downloaded images are saved in
-                      your local
-                      <strong className="text-foreground"> data/ </strong>
-                      folder by default.
+                      your local data folder by default.
                     </p>
                     <div className="rounded-xl border bg-card px-4 py-3">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -630,6 +739,110 @@ export default function SettingsModal({
                         {localDataPath || 'Unavailable'}
                       </div>
                     </div>
+                    <div className="rounded-xl border bg-card px-4 py-4">
+                      <div className="flex flex-col gap-4">
+                        <div className="space-y-1">
+                          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            Choose Another Folder
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Pick a different folder to keep BladeVault on
+                            another drive, or point BladeVault at an existing
+                            local vault.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col gap-3 lg:flex-row">
+                          <Input
+                            value={pendingLocalDataPath}
+                            onChange={(event) => {
+                              setPendingLocalDataPath(event.target.value)
+                              setLocalDataStatus('idle')
+                              setLocalDataMessage('')
+                            }}
+                            placeholder={
+                              defaultLocalDataPath ||
+                              '/Users/you/BladeVault/data'
+                            }
+                            disabled={dataDirManagedByEnv}
+                            className="font-mono text-xs"
+                          />
+                          {canChooseLocalDataFolder ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className={`${settingsSecondaryButtonClassName} rounded-xl`}
+                              onClick={handleChooseLocalDataFolder}
+                              disabled={dataDirManagedByEnv}
+                            >
+                              <FolderOpen className="h-3.5 w-3.5" />
+                              Choose Folder
+                            </Button>
+                          ) : null}
+                        </div>
+
+                        <label className="flex items-start gap-3 rounded-xl border bg-muted/20 px-4 py-3">
+                          <Checkbox
+                            checked={moveExistingLocalData}
+                            onCheckedChange={(checked) =>
+                              setMoveExistingLocalData(checked === true)
+                            }
+                            disabled={dataDirManagedByEnv}
+                            aria-label="Move existing local data"
+                          />
+                          <span className="space-y-1">
+                            <span className="block text-sm font-medium text-foreground">
+                              Move existing data to the new folder
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              Keep this enabled to move your current database,
+                              images, compare list, and local settings with the
+                              vault.
+                            </span>
+                          </span>
+                        </label>
+
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <StatusPill
+                            status={localDataStatus}
+                            message={localDataMessage}
+                          />
+                          <Button
+                            type="button"
+                            className="rounded-xl sm:self-auto"
+                            onClick={handleSaveLocalDataFolder}
+                            disabled={
+                              dataDirManagedByEnv ||
+                              !normalizedPendingLocalDataPath ||
+                              !isLocalDataFolderDirty
+                            }
+                          >
+                            {localDataStatus === 'loading' ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : null}
+                            Save Folder
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    {configuredLocalDataPath ? (
+                      <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                        Selected launch folder:
+                        <div className="mt-2 break-all font-mono text-xs text-foreground">
+                          {configuredLocalDataPath}
+                        </div>
+                      </div>
+                    ) : null}
+                    {dataDirManagedByEnv ? (
+                      <div className="rounded-xl border border-dashed bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                        This session is pinned by
+                        <strong className="text-foreground">
+                          {' '}
+                          BLADEVAULT_DATA_DIR{' '}
+                        </strong>
+                        and cannot be changed from inside the app.
+                      </div>
+                    ) : null}
                     {dockerHostDataMountPath ? (
                       <div className="rounded-xl border bg-card px-4 py-3">
                         <div className="text-[10px] uppercase tracking-wider text-muted-foreground">

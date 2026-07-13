@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, clipboard, dialog, shell } = require('electron')
+const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } = require('electron')
 const { spawn } = require('child_process')
 const fs = require('fs')
 const path = require('path')
@@ -68,8 +68,8 @@ function getNodeExecPath() {
   return process.execPath
 }
 
-function getDataDir() {
-  return path.join(app.getPath('home'), 'BladeVault', 'data')
+function getPreloadPath() {
+  return path.join(__dirname, 'preload.cjs')
 }
 
 function delay(ms) {
@@ -184,7 +184,6 @@ async function startEmbeddedServer() {
   const port = await getPreferredPort()
   const env = {
     ...process.env,
-    BLADEVAULT_DATA_DIR: getDataDir(),
     ELECTRON_RUN_AS_NODE: '1',
     HOSTNAME: '127.0.0.1',
     NEXT_TELEMETRY_DISABLED: '1',
@@ -388,6 +387,20 @@ function wireMainWindowSecurity(window) {
   })
 }
 
+ipcMain.handle('bladevault:select-directory', async () => {
+  const result = await dialog.showOpenDialog(mainWindow ?? undefined, {
+    buttonLabel: 'Use Folder',
+    properties: ['createDirectory', 'openDirectory'],
+    title: 'Choose BladeVault Data Folder',
+  })
+
+  if (result.canceled) {
+    return null
+  }
+
+  return result.filePaths[0] ?? null
+})
+
 async function createMainWindow() {
   const startUrl = isUsingEmbeddedServer()
     ? await startEmbeddedServer()
@@ -410,6 +423,7 @@ async function createMainWindow() {
       backgroundThrottling: false,
       contextIsolation: true,
       nodeIntegration: false,
+      preload: getPreloadPath(),
       sandbox: true,
     },
   })

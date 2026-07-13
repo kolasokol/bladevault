@@ -1,0 +1,39 @@
+import { NextResponse } from 'next/server'
+import {
+  getDockerHostDataMountPath,
+  isContainerizedRuntime,
+} from '@/lib/local-db'
+import { updateLocalDataDirectory } from '@/lib/local-data-location'
+import { getSettings } from '@/lib/settings'
+
+type UpdateLocalDataPathRequest = {
+  moveExistingData?: boolean
+  path?: string
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as UpdateLocalDataPathRequest
+    const result = await updateLocalDataDirectory({
+      moveExistingData: body.moveExistingData !== false,
+      nextDataDir: body.path ?? '',
+    })
+
+    return NextResponse.json(
+      {
+        ...result,
+        dockerHostDataMountPath: getDockerHostDataMountPath(),
+        isContainerized: isContainerizedRuntime(),
+        settings: getSettings(),
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store',
+        },
+      },
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}

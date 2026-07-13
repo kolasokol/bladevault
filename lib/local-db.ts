@@ -2,6 +2,10 @@ import Database from 'better-sqlite3'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import {
+  getPersistedLocalDataDirPreference,
+  savePersistedLocalDataDirPreference,
+} from '@/lib/local-data-config'
 import { normalizeKnifeTextFields } from '@/lib/knife-text'
 
 function joinProjectPath(...segments: string[]): string {
@@ -25,12 +29,35 @@ function hasExistingDb(dataDir: string): boolean {
   return fs.existsSync(joinRuntimePath(dataDir, 'bladevault.sqlite'))
 }
 
-function resolveDataDir(): string {
+function normalizeConfiguredDataDir(value: string): string {
+  return path.resolve(value)
+}
+
+export function isLocalDataDirManagedByEnv(): boolean {
+  return Boolean(process.env.BLADEVAULT_DATA_DIR?.trim())
+}
+
+export function getDefaultLocalDataDirPath(): string {
+  return getDefaultHomeDataDir()
+}
+
+export function getLegacyLocalDataDirPath(): string {
+  return LEGACY_DATA_DIR
+}
+
+export function getConfiguredLocalDataDirPath(): string | null {
   const configuredDataDir = process.env.BLADEVAULT_DATA_DIR?.trim()
   if (configuredDataDir) {
-    return path.isAbsolute(configuredDataDir)
-      ? configuredDataDir
-      : joinProjectPath(configuredDataDir)
+    return normalizeConfiguredDataDir(configuredDataDir)
+  }
+
+  return getPersistedLocalDataDirPreference()
+}
+
+function resolveDataDir(): string {
+  const configuredDataDir = getConfiguredLocalDataDirPath()
+  if (configuredDataDir) {
+    return configuredDataDir
   }
 
   const homeDataDir = getDefaultHomeDataDir()
@@ -45,10 +72,8 @@ function resolveDataDir(): string {
   return homeDataDir
 }
 
-export const DATA_DIR = resolveDataDir()
-export const DB_PATH = joinRuntimePath(DATA_DIR, 'bladevault.sqlite')
-
 let db: Database.Database | null = null
+let activeDbPath: string | null = null
 let restoreInProgress = false
 
 export function beginLocalRestore(): void {
@@ -60,7 +85,25 @@ export function endLocalRestore(): void {
 }
 
 export function getLocalDataDirPath(): string {
-  return DATA_DIR
+  return resolveDataDir()
+}
+
+export function getLocalDbPath(): string {
+  return joinRuntimePath(getLocalDataDirPath(), 'bladevault.sqlite')
+}
+
+export function getLocalImagesDirPath(): string {
+  return joinRuntimePath(getLocalDataDirPath(), 'images')
+}
+
+export function setPersistedLocalDataDirPath(nextDataDir: string | null): string | null {
+  if (isLocalDataDirManagedByEnv()) {
+    throw new Error(
+      'This runtime is managed by BLADEVAULT_DATA_DIR and cannot be changed from the app.',
+    )
+  }
+
+  return savePersistedLocalDataDirPreference(nextDataDir)
 }
 
 export function isContainerizedRuntime(): boolean {
@@ -160,11 +203,19 @@ export function getLocalDb(): Database.Database {
     )
   }
 
+  const nextDbPath = getLocalDbPath()
+  if (db && activeDbPath && activeDbPath !== nextDbPath) {
+    db.close()
+    db = null
+    activeDbPath = null
+  }
+
   if (!db) {
-    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
-    db = new Database(DB_PATH)
+    fs.mkdirSync(path.dirname(nextDbPath), { recursive: true })
+    db = new Database(nextDbPath)
     db.pragma('journal_mode = WAL')
     initSchema(db)
+    activeDbPath = nextDbPath
   }
   return db
 }
@@ -173,6 +224,7 @@ export function closeLocalDb(): void {
   if (!db) return
   db.close()
   db = null
+  activeDbPath = null
 }
 
 function migrateSchema(database: Database.Database) {

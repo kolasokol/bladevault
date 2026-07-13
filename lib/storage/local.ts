@@ -2,10 +2,8 @@ import fs from 'fs/promises'
 import path from 'path'
 import { Knife, KnifeUpdates } from '@/lib/data'
 import { normalizeKnifeTextFields } from '@/lib/knife-text'
-import { getLocalDb, DATA_DIR } from '@/lib/local-db'
+import { getLocalDb, getLocalImagesDirPath } from '@/lib/local-db'
 import { CreateKnifeInput, ImageData, Storage } from './types'
-
-export const IMAGES_DIR = path.join(DATA_DIR, 'images')
 
 function extensionFromMimeType(contentType: string): string {
   const type = contentType.split(';')[0].trim().toLowerCase()
@@ -95,6 +93,10 @@ function getDb() {
   return getLocalDb()
 }
 
+function getImagesDir() {
+  return getLocalImagesDirPath()
+}
+
 export class LocalStorage implements Storage {
   async getAllKnives(): Promise<Knife[]> {
     const rows = getDb()
@@ -147,7 +149,7 @@ export class LocalStorage implements Storage {
       ext = extensionFromMimeType(contentType)
     }
 
-    const dir = path.join(IMAGES_DIR, knifeId)
+    const dir = path.join(getImagesDir(), knifeId)
     await fs.mkdir(dir, { recursive: true })
 
     const filename = `image-${String(index + 1).padStart(2, '0')}.${ext}`
@@ -171,7 +173,7 @@ export class LocalStorage implements Storage {
     const buffer = Buffer.from(base64, 'base64')
     const ext = extensionFromDataUrl(dataUrl)
 
-    const dir = path.join(IMAGES_DIR, knifeId)
+    const dir = path.join(getImagesDir(), knifeId)
     await fs.mkdir(dir, { recursive: true })
 
     const filename = `image-${String(index + 1).padStart(2, '0')}.${ext}`
@@ -290,9 +292,9 @@ export class LocalStorage implements Storage {
         !img.startsWith('https://')
       ) {
         try {
-          const filePath = path.join(IMAGES_DIR, img)
+          const filePath = path.join(getImagesDir(), img)
           const resolved = path.resolve(filePath)
-          const base = path.resolve(IMAGES_DIR)
+          const base = path.resolve(getImagesDir())
           if (resolved.startsWith(base)) {
             await fs.unlink(resolved)
           }
@@ -350,7 +352,7 @@ export class LocalStorage implements Storage {
     getDb().prepare('DELETE FROM compare_list WHERE knife_id = ?').run(id)
 
     try {
-      const dir = path.join(IMAGES_DIR, id)
+      const dir = path.join(getImagesDir(), id)
       await fs.rm(dir, { recursive: true, force: true })
     } catch {
       // ignore cleanup errors
@@ -462,9 +464,9 @@ export class LocalStorage implements Storage {
   }
 
   async getImage(relativePath: string): Promise<ImageData> {
-    const filePath = path.join(IMAGES_DIR, relativePath)
+    const filePath = path.join(getImagesDir(), relativePath)
     const resolved = path.resolve(filePath)
-    const base = path.resolve(IMAGES_DIR)
+    const base = path.resolve(getImagesDir())
 
     if (!resolved.startsWith(base)) {
       throw new Error('Invalid image path')
