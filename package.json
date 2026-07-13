@@ -3,6 +3,14 @@
   "version": "0.2.18",
   "private": true,
   "description": "A sharp, local-first knife collection manager.",
+  "homepage": "https://github.com/dedkola/bladevault",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dedkola/bladevault.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dedkola/bladevault/issues"
+  },
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "next dev",

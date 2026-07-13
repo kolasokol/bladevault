@@ -134,7 +134,7 @@ docker run -d \
   --restart unless-stopped \
   -p 5500:3000 \
   -v "$HOME/BladeVault/data:/app/data" \
-  ghcr.io/kolasokol/bladevault:latest
+  ghcr.io/dedkola/bladevault:latest
 ```
 
 or Podman:
@@ -147,7 +147,7 @@ podman run -d \
   --restart unless-stopped \
   -p 5500:3000 \
   -v "$HOME/BladeVault/data:/app/data" \
-  ghcr.io/kolasokol/bladevault:latest
+  ghcr.io/dedkola/bladevault:latest
 ```
 
 This creates a persistent `BladeVault/data` folder in your home directory for the SQLite database and downloaded images.
@@ -161,7 +161,7 @@ docker run -d `
   --restart unless-stopped `
   -p 5500:3000 `
   -v "${env:USERPROFILE}\BladeVault\data:/app/data" `
-  ghcr.io/kolasokol/bladevault:latest
+  ghcr.io/dedkola/bladevault:latest
 
 ```
 
@@ -175,7 +175,7 @@ podman run -d `
   --name bladevault `
   -p 5500:3000 `
   -v "${path}:/app/data" `
-  ghcr.io/kolasokol/bladevault:latest
+  ghcr.io/dedkola/bladevault:latest
 
 ```
 
@@ -186,7 +186,7 @@ Open [http://localhost:5500](http://localhost:5500) after the container starts.
 If you downloaded the macOS DMG:
 
 Permanent latest-release download:
-[BladeVault.dmg](https://github.com/kolasokol/bladevault/releases/latest/download/BladeVault.dmg)
+[BladeVault.dmg](https://github.com/dedkola/bladevault/releases/latest/download/BladeVault.dmg)
 
 1. Open the `.dmg` file.
 2. Drag `BladeVault.app` into `Applications`.
@@ -211,7 +211,7 @@ If macOS still blocks the first launch, try starting it once from Terminal:
 If you downloaded the Windows installer:
 
 Permanent latest-release download:
-[BladeVault.exe](https://github.com/kolasokol/bladevault/releases/latest/download/BladeVault.exe)
+[BladeVault.exe](https://github.com/dedkola/bladevault/releases/latest/download/BladeVault.exe)
 
 1. Open the `.exe` file.
 2. Follow the installer prompts.
@@ -223,7 +223,7 @@ If Windows SmartScreen blocks the first launch, click `More info` and then
 ### Build your own Docker image
 
 ```bash
-git clone https://github.com/kolasokol/bladevault.git
+git clone https://github.com/dedkola/bladevault.git
 cd bladevault
 
 # Build the image
@@ -247,7 +247,7 @@ docker run -p 5500:3000 -d \
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/kolasokol/bladevault.git
+git clone https://github.com/dedkola/bladevault.git
 cd bladevault
 
 # 2. Install dependencies

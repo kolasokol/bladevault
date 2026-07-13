@@ -7,7 +7,7 @@ updates:
       day: monday
       time: '09:00'
     assignees:
-      - kolasokol
+      - dedkola
     labels:
       - dependencies
     open-pull-requests-limit: 10
@@ -19,7 +19,7 @@ updates:
       day: monday
       time: '09:00'
     assignees:
-      - kolasokol
+      - dedkola
     labels:
       - dependencies
       - github-actions
