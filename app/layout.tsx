@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { SidebarShell } from '@/components/sidebar-shell'
 import { KnivesProvider } from '@/components/providers/knives-provider'
+import { DEFAULT_SETTINGS, getSettings } from '@/lib/settings'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { cn } from '@/lib/utils'
@@ -18,16 +19,33 @@ export const metadata: Metadata = {
   },
 }
 
+function getInitialTheme() {
+  try {
+    return getSettings().theme
+  } catch {
+    return DEFAULT_SETTINGS.theme
+  }
+}
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const theme = getInitialTheme()
+
   return (
-    <html lang="en" className={cn(geistSans.variable, geistMono.variable)}>
+    <html
+      lang="en"
+      className={cn(
+        geistSans.variable,
+        geistMono.variable,
+        theme === 'dark' && 'dark',
+      )}
+      suppressHydrationWarning
+    >
       <body
         className="bg-background text-foreground font-sans h-screen w-full flex overflow-hidden"
-        suppressHydrationWarning
       >
         <KnivesProvider>
           <TooltipProvider>

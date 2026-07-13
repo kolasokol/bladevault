@@ -1,15 +1,29 @@
 import { getLocalDb } from './local-db'
-import { DEFAULT_SETTINGS, type AppSettings } from './settings-shared'
+import {
+  APP_THEMES,
+  DEFAULT_SETTINGS,
+  type AppSettings,
+  type AppTheme,
+} from './settings-shared'
 export { DEFAULT_SETTINGS, SETTINGS_UPDATED_EVENT } from './settings-shared'
-export type { AppSettings } from './settings-shared'
+export type { AppSettings, AppTheme } from './settings-shared'
 
 const SETTINGS_KEYS: Record<keyof AppSettings, string> = {
+  theme: 'theme',
   cloudBackupLastSyncedAt: 'cloud_backup_last_synced_at',
   cloudAutoBackupEnabled: 'cloud_auto_backup_enabled',
 }
 
 function getDb() {
   return getLocalDb()
+}
+
+function parseTheme(value: string | undefined): AppTheme {
+  if (value && APP_THEMES.includes(value as AppTheme)) {
+    return value as AppTheme
+  }
+
+  return DEFAULT_SETTINGS.theme
 }
 
 export function getSettings(): AppSettings {
@@ -20,6 +34,7 @@ export function getSettings(): AppSettings {
   const map = new Map(rows.map((row) => [row.key, row.value]))
 
   return {
+    theme: parseTheme(map.get(SETTINGS_KEYS.theme)),
     cloudBackupLastSyncedAt:
       map.get(SETTINGS_KEYS.cloudBackupLastSyncedAt) ||
       DEFAULT_SETTINGS.cloudBackupLastSyncedAt,
@@ -39,6 +54,7 @@ export function saveSettings(settings: Partial<AppSettings>): AppSettings {
   )
 
   const entries: Array<[keyof AppSettings, string]> = [
+    ['theme', next.theme],
     ['cloudBackupLastSyncedAt', next.cloudBackupLastSyncedAt],
     ['cloudAutoBackupEnabled', next.cloudAutoBackupEnabled ? '1' : '0'],
   ]
