@@ -711,7 +711,7 @@ export default function SettingsView() {
           </div>
         </div>
       ) : (
-        <div className="flex h-full min-h-0 w-full overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-card">
+        <div className="flex h-full min-h-0 w-full overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-sidebar">
           {/* Sidebar */}
           <aside className="flex w-56 flex-col border-r border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)]/35">
             <div className="border-b border-[var(--bladevault-line)] p-3">
@@ -759,14 +759,14 @@ export default function SettingsView() {
           </aside>
 
           {/* Main content */}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-card">
-            <div className="border-b border-[var(--bladevault-line)] bg-card px-5 py-3">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar">
+            <div className="border-b border-[var(--bladevault-line)] bg-sidebar px-5 py-3">
               <h2 className="text-sm font-semibold text-foreground">
                 {tabs.find((t) => t.id === activeTab)?.label}
               </h2>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto bg-card p-4 sm:p-5">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-sidebar p-4 sm:p-5">
               {activeTab === 'general' && (
                 <div className="mx-auto max-w-3xl space-y-3">
                   <SettingsSection
