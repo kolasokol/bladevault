@@ -190,8 +190,9 @@ Permanent latest-release download:
 
 1. Open the `.dmg` file.
 2. Drag `BladeVault.app` into `Applications`.
-3. In the DMG window, double-click `Open BladeVault.command`.
-4. If you prefer Terminal, run:
+3. If macOS blocks the first launch, right-click `BladeVault.app`, choose
+   **Open**, and confirm the prompt.
+4. If that does not work, run:
 
 ```bash
 xattr -d com.apple.quarantine "/Applications/BladeVault.app"
@@ -203,6 +204,14 @@ If macOS still blocks the first launch, try starting it once from Terminal:
 ```bash
 "/Applications/BladeVault.app/Contents/MacOS/BladeVault"
 ```
+
+### Update BladeVault on macOS
+
+Unsigned macOS releases use a user-assisted update flow. When BladeVault finds
+a new version, choose **Download update** in Settings → About. The new DMG is
+downloaded and opened automatically. Quit BladeVault, drag the new app into
+Applications, confirm replacement, and use the same first-launch steps above
+if macOS blocks the unsigned app.
 
 ---
 

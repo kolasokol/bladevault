@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Cloud,
   CloudOff,
+  Download,
+  Loader2,
   Menu,
   X,
 } from 'lucide-react'
@@ -37,6 +39,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { type AppSettings } from '@/lib/settings-shared'
+import { useDesktopUpdates } from '@/hooks/use-desktop-updates'
 
 const links = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -52,11 +55,19 @@ export function Sidebar() {
   const searchParamsKey = searchParams.toString()
   const routeKey = searchParamsKey ? `${pathname}?${searchParamsKey}` : pathname
   const { knives, compareIds, isAutoBackupActive } = useKnives()
+  const { update, downloadUpdate } = useDesktopUpdates()
   const [brandsOpen, setBrandsOpen] = useState(true)
   const [pinnedOpen, setPinnedOpen] = useState(true)
   const [mobileNavSession, setMobileNavSession] = useState<string | null>(null)
   const isMobileNavOpen = mobileNavSession === routeKey
   const isSettingsActive = pathname === '/settings'
+  const hasUpdate = update.status === 'available'
+  const isUpdateBusy =
+    update.status === 'checking' || update.status === 'downloading'
+
+  const handleUpdateClick = async () => {
+    if (hasUpdate) await downloadUpdate()
+  }
 
   const brands = useMemo(() => {
     const counts = new Map<string, number>()
@@ -158,6 +169,30 @@ export function Sidebar() {
             </span>
 
             <div className="flex items-center gap-2">
+              {hasUpdate || isUpdateBusy ? (
+                <button
+                  type="button"
+                  onClick={handleUpdateClick}
+                  disabled={isUpdateBusy}
+                  className={cn(
+                    'inline-flex h-6 items-center gap-1.5 rounded-full border px-2 text-[9px] font-semibold uppercase tracking-[0.12em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--bladevault-gold)]/60',
+                    'border-[var(--bladevault-gold)]/70 bg-[var(--bladevault-gold)]/15 text-[var(--bladevault-title)] hover:bg-[var(--bladevault-gold)]/25 dark:text-[var(--bladevault-gold)]',
+                  )}
+                  title={
+                    hasUpdate
+                      ? `Download BladeVault ${update.version}`
+                      : 'Checking for BladeVault updates'
+                  }
+                >
+                  {isUpdateBusy ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3" />
+                  )}
+                  {hasUpdate ? 'Update' : 'Checking'}
+                </button>
+              ) : null}
+
               <div
                 className={cn(
                   'inline-flex w-fit items-center justify-center rounded-full border px-3 py-[0.22rem]',

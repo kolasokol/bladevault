@@ -60,6 +60,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import pkg from '@/package.json'
+import { useDesktopUpdates } from '@/hooks/use-desktop-updates'
 
 type StatusTone = 'idle' | 'loading' | 'success' | 'error'
 type SettingsTab = 'general' | 'cloud-backup' | 'appearance' | 'about'
@@ -128,6 +129,7 @@ function applyThemePreference(theme: AppSettings['theme']) {
 }
 
 export default function SettingsView() {
+  const { update, checkForUpdates, downloadUpdate } = useDesktopUpdates()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [localDataPath, setLocalDataPath] = useState('')
   const [configuredLocalDataPath, setConfiguredLocalDataPath] = useState('')
@@ -158,6 +160,39 @@ export default function SettingsView() {
   const [localDataMessage, setLocalDataMessage] = useState('')
   const [loadAttemptKey, setLoadAttemptKey] = useState(0)
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
+
+  const updateMessage =
+    update.status === 'checking'
+      ? 'Checking GitHub for a newer release...'
+      : update.status === 'downloading'
+        ? `Downloading update${update.percent != null ? ` (${update.percent}%)` : '...'}`
+        : update.status === 'downloaded'
+          ? update.platform === 'darwin'
+            ? 'DMG opened. Quit BladeVault and replace the app in Applications.'
+            : 'Installer opened. Follow the installer steps to update BladeVault.'
+          : update.status === 'not-available'
+            ? 'BladeVault is up to date.'
+            : update.status === 'error'
+              ? update.message || 'Could not check for updates.'
+              : ''
+
+  const updateTone =
+    update.status === 'error'
+      ? 'error'
+      : update.status === 'checking' || update.status === 'downloading'
+        ? 'loading'
+        : update.status === 'downloaded' || update.status === 'not-available'
+          ? 'success'
+          : 'idle'
+
+  const handleUpdateAction = async () => {
+    if (update.status === 'available') {
+      await downloadUpdate()
+      return
+    }
+
+    await checkForUpdates()
+  }
 
   const authUrl = cloudConfig.authUrl
   const backupUrl = cloudConfig.backupUrl
@@ -1055,7 +1090,38 @@ export default function SettingsView() {
               {activeTab === 'about' && (
                 <div className="mx-auto max-w-3xl space-y-3">
                   <SettingsSection title="BladeVault">
-                    <SettingsRow label="Version" description={pkg.version} />
+                    <SettingsRow label="Version" description={pkg.version}>
+                      <Button
+                        size="sm"
+                        className={`${settingsSecondaryButtonClassName} rounded-lg`}
+                        onClick={handleUpdateAction}
+                        disabled={
+                          update.status === 'checking' ||
+                          update.status === 'downloading'
+                        }
+                      >
+                        {update.status === 'checking' ||
+                        update.status === 'downloading' ? (
+                          <Loader2 className="animate-spin" />
+                        ) : update.status === 'available' ? (
+                          <Download />
+                        ) : update.status === 'downloaded' &&
+                          updateMessage.includes('Restart') ? (
+                          <RefreshCw />
+                        ) : (
+                          <RefreshCw />
+                        )}
+                        {update.status === 'available'
+                          ? 'Download update'
+                          : update.status === 'downloaded' &&
+                              updateMessage.includes('Restart')
+                            ? 'Restart to update'
+                            : 'Check for updates'}
+                      </Button>
+                    </SettingsRow>
+                    <SettingsRow label="Update status">
+                      <StatusPill status={updateTone} message={updateMessage} />
+                    </SettingsRow>
                     <SettingsRow
                       label="Repository"
                       description={pkg.repository?.url}

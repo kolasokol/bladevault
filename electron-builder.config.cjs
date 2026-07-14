@@ -4,11 +4,7 @@ const isMacHost = process.platform === 'darwin'
 const isMacSigningEnabled = process.env.BLADEVAULT_MAC_SIGN === '1'
 const isMacNotarizeEnabled = process.env.BLADEVAULT_MAC_NOTARIZE === '1'
 const isUnsignedMacBuild = isMacHost && !isMacSigningEnabled
-const dmgLaunchTextPath = path.join(
-  __dirname,
-  'build',
-  'First Launch.txt',
-)
+const dmgLaunchTextPath = path.join(__dirname, 'build', 'First Launch.txt')
 const dmgWindow = {
   width: 920,
   height: 720,
@@ -47,9 +43,15 @@ const config = {
     buildResources: 'build',
   },
   files: ['package.json', 'electron/**/*', '.next/standalone/**/*'],
+  publish: {
+    provider: 'github',
+    owner: 'dedkola',
+    repo: 'bladevault',
+    releaseType: 'release',
+  },
   mac: {
     category: 'public.app-category.utilities',
-    target: ['dmg'],
+    target: ['dmg', 'zip'],
     artifactName: 'BladeVault.${ext}',
     identity: isUnsignedMacBuild ? null : undefined,
     hardenedRuntime: isMacSigningEnabled,

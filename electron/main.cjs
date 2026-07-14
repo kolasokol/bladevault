@@ -1,6 +1,17 @@
-const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } = require('electron')
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  clipboard,
+  dialog,
+  ipcMain,
+  shell,
+} = require('electron')
 const { spawn } = require('child_process')
+const crypto = require('crypto')
 const fs = require('fs')
+const https = require('https')
+const os = require('os')
 const path = require('path')
 const net = require('net')
 
@@ -17,6 +28,209 @@ let mainWindow = null
 let serverProcess = null
 let serverOrigin = null
 let isQuitting = false
+let updateStatus = { status: 'idle' }
+
+function publishUpdateStatus(nextStatus) {
+  updateStatus = { ...nextStatus, platform: process.platform }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('bladevault:update-status', updateStatus)
+  }
+}
+
+function compareVersions(left, right) {
+  const parse = (version) => version.replace(/^v/, '').split('.').map(Number)
+  const leftParts = parse(left)
+  const rightParts = parse(right)
+
+  for (let index = 0; index < 3; index += 1) {
+    const difference = (leftParts[index] || 0) - (rightParts[index] || 0)
+    if (difference !== 0) return difference
+  }
+
+  return 0
+}
+
+function requestJson(url) {
+  return new Promise((resolve, reject) => {
+    https
+      .get(
+        url,
+        { headers: { 'User-Agent': 'BladeVault desktop updater' } },
+        (response) => {
+          if (
+            response.statusCode &&
+            response.statusCode >= 300 &&
+            response.statusCode < 400 &&
+            response.headers.location
+          ) {
+            response.resume()
+            requestJson(response.headers.location).then(resolve, reject)
+            return
+          }
+
+          let body = ''
+          response.setEncoding('utf8')
+          response.on('data', (chunk) => {
+            body += chunk
+          })
+          response.on('end', () => {
+            if (response.statusCode !== 200) {
+              reject(new Error(`GitHub returned HTTP ${response.statusCode}.`))
+              return
+            }
+
+            try {
+              resolve(JSON.parse(body))
+            } catch {
+              reject(new Error('GitHub returned invalid release metadata.'))
+            }
+          })
+        },
+      )
+      .on('error', reject)
+  })
+}
+
+function downloadFile(url, destination) {
+  return new Promise((resolve, reject) => {
+    const request = https.get(
+      url,
+      { headers: { 'User-Agent': 'BladeVault desktop updater' } },
+      (response) => {
+        if (
+          response.statusCode &&
+          response.statusCode >= 300 &&
+          response.statusCode < 400 &&
+          response.headers.location
+        ) {
+          response.resume()
+          downloadFile(response.headers.location, destination).then(
+            resolve,
+            reject,
+          )
+          return
+        }
+
+        if (response.statusCode !== 200) {
+          response.resume()
+          reject(new Error(`Download failed with HTTP ${response.statusCode}.`))
+          return
+        }
+
+        const file = fs.createWriteStream(destination)
+        const hash = crypto.createHash('sha256')
+        let transferred = 0
+        const total = Number(response.headers['content-length'] || 0)
+
+        response.on('data', (chunk) => {
+          transferred += chunk.length
+          hash.update(chunk)
+          publishUpdateStatus({
+            status: 'downloading',
+            percent: total ? Math.round((transferred / total) * 100) : null,
+          })
+        })
+        response.pipe(file)
+        file.on('finish', () => {
+          file.close(() => resolve({ sha256: hash.digest('hex') }))
+        })
+        file.on('error', (error) => {
+          file.destroy()
+          reject(error)
+        })
+      },
+    )
+    request.on('error', reject)
+  })
+}
+
+function getUpdateAssetName() {
+  if (process.platform === 'darwin') return 'BladeVault.dmg'
+  if (process.platform === 'win32') return 'BladeVault.exe'
+  return null
+}
+
+async function checkPlatformUpdate() {
+  const release = await requestJson(
+    'https://api.github.com/repos/dedkola/bladevault/releases/latest',
+  )
+  const version = String(release.tag_name || '').replace(/^v/, '')
+
+  if (!version || compareVersions(version, app.getVersion()) <= 0) {
+    publishUpdateStatus({
+      status: 'not-available',
+      currentVersion: app.getVersion(),
+    })
+    return updateStatus
+  }
+
+  const assetName = getUpdateAssetName()
+  const asset = Array.isArray(release.assets)
+    ? release.assets.find((candidate) => candidate.name === assetName)
+    : null
+  if (!asset?.browser_download_url) {
+    throw new Error(`The latest release does not contain ${assetName}.`)
+  }
+
+  publishUpdateStatus({
+    status: 'available',
+    version,
+    releaseUrl: release.html_url,
+    downloadUrl: asset.browser_download_url,
+  })
+  return updateStatus
+}
+
+async function downloadPlatformUpdate() {
+  const release = await requestJson(
+    'https://api.github.com/repos/dedkola/bladevault/releases/latest',
+  )
+  const version = String(release.tag_name || '').replace(/^v/, '')
+  const assetName = getUpdateAssetName()
+  const asset = Array.isArray(release.assets)
+    ? release.assets.find((candidate) => candidate.name === assetName)
+    : null
+  if (!asset?.browser_download_url || !version) {
+    throw new Error(`The latest release does not contain ${assetName}.`)
+  }
+
+  const extension = process.platform === 'win32' ? 'exe' : 'dmg'
+  const destination = path.join(
+    os.tmpdir(),
+    `BladeVault-${version}.${extension}`,
+  )
+  const result = await downloadFile(asset.browser_download_url, destination)
+  const expectedDigest = String(asset.digest || '')
+    .replace(/^sha256:/, '')
+    .toLowerCase()
+  if (expectedDigest && expectedDigest !== result.sha256.toLowerCase()) {
+    fs.rmSync(destination, { force: true })
+    throw new Error('The downloaded update failed its SHA-256 integrity check.')
+  }
+  publishUpdateStatus({
+    status: 'downloaded',
+    version,
+    path: destination,
+    sha256: result.sha256,
+  })
+  await shell.openPath(destination)
+  return updateStatus
+}
+
+async function checkForUpdates() {
+  publishUpdateStatus({ status: 'checking' })
+  if (getUpdateAssetName()) return checkPlatformUpdate()
+  publishUpdateStatus({
+    status: 'not-available',
+    currentVersion: app.getVersion(),
+  })
+  return updateStatus
+}
+
+async function downloadUpdate() {
+  if (getUpdateAssetName()) return downloadPlatformUpdate()
+  return updateStatus
+}
 
 function isUsingEmbeddedServer() {
   return app.isPackaged || FORCE_PRODUCTION_SERVER
@@ -401,6 +615,9 @@ ipcMain.handle('bladevault:select-directory', async () => {
   return result.filePaths[0] ?? null
 })
 
+ipcMain.handle('bladevault:get-update-status', () => updateStatus)
+ipcMain.handle('bladevault:check-for-updates', () => checkForUpdates())
+ipcMain.handle('bladevault:download-update', () => downloadUpdate())
 async function createMainWindow() {
   const startUrl = isUsingEmbeddedServer()
     ? await startEmbeddedServer()
@@ -432,6 +649,7 @@ async function createMainWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
+    mainWindow.webContents.send('bladevault:update-status', updateStatus)
   })
 
   if (SMOKE_TEST_MODE) {
@@ -483,6 +701,9 @@ app
   .then(async () => {
     try {
       await createMainWindow()
+      void checkForUpdates().catch((error) => {
+        publishUpdateStatus({ status: 'error', message: error.message })
+      })
     } catch (error) {
       dialog.showErrorBox(
         'BladeVault failed to start',

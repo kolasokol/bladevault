@@ -78,20 +78,16 @@ jobs:
 
       - name: Build desktop app
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: npm run dist:desktop
+        run: |
+          npm run build:desktop
+          npm run rebuild:desktop-native
+          npm run sync:desktop-runtime
+          npx electron-builder --config electron-builder.config.cjs --publish always
 
       - name: Verify macOS desktop app
         if: runner.os == 'macOS'
         run: npm run verify:desktop:mac
-
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/desktop/*.dmg
-            dist/desktop/*.exe
-            dist/desktop/latest*.yml
-            dist/desktop/latest*.yaml
