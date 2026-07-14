@@ -1,4 +1,5 @@
-import { chromium, Browser, BrowserContext } from 'playwright'
+import { chromium } from 'playwright'
+import type { Browser, BrowserContext } from 'playwright'
 
 export type RenderedPage = {
   html: string
