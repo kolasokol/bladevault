@@ -402,6 +402,7 @@ export function Sidebar() {
                   <Button
                     variant="outline"
                     size="sm"
+                    aria-label="Settings"
                     className={cn(
                       'flex-1',
                       isSettingsActive &&
