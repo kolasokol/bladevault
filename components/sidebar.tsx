@@ -37,7 +37,6 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { type AppSettings } from '@/lib/settings-shared'
-import SettingsModal from './settings-modal'
 
 const links = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -53,7 +52,6 @@ export function Sidebar() {
   const searchParamsKey = searchParams.toString()
   const routeKey = searchParamsKey ? `${pathname}?${searchParamsKey}` : pathname
   const { knives, compareIds, isAutoBackupActive } = useKnives()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [brandsOpen, setBrandsOpen] = useState(true)
   const [pinnedOpen, setPinnedOpen] = useState(true)
   const [mobileNavSession, setMobileNavSession] = useState<string | null>(null)
@@ -103,11 +101,6 @@ export function Sidebar() {
 
   const closeMobileNav = () => {
     setMobileNavSession(null)
-  }
-
-  const openSettings = () => {
-    setMobileNavSession(null)
-    setIsSettingsOpen(true)
   }
 
   const renderSidebarContent = (isMobile: boolean) => {
@@ -409,7 +402,8 @@ export function Sidebar() {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={openSettings}
+                    render={<Link href="/settings" onClick={handleNavigate} />}
+                    nativeButton={false}
                   >
                     <Settings className="h-3.5 w-3.5" />
                   </Button>
@@ -483,11 +477,6 @@ export function Sidebar() {
       )}
 
       {renderSidebarContent(false)}
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
     </>
   )
 }
