@@ -40,6 +40,7 @@ const compareRows = [
   { label: 'Overall Length', key: 'specs.overallLength' },
   { label: 'Blade Thickness', key: 'specs.bladeThickness' },
   { label: 'Weight', key: 'specs.weight' },
+  { label: 'Price', key: 'specs.price' },
   { label: 'Country', key: 'specs.country' },
 ] as const
 

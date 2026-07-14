@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/kolasokol/bladevault:latest
+    image: ghcr.io/dedkola/bladevault:latest
     container_name: bladevault
     ports:
       - '5500:3000'

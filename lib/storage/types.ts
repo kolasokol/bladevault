@@ -1,6 +1,9 @@
 import { Knife, KnifeUpdates } from '@/lib/data'
 
-export type CreateKnifeInput = Omit<Knife, 'id' | 'addedAt' | 'images'> & {
+export type CreateKnifeInput = Omit<
+  Knife,
+  'id' | 'addedAt' | 'updatedAt' | 'images'
+> & {
   imageUrls: string[]
 }
 

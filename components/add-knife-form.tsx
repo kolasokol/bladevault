@@ -158,6 +158,7 @@ export function AddKnifeForm() {
       modelNumber: product.specs?.modelNumber ?? '',
       handleLength: product.specs?.handleLength ?? '',
       hardness: product.specs?.hardness ?? '',
+      price: product.specs?.price ?? '',
       country: product.specs?.country ?? '',
       images: Array.isArray(product.images) ? product.images : [],
       sourceUrl: product.sourceUrl ?? url.trim(),

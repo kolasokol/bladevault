@@ -123,6 +123,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
           modelNumber: form.modelNumber,
           handleLength: form.handleLength,
           hardness: form.hardness,
+          price: form.price,
           country: form.country,
         },
       }
@@ -240,6 +241,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
     { label: 'Blade Thickness', value: knife.specs.bladeThickness || 'N/A' },
     { label: 'Weight', value: knife.specs.weight },
     { label: 'Designer', value: knife.specs.designer || 'N/A' },
+    { label: 'Price', value: knife.specs.price || 'N/A' },
     { label: 'Origin', value: knife.specs.country },
   ]
 

@@ -20,6 +20,7 @@ const SPEC_FIELDS = [
   'modelNumber',
   'handleLength',
   'hardness',
+  'price',
   'country',
 ] as const
 

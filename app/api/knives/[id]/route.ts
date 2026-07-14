@@ -51,6 +51,7 @@ export async function PATCH(
         'modelNumber',
         'handleLength',
         'hardness',
+        'price',
         'country',
       ] as const
       for (const field of specFields) {

@@ -78,6 +78,11 @@ const filterDefinitions = [
     getValue: (knife: Knife) => knife.specs.weight,
   },
   {
+    key: 'price',
+    label: 'Price',
+    getValue: (knife: Knife) => knife.specs.price,
+  },
+  {
     key: 'country',
     label: 'Country',
     getValue: (knife: Knife) => knife.specs.country,

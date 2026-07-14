@@ -39,6 +39,7 @@ export async function POST(request: Request) {
         modelNumber: body.specs?.modelNumber ?? '',
         handleLength: body.specs?.handleLength ?? '',
         hardness: body.specs?.hardness ?? '',
+        price: body.specs?.price ?? '',
         country: body.specs?.country ?? '',
       },
       imageUrls: Array.isArray(body.imageUrls) ? body.imageUrls : [],
