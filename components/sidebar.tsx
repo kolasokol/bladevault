@@ -37,7 +37,6 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { type AppSettings } from '@/lib/settings-shared'
-import SettingsModal from './settings-modal'
 
 const links = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -53,11 +52,11 @@ export function Sidebar() {
   const searchParamsKey = searchParams.toString()
   const routeKey = searchParamsKey ? `${pathname}?${searchParamsKey}` : pathname
   const { knives, compareIds, isAutoBackupActive } = useKnives()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [brandsOpen, setBrandsOpen] = useState(true)
   const [pinnedOpen, setPinnedOpen] = useState(true)
   const [mobileNavSession, setMobileNavSession] = useState<string | null>(null)
   const isMobileNavOpen = mobileNavSession === routeKey
+  const isSettingsActive = pathname === '/settings'
 
   const brands = useMemo(() => {
     const counts = new Map<string, number>()
@@ -103,11 +102,6 @@ export function Sidebar() {
 
   const closeMobileNav = () => {
     setMobileNavSession(null)
-  }
-
-  const openSettings = () => {
-    setMobileNavSession(null)
-    setIsSettingsOpen(true)
   }
 
   const renderSidebarContent = (isMobile: boolean) => {
@@ -408,8 +402,13 @@ export function Sidebar() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1"
-                    onClick={openSettings}
+                    className={cn(
+                      'flex-1',
+                      isSettingsActive &&
+                        'border-[var(--bladevault-olive)] bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)] hover:bg-[var(--bladevault-olive)] hover:text-[var(--bladevault-gold)]',
+                    )}
+                    render={<Link href="/settings" onClick={handleNavigate} />}
+                    nativeButton={false}
                   >
                     <Settings className="h-3.5 w-3.5" />
                   </Button>
@@ -483,11 +482,6 @@ export function Sidebar() {
       )}
 
       {renderSidebarContent(false)}
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
     </>
   )
 }
