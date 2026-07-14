@@ -4,10 +4,10 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 const panelClassName =
-  'overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-card shadow-none'
+  'overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-background shadow-none'
 
 const headerClassName =
-  'border-b border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)]/45 px-4 py-2.5 dark:border-[#d3c097]/30 dark:bg-[#382f1d]'
+  'border-b border-[var(--bladevault-line)] bg-background px-4 py-2.5 dark:border-[#d3c097]/30'
 
 const rowClassName =
   'flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 border-b border-[var(--bladevault-line)]/60 last:border-b-0'
@@ -70,7 +70,7 @@ export function SettingsRow({
 
 export function MonoValue({ children }: { children: React.ReactNode }) {
   return (
-    <div className="break-all rounded-md border border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)] px-2 py-1 font-mono text-xs text-foreground">
+    <div className="break-all rounded-md border border-[var(--bladevault-line)] bg-background px-2 py-1 font-mono text-xs text-foreground">
       {children}
     </div>
   )

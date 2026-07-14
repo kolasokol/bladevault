@@ -13,7 +13,6 @@ import {
   LogOut,
   Palette,
   RefreshCw,
-  Search,
   ShieldCheck,
   Upload,
 } from 'lucide-react'
@@ -162,7 +161,6 @@ export default function SettingsView() {
   const [localDataMessage, setLocalDataMessage] = useState('')
   const [loadAttemptKey, setLoadAttemptKey] = useState(0)
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
-  const [searchQuery, setSearchQuery] = useState('')
 
   const authUrl = cloudConfig.authUrl
   const backupUrl = cloudConfig.backupUrl
@@ -189,16 +187,6 @@ export default function SettingsView() {
     ],
     [],
   )
-
-  const visibleTabs = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return tabs
-    return tabs.filter(
-      (tab) =>
-        tab.label.toLowerCase().includes(query) ||
-        tab.id.toLowerCase().includes(query),
-    )
-  }, [searchQuery, tabs])
 
   const refreshCloudConfig = useCallback(async (force = false) => {
     const nextConfig = await loadCloudRuntimeConfig(force)
@@ -711,22 +699,11 @@ export default function SettingsView() {
           </div>
         </div>
       ) : (
-        <div className="flex h-full min-h-0 w-full overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-sidebar">
+        <div className="flex h-full min-h-0 w-full overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-background">
           {/* Sidebar */}
-          <aside className="flex w-56 flex-col border-r border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)]/35">
-            <div className="border-b border-[var(--bladevault-line)] p-3">
-              <div className="relative">
-                <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search settings..."
-                  className="h-8 rounded-lg border-[var(--bladevault-line)] bg-card pl-8 text-xs shadow-none"
-                />
-              </div>
-            </div>
+          <aside className="flex w-56 flex-col border-r border-[var(--bladevault-line)] bg-background">
             <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">
-              {visibleTabs.map((tab) => {
+              {tabs.map((tab) => {
                 const isActive = tab.id === activeTab
                 return (
                   <button
@@ -736,37 +713,33 @@ export default function SettingsView() {
                     className={cn(
                       settingsTabTriggerClassName,
                       isActive
-                        ? 'bg-card font-medium text-foreground shadow-sm'
+                        ? 'bg-[var(--bladevault-olive)] font-medium text-[var(--bladevault-gold)]'
                         : 'text-muted-foreground hover:bg-[var(--bladevault-surface-hover)] hover:text-foreground',
                     )}
                   >
                     <tab.icon className="h-4 w-4 shrink-0" />
                     <span className="flex-1">{tab.label}</span>
                     {tab.id === 'cloud-backup' ? (
-                      <span className="flex h-4 shrink-0 items-center rounded-full border border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)] px-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--bladevault-olive)] dark:border-[var(--bladevault-gold)] dark:bg-[var(--bladevault-gold)] dark:text-[var(--bladevault-olive)]">
+                      <span
+                        className={cn(
+                          'flex h-4 shrink-0 items-center rounded-full border px-1.5 text-[10px] font-semibold uppercase tracking-[0.14em]',
+                          isActive
+                            ? 'border-[var(--bladevault-gold)] bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)]'
+                            : 'border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)] text-[var(--bladevault-olive)] dark:border-[var(--bladevault-gold)] dark:bg-[var(--bladevault-gold)] dark:text-[var(--bladevault-olive)]',
+                        )}
+                      >
                         Beta
                       </span>
                     ) : null}
                   </button>
                 )
               })}
-              {visibleTabs.length === 0 ? (
-                <div className="px-2.5 py-2 text-xs text-muted-foreground">
-                  No settings match “{searchQuery}”.
-                </div>
-              ) : null}
             </nav>
           </aside>
 
           {/* Main content */}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar">
-            <div className="border-b border-[var(--bladevault-line)] bg-sidebar px-5 py-3">
-              <h2 className="text-sm font-semibold text-foreground">
-                {tabs.find((t) => t.id === activeTab)?.label}
-              </h2>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto bg-sidebar p-4 sm:p-5">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-background p-4 sm:p-5">
               {activeTab === 'general' && (
                 <div className="mx-auto max-w-3xl space-y-3">
                   <SettingsSection
@@ -796,7 +769,7 @@ export default function SettingsView() {
                             defaultLocalDataPath || '/Users/you/BladeVault/data'
                           }
                           disabled={dataDirManagedByEnv}
-                          className="h-8 min-w-[10rem] rounded-lg border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)] font-mono text-xs shadow-none dark:border-[#d3c097]/30 dark:bg-[#382f1d]"
+                          className="h-8 min-w-[10rem] rounded-lg border-[var(--bladevault-line)] bg-background font-mono text-xs shadow-none dark:border-[#d3c097]/30"
                         />
                         {canChooseLocalDataFolder ? (
                           <Button
