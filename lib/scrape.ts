@@ -407,11 +407,41 @@ function extractImages($: cheerio.CheerioAPI, baseUrl: string): string[] {
 const RETAILER_NAMES =
   /\bAmazon\b|Blade HQ|Knife Center|GP Knives|DLT Trading|KnifeWorks|KnivesPlus|Knife Art|KnifeJoy|NC Blade|Southern Edges|House of Blades|New Graham Knives|True North Knives|Steel Addiction|USA Made Blade/i
 
+function normalizeBrandName(brand: string): string {
+  const normalizations: Record<string, string> = {
+    'microtech gear': 'Microtech',
+    'microtech knives': 'Microtech',
+    'mtk inc.': 'Microtech',
+    'mtknives': 'Microtech',
+    'spyderco knives': 'Spyderco',
+    'chris reeve knives': 'Chris Reeve',
+    'bark river knives': 'Bark River',
+    'buck knives': 'Buck',
+    'case knives': 'Case',
+    'demko knives': 'Demko',
+    'fox knives': 'Fox',
+    'hogue knives': 'Hogue',
+    'kizer knives': 'Kizer',
+    'kizer cutlery': 'Kizer',
+    'we knife': 'WE',
+    'we knife co': 'WE',
+    'we knife co.': 'WE',
+    'we knife co ltd': 'WE',
+    'lionsteel': 'LionSteel',
+    'mora knives': 'Mora',
+    'mora of sweden': 'Mora',
+    'fallkniven': 'Fällkniven',
+    'fällkniven': 'Fällkniven',
+  }
+  return normalizations[brand.toLowerCase()] ?? brand
+}
+
 function cleanBrand(text: string): string {
-  return cleanText(text)
+  const cleaned = cleanText(text)
     .replace(/\s+/g, ' ')
     .replace(/(?:store|shop|official)\s*$/i, '')
     .trim()
+  return normalizeBrandName(cleaned)
 }
 
 function extractBrandFromAmazon($: cheerio.CheerioAPI): string {
@@ -611,10 +641,42 @@ function extractBrandFromName(name: string): string {
   return ''
 }
 
+function extractBrandFromDomain(url: string): string {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase()
+    const domainBrands: Record<string, string> = {
+      'spyderco.com': 'Spyderco',
+      'benchmade.com': 'Benchmade',
+      'buckknives.com': 'Buck',
+      'microtechknives.com': 'Microtech',
+      'chrisreeve.com': 'Chris Reeve',
+      'victorinox.com': 'Victorinox',
+      'boker.de': 'Böker',
+      'morakniv.se': 'Morakniv',
+      'morakniv.com': 'Morakniv',
+      'fallkniven.com': 'Fällkniven',
+      'fallkniven.se': 'Fällkniven',
+      'foxknives.com': 'Fox',
+      'lionsteel.it': 'LionSteel',
+      'extremaratio.com': 'Extrema Ratio',
+      'civivi.com': 'CIVIVI',
+      'weknife.com': 'WE',
+      'kizerknives.com': 'Kizer',
+    }
+    for (const [domain, brand] of Object.entries(domainBrands)) {
+      if (hostname === domain || hostname.endsWith(`.${domain}`)) return brand
+    }
+  } catch {
+    // ignore invalid URLs
+  }
+  return ''
+}
+
 function extractBrand(
   name: string,
   $: cheerio.CheerioAPI,
   ldBrand?: string,
+  sourceUrl?: string,
 ): string {
   // 1) Trust JSON-LD brand/manufacturer when present.
   if (ldBrand) {
@@ -626,8 +688,6 @@ function extractBrand(
   const metaBrand = findMeta($, [
     'brand',
     'og:brand',
-    'twitter:brand',
-    'product:brand',
     'manufacturer',
     'og:manufacturer',
   ])
@@ -646,7 +706,20 @@ function extractBrand(
   if (siteName && !RETAILER_NAMES.test(siteName)) return cleanBrand(siteName)
 
   // 6) Fall back to known brand names in the product title/name.
-  return extractBrandFromName(name)
+  const brandFromName = extractBrandFromName(name)
+  if (brandFromName) return brandFromName
+
+  // 7) Some sites put the brand only in <title> while h1 is a short model name.
+  const titleBrand = extractBrandFromName(normalizeText($('title').text()))
+  if (titleBrand) return titleBrand
+
+  // 8) Last resort: known manufacturer domain.
+  if (sourceUrl) {
+    const domainBrand = extractBrandFromDomain(sourceUrl)
+    if (domainBrand) return domainBrand
+  }
+
+  return ''
 }
 
 const SPEC_PATTERNS: Array<[keyof ScrapedProduct['specs'], RegExp]> = [
@@ -1230,7 +1303,7 @@ export function extractShopifyProduct(
 
   const result: Partial<ScrapedProduct> = {}
   if (title) result.name = title
-  if (vendor) result.brand = vendor
+  if (vendor) result.brand = cleanBrand(vendor)
   if (description) result.description = description
   if (images.length > 0) result.images = images
 
@@ -1272,7 +1345,7 @@ export function scrapeProduct(
   const ld = extractJsonLdProduct($)
 
   const name = ld.name || extractTitle($)
-  const brand = extractBrand(name, $, ld.brand)
+  const brand = extractBrand(name, $, ld.brand, sourceUrl ?? baseUrl)
   const description = ld.description || extractDescription($)
   const images = ld.images?.length ? ld.images : extractImages($, baseUrl)
   // Use elementTextWithBreaks so block-level tags and <br> become word
