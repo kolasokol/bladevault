@@ -59,7 +59,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import pkg from '@/package.json'
 
@@ -74,12 +73,6 @@ const settingsSecondaryButtonClassName =
 
 const settingsPrimaryButtonClassName =
   'border-[var(--bladevault-gold)] bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)] hover:bg-[var(--bladevault-title)] hover:text-[var(--bladevault-olive)]'
-
-const settingsPanelClassName =
-  'overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-card shadow-none'
-
-const settingsPanelHeaderClassName =
-  'border-b border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)]/45 px-4 py-2.5 dark:border-[#d3c097]/30 dark:bg-[#382f1d]'
 
 const settingsRowClassName =
   'flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 border-b border-[var(--bladevault-line)]/60 last:border-b-0'
@@ -173,7 +166,6 @@ export default function SettingsView() {
 
   const authUrl = cloudConfig.authUrl
   const backupUrl = cloudConfig.backupUrl
-  const authOrigin = authUrl ? new URL(authUrl).origin : ''
   const cloudConfigError = [
     !authUrl ? 'NEXT_PUBLIC_BLADEVAULT_AUTH_URL is not configured.' : null,
     !backupUrl ? 'NEXT_PUBLIC_BLADEVAULT_BACKUP_URL is not configured.' : null,
