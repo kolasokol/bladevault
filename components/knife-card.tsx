@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { memo } from 'react'
 import { ImageIcon, Scale } from 'lucide-react'
 import { getImageUrl, Knife } from '@/lib/data'
 import { cn } from '@/lib/utils'
@@ -13,7 +14,7 @@ import {
   activeKnifeFloatingClassName,
 } from '@/lib/knife-action-styles'
 
-export function KnifeCard({ knife }: { knife: Knife }) {
+export const KnifeCard = memo(function KnifeCard({ knife }: { knife: Knife }) {
   const { updateKnife, compareIds, addToCompare, removeFromCompare } =
     useKnives()
   const pinned = knife.pinned
@@ -58,6 +59,7 @@ export function KnifeCard({ knife }: { knife: Knife }) {
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               className="object-contain transition-transform duration-500 group-hover:scale-105"
               referrerPolicy="no-referrer"
+              decoding="async"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted/50">
@@ -112,4 +114,4 @@ export function KnifeCard({ knife }: { knife: Knife }) {
       </Card>
     </Link>
   )
-}
+})
