@@ -73,9 +73,6 @@ const settingsSecondaryButtonClassName =
 const settingsPrimaryButtonClassName =
   'border-[var(--bladevault-gold)] bg-[var(--bladevault-gold)] text-[var(--bladevault-olive)] hover:bg-[var(--bladevault-title)] hover:text-[var(--bladevault-olive)]'
 
-const settingsRowClassName =
-  'flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 border-b border-[var(--bladevault-line)]/60 last:border-b-0'
-
 function StatusPill({
   status,
   message,
@@ -195,10 +192,10 @@ export default function SettingsView() {
   }, [])
 
   const refreshCloudSession = useCallback(
-    async (cancelled = false) => {
+    async (cancellation?: { cancelled: boolean }) => {
       const state = getCloudAuthState()
       if (!state?.sessionToken) {
-        if (!cancelled) {
+        if (!cancellation?.cancelled) {
           setCloudSession(null)
           setSessionStatus('idle')
           setSessionMessage('')
@@ -217,19 +214,19 @@ export default function SettingsView() {
 
         const controller = new AbortController()
         const timeout = window.setTimeout(() => controller.abort(), 8000)
-
         const response = await fetch(`${nextConfig.authUrl}/api/me`, {
           headers: createCloudAuthHeaders(),
           signal: controller.signal,
+        }).finally(() => {
+          window.clearTimeout(timeout)
         })
-        window.clearTimeout(timeout)
 
         if (!response.ok) {
           throw new Error(await parseApiError(response))
         }
 
         const data = await readJsonResponse<CloudBackupSession | null>(response)
-        if (cancelled) return
+        if (cancellation?.cancelled) return
 
         if (data?.user && data?.session) {
           const existingState = getCloudAuthState()
@@ -250,7 +247,7 @@ export default function SettingsView() {
           setSessionMessage('')
         }
       } catch (error) {
-        if (!cancelled) {
+        if (!cancellation?.cancelled) {
           setCloudSession(null)
           setSessionStatus('error')
           setSessionMessage(
@@ -263,7 +260,7 @@ export default function SettingsView() {
   )
 
   useEffect(() => {
-    let cancelled = false
+    const cancellation = { cancelled: false }
 
     async function load() {
       setIsLoading(true)
@@ -295,7 +292,7 @@ export default function SettingsView() {
           throw new Error('BladeVault did not return settings data.')
         }
 
-        if (cancelled) return
+        if (cancellation.cancelled) return
         setSettings(nextSettings)
         setLocalDataPath(data.localDataPath || '')
         setConfiguredLocalDataPath(data.configuredLocalDataPath || '')
@@ -305,15 +302,15 @@ export default function SettingsView() {
         setDockerHostDataMountPath(data.dockerHostDataMountPath || '')
         setIsContainerized(Boolean(data.isContainerized))
         setCloudConfig(nextCloudConfig)
-        void refreshCloudSession(cancelled)
+        void refreshCloudSession(cancellation)
       } catch (error) {
-        if (!cancelled) {
+        if (!cancellation.cancelled) {
           setLoadError(
             error instanceof Error ? error.message : 'Failed to load settings',
           )
         }
       } finally {
-        if (!cancelled) {
+        if (!cancellation.cancelled) {
           setIsLoading(false)
         }
       }
@@ -321,7 +318,7 @@ export default function SettingsView() {
 
     load()
     return () => {
-      cancelled = true
+      cancellation.cancelled = true
     }
   }, [loadAttemptKey, refreshCloudConfig, refreshCloudSession])
 
