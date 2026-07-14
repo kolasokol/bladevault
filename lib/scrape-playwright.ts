@@ -136,6 +136,21 @@ export async function fetchRenderedHtml(url: string): Promise<RenderedPage> {
     const html = await page.content()
     const finalUrl = page.url()
 
+    // Some sites detect Playwright and return a bare error page (e.g. LionSteel).
+    // Throw so the caller can fall back to a plain HTTP fetch.
+    if (html.length < 2000) {
+      const lower = html.toLowerCase()
+      if (
+        lower.includes('exception') ||
+        lower.includes('this action caused') ||
+        lower.includes('please report via e-mail')
+      ) {
+        throw new Error(
+          'The page returned an automation error; falling back to plain fetch.',
+        )
+      }
+    }
+
     return { html, finalUrl }
   } finally {
     await page.close().catch(() => {
