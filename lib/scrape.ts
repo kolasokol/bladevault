@@ -474,7 +474,7 @@ function extractBrandFromAmazon($: cheerio.CheerioAPI): string {
         found = cleanBrand($row.find('td').last().text())
       }
     })
-    if (found) return found
+    if (found && !isRetailerBrand(found)) return found
   }
 
   // Amazon "product overview" feature lists key/value pairs including Brand.
@@ -494,12 +494,15 @@ function extractBrandFromAmazon($: cheerio.CheerioAPI): string {
   return ''
 }
 
+function isRetailerBrand(brand: string): boolean {
+  return RETAILER_NAMES.test(brand)
+}
+
 function extractBrandFromLabeledElements($: cheerio.CheerioAPI): string {
   const rowSelectors = [
     'table tr',
     'table tbody tr',
     'dl div',
-    'dl dd',
     '.spec-row',
     '.product-spec',
     '.product-attribute',
@@ -522,7 +525,22 @@ function extractBrandFromLabeledElements($: cheerio.CheerioAPI): string {
       found = cleanBrand($row.find(valueSelectors).first().text())
     }
   })
-  return found
+
+  // Standard definition lists have dt/dd as siblings, not nested rows.
+  if (!found) {
+    $('dt').each((_, dt) => {
+      if (found) return
+      const $dt = $(dt)
+      const label = cleanText($dt.text())
+      if (/^brand$/i.test(label) || /^manufacturer$/i.test(label)) {
+        const value = cleanBrand($dt.next('dd').text())
+        if (value) found = value
+      }
+    })
+  }
+
+  if (found && !isRetailerBrand(found)) return found
+  return ''
 }
 
 function extractBrandFromName(name: string): string {
@@ -632,10 +650,13 @@ function extractBrandFromName(name: string): string {
     'Bastinelli',
   ]
 
-  for (const brand of commonBrands) {
+  // Sort longer/more specific brands first so "Boker Plus" wins over "Boker"
+  // and "Buck Knives" wins over "Buck".
+  const sortedBrands = commonBrands.slice().sort((a, b) => b.length - a.length)
+  for (const brand of sortedBrands) {
     const escaped = brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     if (new RegExp(`\\b${escaped}\\b`, 'i').test(name)) {
-      return brand.trim()
+      return cleanBrand(brand)
     }
   }
   return ''
