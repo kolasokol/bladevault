@@ -18,21 +18,25 @@ export function SettingsSection({
   children,
   className,
 }: {
-  title: React.ReactNode
+  title?: React.ReactNode
   description?: React.ReactNode
   children: React.ReactNode
   className?: string
 }) {
   return (
     <div className={cn(panelClassName, className)}>
-      <div className={headerClassName}>
-        <div>
-          <div className="text-sm font-medium text-foreground">{title}</div>
-          {description ? (
-            <div className="text-xs text-muted-foreground">{description}</div>
-          ) : null}
+      {title || description ? (
+        <div className={headerClassName}>
+          <div>
+            {title ? (
+              <div className="text-sm font-medium text-foreground">{title}</div>
+            ) : null}
+            {description ? (
+              <div className="text-xs text-muted-foreground">{description}</div>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
       <div className="px-4">{children}</div>
     </div>
   )

@@ -177,7 +177,7 @@ export default function SettingsView() {
 
   const tabs = useMemo(
     () => [
-      { id: 'general' as const, label: 'General', icon: Database },
+      { id: 'general' as const, label: 'Local storage', icon: Database },
       { id: 'cloud-backup' as const, label: 'Cloud Backup', icon: Cloud },
       { id: 'appearance' as const, label: 'Appearance', icon: Palette },
       { id: 'about' as const, label: 'About', icon: Info },
@@ -739,10 +739,7 @@ export default function SettingsView() {
             <div className="min-h-0 flex-1 overflow-y-auto bg-background p-4 sm:p-5">
               {activeTab === 'general' && (
                 <div className="mx-auto max-w-3xl space-y-3">
-                  <SettingsSection
-                    title="Local Vault"
-                    description="Where your collection lives on this device."
-                  >
+                  <SettingsSection>
                     <SettingsRow
                       label="Current data folder"
                       description="The active vault used by BladeVault right now."
@@ -859,10 +856,7 @@ export default function SettingsView() {
 
               {activeTab === 'cloud-backup' && (
                 <div className="mx-auto max-w-3xl space-y-3">
-                  <SettingsSection
-                    title="Cloud Backup"
-                    description="Encrypted backups and cross-device sync."
-                  >
+                  <SettingsSection>
                     <SettingsRow
                       label="Session"
                       description={
