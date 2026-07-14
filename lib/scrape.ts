@@ -216,6 +216,35 @@ function findMeta($: cheerio.CheerioAPI, names: string[]): string {
   return ''
 }
 
+function extractJsonLdBrandValue(node: Record<string, unknown>): string {
+  const candidates: unknown[] = []
+  for (const key of ['brand', 'manufacturer']) {
+    const value = node[key]
+    if (value === undefined || value === null) continue
+    if (Array.isArray(value)) {
+      candidates.push(...value)
+    } else {
+      candidates.push(value)
+    }
+  }
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string') {
+      return cleanText(candidate)
+    }
+    if (typeof candidate === 'object' && candidate !== null) {
+      const obj = candidate as Record<string, unknown>
+      const name =
+        typeof obj.name === 'string'
+          ? cleanText(obj.name)
+          : typeof obj.value === 'string'
+            ? cleanText(obj.value)
+            : ''
+      if (name) return name
+    }
+  }
+  return ''
+}
+
 function extractJsonLdProduct($: cheerio.CheerioAPI): Partial<ScrapedProduct> {
   const result: Partial<ScrapedProduct> = {}
   $('script[type="application/ld+json"]').each((_, el) => {
@@ -233,9 +262,7 @@ function extractJsonLdProduct($: cheerio.CheerioAPI): Partial<ScrapedProduct> {
             (Array.isArray(type) && type.includes('Product'))
           ) {
             result.name = result.name || cleanText(node.name)
-            result.brand =
-              result.brand ||
-              cleanText(node.brand?.name || node.brand?.value || node.brand)
+            result.brand = result.brand || extractJsonLdBrandValue(node)
             result.description =
               result.description || htmlToPlainText(node.description)
             if (node.image) {
@@ -377,15 +404,98 @@ function extractImages($: cheerio.CheerioAPI, baseUrl: string): string[] {
   return images
 }
 
-function extractBrand(name: string, $: cheerio.CheerioAPI): string {
-  const siteName = findMeta($, ['og:site_name', 'application-name'])
-  if (siteName) {
-    // Some retailers put their own name here, not the product brand.
-    const retailerNames =
-      /Blade HQ|Knife Center|GP Knives|DLT Trading|KnifeWorks|KnivesPlus|Knife Art|KnifeJoy|NC Blade|Southern Edges|House of Blades|New Graham Knives|True North Knives|Steel Addiction|USA Made Blade/i
-    if (!retailerNames.test(siteName)) return siteName
+const RETAILER_NAMES =
+  /\bAmazon\b|Blade HQ|Knife Center|GP Knives|DLT Trading|KnifeWorks|KnivesPlus|Knife Art|KnifeJoy|NC Blade|Southern Edges|House of Blades|New Graham Knives|True North Knives|Steel Addiction|USA Made Blade/i
+
+function cleanBrand(text: string): string {
+  return cleanText(text)
+    .replace(/\s+/g, ' ')
+    .replace(/(?:store|shop|official)\s*$/i, '')
+    .trim()
+}
+
+function extractBrandFromAmazon($: cheerio.CheerioAPI): string {
+  // Amazon's byline info: "Kershaw", "Visit the Kershaw Store", or "by Kershaw".
+  const rawByline = cleanText($('#bylineInfo').first().text())
+  if (rawByline) {
+    const m =
+      rawByline.match(/visit the\s+(.+?)\s+(?:store|shop)/i) ||
+      rawByline.match(/^by\s+(.+)$/i)
+    const byline = cleanBrand(m?.[1] ?? rawByline)
+    if (byline && !RETAILER_NAMES.test(byline)) {
+      return byline
+    }
   }
 
+  // Amazon product details tables label the brand row.
+  const detailSelectors = [
+    '#productDetails_detailBullets_sections1 tr',
+    '#productDetails_techSpec_section_1 tr',
+    '.a-keyvalue tr',
+    'table tr',
+  ]
+  for (const selector of detailSelectors) {
+    let found = ''
+    $(selector).each((_, row) => {
+      if (found) return
+      const $row = $(row)
+      const label = cleanText($row.find('td.a-text-bold, th, td:first-child').first().text())
+      if (/^brand$/i.test(label) || /^manufacturer$/i.test(label)) {
+        found = cleanBrand($row.find('td').last().text())
+      }
+    })
+    if (found) return found
+  }
+
+  // Amazon "product overview" feature lists key/value pairs including Brand.
+  const overview = $('[data-feature-name="productOverview"], #productOverview_feature_div')
+  let overviewBrand = ''
+  overview.find('div, span, tr, li').each((_, el) => {
+    if (overviewBrand) return
+    const text = normalizeMultilineText(elementTextWithBreaks($, el as any))
+    // Some overviews use "Brand: Value", others just "Brand Value" with inline spans.
+    const match = text.match(/brand\s*[:\uFF1A]?\s*(.{1,80}?)(?:\n|$)/i)
+    if (match) {
+      overviewBrand = cleanBrand(match[1])
+    }
+  })
+  if (overviewBrand && !RETAILER_NAMES.test(overviewBrand)) return overviewBrand
+
+  return ''
+}
+
+function extractBrandFromLabeledElements($: cheerio.CheerioAPI): string {
+  const rowSelectors = [
+    'table tr',
+    'table tbody tr',
+    'dl div',
+    'dl dd',
+    '.spec-row',
+    '.product-spec',
+    '.product-attribute',
+    '.product-data-row',
+    '.woocommerce-product-attributes-item',
+    '.pdp-specs-row',
+    '.specifications-row',
+  ]
+  const labelSelectors =
+    'th, dt, .spec-label, [class*="label"], [class*="title"], .attribute-label'
+  const valueSelectors =
+    'td, dd, .spec-value, [class*="value"], [class*="data"], .attribute-value'
+
+  let found = ''
+  $(rowSelectors.join(', ')).each((_, row) => {
+    if (found) return
+    const $row = $(row)
+    const label = cleanText($row.find(labelSelectors).first().text())
+    if (/^brand$/i.test(label) || /^manufacturer$/i.test(label)) {
+      found = cleanBrand($row.find(valueSelectors).first().text())
+    }
+  })
+  return found
+}
+
+function extractBrandFromName(name: string): string {
   const commonBrands = [
     'Chris Reeve',
     'Spyderco',
@@ -399,43 +509,71 @@ function extractBrand(name: string, $: cheerio.CheerioAPI): string {
     'Bark River',
     'Boker',
     'Böker',
+    'Boker Plus',
     'Buck',
+    'Buck Knives',
     'Case',
+    'Case Knives',
     'Cold Steel',
     'CRKT',
     'Demko',
+    'Demko Knives',
     'Emerson',
+    'ESEE',
+    'Extrema Ratio',
     'Fox',
+    'Fox Knives',
+    'Ferrum Forge',
     'GiantMouse',
+    'Graham',
+    'Heretic',
+    'Hogue',
+    'Hogue Knives',
+    'Jake Hoback',
     'Kershaw',
+    'Kizer',
+    'Kizer Cutlery',
     'Liong Mah',
+    'Les George',
+    'LionSteel',
+    'Marfione',
     'Medford',
+    'Medford Knife & Tool',
     'MKM',
+    'Mikov',
+    'Mora',
+    'Maserin',
     'Nemesis',
     'Olamic',
     'QuietCarry',
     'Reate',
     'Rike',
+    'Schrade',
     'Shirogorov',
     'Smith & Wesson',
     'Spartan Blades',
+    'Survive! Knives',
     'Toor',
     'Tops',
+    'Tashi Bharucha',
+    'Tuff Knives',
     'Viper',
     'WE Knife',
     'WE',
+    'William Henry',
+    'Wilson Combat',
+    'Winkler',
+    'Work Tuff Gear',
     'CIVIVI',
-    'Kizer',
-    'Kizer Cutlery',
-    'Bestech',
     'Civivi',
+    'Bestech',
     'QSP',
     'Kansept',
     'Petrified Fish',
     'Sencut',
     'Twosun',
     'CJRB',
-    ' Artisan ',
+    'Artisan',
     'Artisan Cutlery',
     'Real Steel',
     'James Brand',
@@ -446,7 +584,6 @@ function extractBrand(name: string, $: cheerio.CheerioAPI): string {
     'Brous Blades',
     'Chaves',
     'CRK',
-    'Hogue',
     'Midgards-Messer',
     'Miguron',
     'North Arms',
@@ -462,6 +599,7 @@ function extractBrand(name: string, $: cheerio.CheerioAPI): string {
     'Trevor Burger',
     'Vero Engineering',
     'Vosteed',
+    'Bastinelli',
   ]
 
   for (const brand of commonBrands) {
@@ -471,6 +609,44 @@ function extractBrand(name: string, $: cheerio.CheerioAPI): string {
     }
   }
   return ''
+}
+
+function extractBrand(
+  name: string,
+  $: cheerio.CheerioAPI,
+  ldBrand?: string,
+): string {
+  // 1) Trust JSON-LD brand/manufacturer when present.
+  if (ldBrand) {
+    const cleaned = cleanBrand(ldBrand)
+    if (cleaned && !RETAILER_NAMES.test(cleaned)) return cleaned
+  }
+
+  // 2) Dedicated brand meta tags.
+  const metaBrand = findMeta($, [
+    'brand',
+    'og:brand',
+    'twitter:brand',
+    'product:brand',
+    'manufacturer',
+    'og:manufacturer',
+  ])
+  if (metaBrand && !RETAILER_NAMES.test(metaBrand)) return cleanBrand(metaBrand)
+
+  // 3) Amazon-specific DOM patterns.
+  const amazonBrand = extractBrandFromAmazon($)
+  if (amazonBrand) return amazonBrand
+
+  // 4) Generic spec rows with Brand/Manufacturer labels.
+  const labeledBrand = extractBrandFromLabeledElements($)
+  if (labeledBrand) return labeledBrand
+
+  // 5) Site name only when it is not a retailer/marketplace.
+  const siteName = findMeta($, ['og:site_name', 'application-name'])
+  if (siteName && !RETAILER_NAMES.test(siteName)) return cleanBrand(siteName)
+
+  // 6) Fall back to known brand names in the product title/name.
+  return extractBrandFromName(name)
 }
 
 const SPEC_PATTERNS: Array<[keyof ScrapedProduct['specs'], RegExp]> = [
@@ -1096,7 +1272,7 @@ export function scrapeProduct(
   const ld = extractJsonLdProduct($)
 
   const name = ld.name || extractTitle($)
-  const brand = ld.brand || extractBrand(name, $)
+  const brand = extractBrand(name, $, ld.brand)
   const description = ld.description || extractDescription($)
   const images = ld.images?.length ? ld.images : extractImages($, baseUrl)
   // Use elementTextWithBreaks so block-level tags and <br> become word
