@@ -14,7 +14,13 @@ import {
   activeKnifeFloatingClassName,
 } from '@/lib/knife-action-styles'
 
-export const KnifeCard = memo(function KnifeCard({ knife }: { knife: Knife }) {
+export const KnifeCard = memo(function KnifeCard({
+  knife,
+  eager = false,
+}: {
+  knife: Knife
+  eager?: boolean
+}) {
   const { updateKnife, compareIds, addToCompare, removeFromCompare } =
     useKnives()
   const pinned = knife.pinned
@@ -56,6 +62,7 @@ export const KnifeCard = memo(function KnifeCard({ knife }: { knife: Knife }) {
               src={getImageUrl(knife.images[0])}
               alt={knife.name}
               fill
+              loading={eager ? 'eager' : 'lazy'}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               className="object-contain transition-transform duration-500 group-hover:scale-105"
               referrerPolicy="no-referrer"

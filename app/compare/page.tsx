@@ -445,6 +445,7 @@ export default function ComparePage() {
                                 src={getImageUrl(knife.images[0])}
                                 alt={knife.name}
                                 fill
+                                sizes="(max-width: 640px) 100vw, 180px"
                                 className="object-contain"
                                 referrerPolicy="no-referrer"
                               />

@@ -7,7 +7,9 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: '**' },
+    ],
   },
   allowedDevOrigins: ['192.168.0.155'],
   output: 'standalone',

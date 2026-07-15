@@ -169,16 +169,24 @@ export function Gallery({
             <ChevronLeft className="h-8 w-8" />
           </button>
 
-          <div className="relative h-full w-full">
+          <div className="relative h-full w-full bg-black">
             {images.length > 0 ? (
-              <Image
-                src={getImageUrl(images[activeIdx])}
-                alt="Knife full screen"
-                fill
-                sizes="90vw"
-                className="object-contain"
-                referrerPolicy="no-referrer"
-              />
+              images.map((image, index) => (
+                <Image
+                  key={`${image}-${index}`}
+                  src={getImageUrl(image)}
+                  alt={index === activeIdx ? 'Knife full screen' : ''}
+                  aria-hidden={index !== activeIdx}
+                  fill
+                  loading="eager"
+                  sizes="90vw"
+                  className={cn(
+                    'object-contain',
+                    index === activeIdx ? 'z-10 opacity-100' : 'z-0 opacity-0',
+                  )}
+                  referrerPolicy="no-referrer"
+                />
+              ))
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <ImageIcon className="h-16 w-16 text-white/50" />
