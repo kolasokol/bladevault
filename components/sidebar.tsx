@@ -256,7 +256,8 @@ export function Sidebar() {
                 <Icon className="h-4 w-4" />
                 <span className="flex flex-1 items-center justify-between gap-2">
                   <span>{link.label}</span>
-                  {link.href === '/compare' && compareIds.length > 0 ? (
+                  {(link.href === '/collection' && knives.length > 0) ||
+                  (link.href === '/compare' && compareIds.length > 0) ? (
                     <span
                       className={cn(
                         'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none',
@@ -265,7 +266,9 @@ export function Sidebar() {
                           : 'bg-muted text-foreground',
                       )}
                     >
-                      {compareIds.length}
+                      {link.href === '/collection'
+                        ? knives.length
+                        : compareIds.length}
                     </span>
                   ) : null}
                 </span>
