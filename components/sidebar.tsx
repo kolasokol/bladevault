@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useSearchParams } from 'next/navigation'
-import packageJson from '@/package.json'
 import { useMemo, useState } from 'react'
 import { BookmarkIcon } from '@/components/bookmark-icon'
 import {
@@ -46,8 +45,6 @@ const links = [
   { href: '/collection', label: 'Collection', icon: Library },
   { href: '/compare', label: 'Compare', icon: Scale },
 ]
-
-const appVersion = `v.${packageJson.version}`
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -163,11 +160,7 @@ export function Sidebar() {
         </div>
 
         <div className="px-4 pb-2">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[10px] font-medium tracking-[0.16em] text-muted-foreground/75">
-              {appVersion}
-            </span>
-
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
               {hasUpdate || isUpdateBusy ? (
                 <button
