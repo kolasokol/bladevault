@@ -9,7 +9,6 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
-      { protocol: 'http', hostname: '**' },
     ],
   },
   allowedDevOrigins: ['192.168.0.155'],
