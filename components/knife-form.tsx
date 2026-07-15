@@ -328,6 +328,7 @@ export function KnifeFormFields({
                     src={getImageUrl(src)}
                     alt={`Scraped image ${index + 1}`}
                     fill
+                    sizes="(max-width: 640px) 33vw, 25vw"
                     className="object-cover"
                     referrerPolicy="no-referrer"
                     unoptimized
