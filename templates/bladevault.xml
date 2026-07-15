@@ -5,7 +5,7 @@
   <Network>bridge</Network>
   <Shell>bash</Shell>
   <Privileged>false</Privileged>
-  <Icon>https://raw.githubusercontent.com/dedkola/bladevault/main/public/logo.svg</Icon>
+  <Icon>https://raw.githubusercontent.com/dedkola/bladevault/main/public/logo.png</Icon>
   <WebUI>http://[IP]:[PORT:3000]</WebUI>
   <Overview>BladeVault is a local-first knife collection manager. Organize and compare your collection, store images and a SQLite database in persistent appdata, and export knife records to PDF.</Overview>
   <Support>https://github.com/dedkola/bladevault/issues</Support>

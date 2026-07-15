@@ -2,7 +2,7 @@
   <Profile>
     BladeVault is a local-first knife collection manager for Unraid. This repository maintains the BladeVault Docker app template. Track, organize, compare, and export knife records while keeping your SQLite database and images in persistent storage. For installation help, updates, and bug reports, use the GitHub issue tracker.
   </Profile>
-  <Icon>https://raw.githubusercontent.com/dedkola/bladevault/main/public/logo.svg</Icon>
+  <Icon>https://raw.githubusercontent.com/dedkola/bladevault/main/public/logo.png</Icon>
   <WebPage>https://www.bladevault.pro</WebPage>
   <Forum>https://github.com/dedkola/bladevault/issues</Forum>
   <Photo>https://raw.githubusercontent.com/dedkola/bladevault/main/assets/screenshots/dashboard.png</Photo>
