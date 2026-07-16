@@ -122,7 +122,7 @@ export function Sidebar() {
           'flex min-h-0 flex-col bg-sidebar text-sidebar-foreground',
           isMobile
             ? 'h-full w-[min(20rem,calc(100vw-2.5rem))] max-w-full border-r border-sidebar-border shadow-2xl'
-            : 'hidden h-full w-60 shrink-0 border-r border-sidebar-border lg:flex',
+            : 'hidden h-full w-60 shrink-0 border-r border-sidebar-border md:flex',
         )}
       >
         <div className="flex items-center justify-between gap-3 px-4 py-4">
@@ -474,7 +474,7 @@ export function Sidebar() {
         </defs>
       </svg>
 
-      <div className="flex items-center justify-between gap-3 border-b border-sidebar-border bg-sidebar px-4 py-3 lg:hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-sidebar-border bg-sidebar px-4 py-3 md:hidden">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
           <div className="relative h-10 w-10 shrink-0">
             <Image
@@ -506,7 +506,7 @@ export function Sidebar() {
 
       {isMobileNavOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/45 lg:hidden"
+          className="fixed inset-0 z-50 bg-black/45 md:hidden"
           onClick={closeMobileNav}
         >
           <div onClick={(event) => event.stopPropagation()}>

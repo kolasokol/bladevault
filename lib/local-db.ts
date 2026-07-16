@@ -25,8 +25,56 @@ function getDefaultHomeDataDir(): string {
     : LEGACY_DATA_DIR
 }
 
+function getLegacyDesktopDataDirs(): string[] {
+  if (process.platform !== 'darwin') {
+    return []
+  }
+
+  const homeDir = os.homedir().trim()
+  if (!homeDir) {
+    return []
+  }
+
+  const appSupportDir = joinRuntimePath(homeDir, 'Library', 'Application Support')
+  return [
+    joinRuntimePath(appSupportDir, 'BladeVault', 'data'),
+    joinRuntimePath(appSupportDir, 'bladevault', 'data'),
+  ]
+}
+
 function hasExistingDb(dataDir: string): boolean {
   return fs.existsSync(joinRuntimePath(dataDir, 'bladevault.sqlite'))
+}
+
+function getExistingDbKnifeCount(dataDir: string): number {
+  const dbPath = joinRuntimePath(dataDir, 'bladevault.sqlite')
+
+  let dbHandle: Database.Database | null = null
+  try {
+    dbHandle = new Database(dbPath, {
+      readonly: true,
+      fileMustExist: true,
+    })
+
+    const tableExists = dbHandle
+      .prepare(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'knives' LIMIT 1",
+      )
+      .get()
+
+    if (!tableExists) {
+      return 0
+    }
+
+    const result = dbHandle.prepare('SELECT COUNT(*) AS total FROM knives').get() as
+      | { total?: number }
+      | undefined
+    return Number(result?.total ?? 0)
+  } catch {
+    return 0
+  } finally {
+    dbHandle?.close()
+  }
 }
 
 function normalizeConfiguredDataDir(value: string): string {
@@ -61,12 +109,30 @@ function resolveDataDir(): string {
   }
 
   const homeDataDir = getDefaultHomeDataDir()
-  if (hasExistingDb(homeDataDir)) {
-    return homeDataDir
-  }
+  const existingCandidates = [
+    homeDataDir,
+    LEGACY_DATA_DIR,
+    ...getLegacyDesktopDataDirs(),
+  ].filter((candidate, index, allCandidates) => {
+    const normalized = path.resolve(candidate)
+    return (
+      allCandidates.findIndex((otherCandidate) => path.resolve(otherCandidate) === normalized) ===
+        index && hasExistingDb(candidate)
+    )
+  })
 
-  if (hasExistingDb(LEGACY_DATA_DIR)) {
-    return LEGACY_DATA_DIR
+  if (existingCandidates.length > 0) {
+    // Prefer the existing database with the most knives to keep desktop upgrades on the active vault.
+    const [bestCandidate] = existingCandidates
+      .map((candidate) => ({
+        candidate,
+        knifeCount: getExistingDbKnifeCount(candidate),
+      }))
+      .sort((left, right) => right.knifeCount - left.knifeCount)
+
+    if (bestCandidate) {
+      return bestCandidate.candidate
+    }
   }
 
   return homeDataDir
