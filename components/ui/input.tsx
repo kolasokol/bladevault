@@ -1,10 +1,15 @@
 import * as React from 'react'
 import { Input as InputPrimitive } from '@base-ui/react/input'
 
+import { DateInput } from '@/components/ui/date-input'
 import { cn } from '@/lib/utils'
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
   ({ className, type, ...props }, ref) => {
+    if (type === 'date') {
+      return <DateInput ref={ref} className={className} {...props} />
+    }
+
     return (
       <InputPrimitive
         ref={ref}
