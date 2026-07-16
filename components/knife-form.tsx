@@ -312,24 +312,6 @@ export function KnifeFormFields({
         </div>
       </FormSection>
 
-      <FormSection
-        title="Notes"
-        description="Add the context that does not fit into a structured spec field."
-      >
-        <div className="space-y-2">
-          <label className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-            Description
-          </label>
-          <Textarea
-            value={form.description}
-            onChange={(e) => updateField('description', e.target.value)}
-            rows={5}
-            placeholder="Short description of the knife..."
-            className="bg-background/80"
-          />
-        </div>
-      </FormSection>
-
       {customFieldDefinitions.length > 0 && (
         <FormSection
           title="Custom Fields"
@@ -359,6 +341,24 @@ export function KnifeFormFields({
           </div>
         </FormSection>
       )}
+
+      <FormSection
+        title="Notes"
+        description="Add the context that does not fit into a structured spec field."
+      >
+        <div className="space-y-2">
+          <label className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Description
+          </label>
+          <Textarea
+            value={form.description}
+            onChange={(e) => updateField('description', e.target.value)}
+            rows={5}
+            placeholder="Short description of the knife..."
+            className="bg-background/80"
+          />
+        </div>
+      </FormSection>
 
       <FormSection
         title="Images"
