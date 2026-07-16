@@ -375,7 +375,6 @@ export default function ComparePage() {
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
       <PageHeader
         title="Compare"
-        description="Review selected knives side-by-side without leaving your collection workflow."
         actions={
           knives.length > 0 ? (
             <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto">
@@ -427,10 +426,6 @@ export default function ComparePage() {
                 <div className="text-sm font-medium text-foreground">
                   Compare Lineup
                 </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Add, remove, and reorder what you want to inspect in the
-                  matrix below.
-                </p>
               </div>
 
               <div className="overflow-x-auto">
@@ -497,10 +492,6 @@ export default function ComparePage() {
                   <div className="text-sm font-medium text-foreground">
                     Comparison Matrix
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Scroll horizontally to view every selected knife across all
-                    rows.
-                  </p>
                 </div>
 
                 <div className="max-h-[72vh] overflow-auto rounded-xl border border-[var(--bladevault-line)]/80 bg-[color:var(--bladevault-surface-soft)]/30">
