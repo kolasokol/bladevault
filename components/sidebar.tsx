@@ -50,6 +50,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const searchParamsKey = searchParams.toString()
+  const selectedBrands = searchParams.getAll('brand')
   const routeKey = searchParamsKey ? `${pathname}?${searchParamsKey}` : pathname
   const { knives, compareIds, isAutoBackupActive } = useKnives()
   const { update, downloadUpdate } = useDesktopUpdates()
@@ -365,7 +366,8 @@ export function Sidebar() {
                     const brandHref = `/collection?brand=${encodeURIComponent(brand.name)}`
                     const isBrandActive =
                       pathname === '/collection' &&
-                      searchParams.get('brand') === brand.name
+                      selectedBrands.length === 1 &&
+                      selectedBrands[0] === brand.name
 
                     return (
                       <Link

@@ -429,7 +429,7 @@ export default function ComparePage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-white hover:bg-white">
-                      <TableHead className="sticky left-0 z-10 w-40 bg-white text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">
+                      <TableHead className="sticky left-0 z-10 w-40 bg-card text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">
                         Feature
                       </TableHead>
                       {comparedKnives.map((knife) => (

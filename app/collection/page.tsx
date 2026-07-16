@@ -3,7 +3,7 @@
 import { Suspense } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useMemo, useState } from 'react'
-import { X } from 'lucide-react'
+import { SlidersHorizontal, X } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { KnifeCard } from '@/components/knife-card'
 import { EmptyState } from '@/components/empty-state'
@@ -193,22 +193,31 @@ function CollectionContent() {
       )}
 
       {knives.length > 0 && (
-        <div className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          {filterDefinitions.map((definition) => (
-            <FilterMultiSelect
-              key={definition.key}
-              label={definition.label}
-              options={optionsByFilter[definition.key]}
-              selectedValues={selectedFilters[definition.key]}
-              onToggleValue={(value) =>
-                toggleFilterValue(definition.key, value)
-              }
-              onSelectAll={() =>
-                setFilterValues(definition.key, optionsByFilter[definition.key])
-              }
-              onClear={() => setFilterValues(definition.key, [])}
-            />
-          ))}
+        <div className="mb-6 border border-border/80 bg-muted/20 p-3 sm:p-4">
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+            Filters
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:gap-2.5 xl:grid-cols-4">
+            {filterDefinitions.map((definition) => (
+              <FilterMultiSelect
+                key={definition.key}
+                label={definition.label}
+                options={optionsByFilter[definition.key]}
+                selectedValues={selectedFilters[definition.key]}
+                onToggleValue={(value) =>
+                  toggleFilterValue(definition.key, value)
+                }
+                onSelectAll={() =>
+                  setFilterValues(
+                    definition.key,
+                    optionsByFilter[definition.key],
+                  )
+                }
+                onClear={() => setFilterValues(definition.key, [])}
+              />
+            ))}
+          </div>
         </div>
       )}
 

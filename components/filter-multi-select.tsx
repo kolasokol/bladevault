@@ -106,8 +106,8 @@ export function FilterMultiSelect({
           setIsOpen(true)
         }}
         className={cn(
-          'w-full justify-between gap-2 px-2.5 text-left',
-          selectedValues.length > 0 && 'border-[var(--bladevault-line)]',
+          'h-8 w-full justify-between gap-2 px-2.5 text-left hover:border-primary/50',
+          selectedValues.length > 0 && 'border-primary/60 bg-primary/5',
         )}
       >
         <span className="truncate">{triggerLabel}</span>
