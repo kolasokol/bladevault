@@ -11,7 +11,7 @@
   <Support>https://github.com/dedkola/bladevault/issues</Support>
   <Project>https://www.bladevault.pro</Project>
   <TemplateURL>https://raw.githubusercontent.com/dedkola/bladevault/main/templates/bladevault.xml</TemplateURL>
-  <ReadMe>https://raw.githubusercontent.com/dedkola/bladevault/main/README.md</ReadMe>
+  <ReadMe>https://github.com/dedkola/bladevault/blob/main/README.md</ReadMe>
   <Category>Tools:System</Category>
   <ExtraSearchTerms>knife collection inventory catalog manager local-first sqlite</ExtraSearchTerms>
   <Changes>Initial Unraid Community Apps release.</Changes>
