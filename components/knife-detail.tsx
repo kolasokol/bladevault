@@ -22,13 +22,59 @@ import { Gallery } from '@/components/gallery'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import {
   activeKnifeActionStyle,
   activeKnifeOutlineClassName,
 } from '@/lib/knife-action-styles'
+
+function DetailSection({
+  title,
+  description,
+  children,
+  className,
+}: {
+  title: string
+  description?: string
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <section
+      className={cn(
+        'overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-background shadow-none',
+        className,
+      )}
+    >
+      <div className="border-b border-[var(--bladevault-line)] bg-[color:var(--bladevault-surface-soft)]/70 px-4 py-3 dark:border-[#d3c097]/30">
+        <div className="text-sm font-medium text-foreground">{title}</div>
+        {description ? (
+          <div className="mt-0.5 text-xs text-muted-foreground">
+            {description}
+          </div>
+        ) : null}
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  )
+}
+
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string
+  value: React.ReactNode
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-[var(--bladevault-line)]/60 py-2.5 last:border-b-0 last:pb-0 first:pt-0">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="max-w-[60%] text-right text-xs text-foreground">
+        {value}
+      </span>
+    </div>
+  )
+}
 
 export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
   const router = useRouter()
@@ -250,29 +296,42 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
     )
   }
 
-  const specRows = [
+  const identityRows = [
     { label: 'Model Number', value: knife.specs.modelNumber || 'N/A' },
+    { label: 'Designer', value: knife.specs.designer || 'N/A' },
+    { label: 'Origin', value: knife.specs.country || 'N/A' },
+    { label: 'Price', value: knife.specs.price || 'N/A' },
+  ]
+
+  const constructionRows = [
     { label: 'Blade Material', value: knife.specs.bladeMaterial || 'N/A' },
-    { label: 'Handle', value: knife.handleMaterial },
-    { label: 'Handle Length', value: knife.specs.handleLength || 'N/A' },
-    { label: 'Blade Style', value: knife.bladeStyle },
+    { label: 'Blade Style', value: knife.bladeStyle || 'N/A' },
     {
       label: 'Blade Coating / Finish',
       value: knife.specs.bladeCoating || 'N/A',
     },
-    { label: 'Hardness', value: knife.specs.hardness || 'N/A' },
+    { label: 'Handle Material', value: knife.handleMaterial || 'N/A' },
     {
       label: 'Locking Mechanism',
       value: knife.specs.lockingMechanism || 'N/A',
     },
-    { label: 'Overall Length', value: knife.specs.overallLength },
-    { label: 'Blade Length', value: knife.specs.bladeLength },
-    { label: 'Blade Thickness', value: knife.specs.bladeThickness || 'N/A' },
-    { label: 'Weight', value: knife.specs.weight },
-    { label: 'Designer', value: knife.specs.designer || 'N/A' },
-    { label: 'Price', value: knife.specs.price || 'N/A' },
-    { label: 'Origin', value: knife.specs.country },
+    { label: 'Hardness', value: knife.specs.hardness || 'N/A' },
   ]
+
+  const dimensionRows = [
+    { label: 'Overall Length', value: knife.specs.overallLength || 'N/A' },
+    { label: 'Blade Length', value: knife.specs.bladeLength || 'N/A' },
+    { label: 'Blade Thickness', value: knife.specs.bladeThickness || 'N/A' },
+    { label: 'Handle Length', value: knife.specs.handleLength || 'N/A' },
+    { label: 'Weight', value: knife.specs.weight || 'N/A' },
+  ]
+
+  const customFieldRows = customFields
+    .map((field) => ({
+      label: field.name,
+      value: knife.customFields[field.id] || 'N/A',
+    }))
+    .filter(Boolean)
 
   return (
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl 2xl:max-w-[100rem] mx-auto">
@@ -355,39 +414,40 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
         <div className="flex flex-col gap-6">
           <Gallery images={knife.images} />
 
-          <Tabs defaultValue="overview">
-            <TabsList variant="line">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
-            </TabsList>
-            <TabsContent value="overview" className="pt-4">
-              <div className="max-w-2xl space-y-3">
-                {knife.description ? (
-                  knife.description
-                    .split(/\n\s*\n/)
-                    .map((p) => p.trim())
-                    .filter(Boolean)
-                    .map((paragraph, index) => (
-                      <p
-                        key={index}
-                        className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line"
-                      >
-                        {paragraph}
-                      </p>
-                    ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No description provided.
-                  </p>
-                )}
-              </div>
-            </TabsContent>
-            <TabsContent value="history" className="pt-4">
-              <p className="text-sm text-muted-foreground">
-                History tracking coming soon.
-              </p>
-            </TabsContent>
-          </Tabs>
+          <DetailSection
+            title="Notes"
+            description="Reference copy and product context captured for this item."
+          >
+            <div className="max-w-3xl space-y-3">
+              {knife.description ? (
+                knife.description
+                  .split(/\n\s*\n/)
+                  .map((p) => p.trim())
+                  .filter(Boolean)
+                  .map((paragraph, index) => (
+                    <p
+                      key={index}
+                      className="text-sm leading-relaxed whitespace-pre-line text-muted-foreground"
+                    >
+                      {paragraph}
+                    </p>
+                  ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No description provided.
+                </p>
+              )}
+            </div>
+          </DetailSection>
+
+          <DetailSection
+            title="History"
+            description="Reserved for future tracking of acquisitions, updates, and notes."
+          >
+            <p className="text-sm text-muted-foreground">
+              History tracking coming soon.
+            </p>
+          </DetailSection>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -404,9 +464,9 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               </>
             </CardHeader>
 
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {knife.sourceUrl ? (
-                <div className="space-y-1.5">
+                <div className="rounded-lg border border-[var(--bladevault-line)]/70 bg-[color:var(--bladevault-surface-soft)]/45 px-3 py-3">
                   <h3 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                     Source
                   </h3>
@@ -414,7 +474,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                     href={knife.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground break-all"
+                    className="mt-1 inline-flex items-center gap-1 break-all text-xs text-muted-foreground hover:text-foreground"
                   >
                     {knife.sourceUrl}
                     <ExternalLink className="h-3 w-3 shrink-0" />
@@ -422,51 +482,55 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 </div>
               ) : null}
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                    Specifications
-                  </h3>
+              <DetailSection
+                title="Identity"
+                description="Core catalog data used to identify this knife in the collection."
+                className="rounded-lg"
+              >
+                <div>
+                  {identityRows.map(({ label, value }) => (
+                    <DetailRow key={label} label={label} value={value} />
+                  ))}
                 </div>
+              </DetailSection>
 
-                <Separator />
+              <DetailSection
+                title="Construction"
+                description="Materials, finish, and mechanism details for the build."
+                className="rounded-lg"
+              >
+                <div>
+                  {constructionRows.map(({ label, value }) => (
+                    <DetailRow key={label} label={label} value={value} />
+                  ))}
+                </div>
+              </DetailSection>
 
-                {specRows.map(({ label, value }) => (
-                  <div key={label}>
-                    <div className="flex items-center justify-between gap-4 py-1.5">
-                      <span className="text-xs text-muted-foreground">
-                        {label}
-                      </span>
-                      <span className="text-xs text-foreground">{value}</span>
-                    </div>
-                    <Separator />
-                  </div>
-                ))}
+              <DetailSection
+                title="Dimensions"
+                description="Size and carry measurements in the same grouping as the editor."
+                className="rounded-lg"
+              >
+                <div>
+                  {dimensionRows.map(({ label, value }) => (
+                    <DetailRow key={label} label={label} value={value} />
+                  ))}
+                </div>
+              </DetailSection>
 
-                {customFields.length > 0 && (
-                  <>
-                    <div className="flex items-center justify-between pt-3">
-                      <h3 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                        Custom Fields
-                      </h3>
-                    </div>
-                    <Separator />
-                    {customFields.map((field) => (
-                      <div key={field.id}>
-                        <div className="flex items-center justify-between gap-4 py-1.5">
-                          <span className="text-xs text-muted-foreground">
-                            {field.name}
-                          </span>
-                          <span className="text-xs text-foreground">
-                            {knife.customFields[field.id] || 'N/A'}
-                          </span>
-                        </div>
-                        <Separator />
-                      </div>
+              {customFieldRows.length > 0 && (
+                <DetailSection
+                  title="Custom Fields"
+                  description="Additional metadata configured from settings."
+                  className="rounded-lg"
+                >
+                  <div>
+                    {customFieldRows.map(({ label, value }) => (
+                      <DetailRow key={label} label={label} value={value} />
                     ))}
-                  </>
-                )}
-              </div>
+                  </div>
+                </DetailSection>
+              )}
             </CardContent>
           </Card>
         </div>

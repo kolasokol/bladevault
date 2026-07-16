@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
 export type KnifeFormData = {
   brand: string
@@ -179,6 +180,37 @@ function inputTypeForCustomField(type: CustomFieldType): string {
   }
 }
 
+function FormSection({
+  title,
+  description,
+  children,
+  className,
+}: {
+  title: string
+  description?: string
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <section
+      className={cn(
+        'overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-background shadow-none',
+        className,
+      )}
+    >
+      <div className="border-b border-[var(--bladevault-line)] bg-[color:var(--bladevault-surface-soft)]/70 px-4 py-3 dark:border-[#d3c097]/30">
+        <div className="text-sm font-medium text-foreground">{title}</div>
+        {description ? (
+          <div className="mt-0.5 text-xs text-muted-foreground">
+            {description}
+          </div>
+        ) : null}
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  )
+}
+
 export function KnifeFormFields({
   form,
   updateField,
@@ -218,8 +250,8 @@ export function KnifeFormFields({
     placeholder: string,
     span: 1 | 2 = 1,
   ) => (
-    <div className={`space-y-1.5 ${span === 2 ? 'sm:col-span-2' : ''}`}>
-      <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+    <div className={cn('space-y-2', span === 2 && 'sm:col-span-2')}>
+      <label className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
         {label}
       </label>
       <Input
@@ -228,45 +260,85 @@ export function KnifeFormFields({
           updateField(field, e.target.value as KnifeFormData[typeof field])
         }
         placeholder={placeholder}
+        className="bg-background/80"
       />
     </div>
   )
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {inputField('Brand / Maker', 'brand', 'e.g. Chris Reeve Knives', 2)}
-        {inputField('Model Name', 'name', 'e.g. Sebenza 31', 2)}
-        {inputField('Model Number', 'modelNumber', 'e.g. 1122A4')}
-        {inputField('Blade Material', 'bladeMaterial', 'e.g. AEB-L')}
-        {inputField('Handle Material', 'handleMaterial', 'e.g. Titanium')}
-        {inputField('Handle Length', 'handleLength', 'e.g. 3.77 in')}
-        {inputField('Blade Style', 'bladeStyle', 'e.g. Drop Point')}
-        {inputField('Weight', 'weight', 'e.g. 4.7 oz')}
-        {inputField('Overall Length', 'overallLength', 'e.g. 8.33 in')}
-        {inputField('Blade Length', 'bladeLength', 'e.g. 3.61 in')}
-        {inputField('Blade Thickness', 'bladeThickness', 'e.g. 3.7 mm')}
-        {inputField('Blade Coating / Finish', 'bladeCoating', 'e.g. Satin')}
-        {inputField('Hardness', 'hardness', 'e.g. 58-60 HRC')}
-        {inputField(
-          'Locking Mechanism',
-          'lockingMechanism',
-          'e.g. Compression lock',
-        )}
-        {inputField('Designer', 'designer', 'e.g. Chris Reeve')}
-        {inputField('Price', 'price', 'e.g. $525')}
-        {inputField('Country', 'country', 'e.g. USA')}
-      </div>
+    <div className="space-y-5">
+      <FormSection
+        title="Identity"
+        description="Core naming and catalog details used across the collection."
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {inputField('Brand / Maker', 'brand', 'e.g. Chris Reeve Knives', 2)}
+          {inputField('Model Name', 'name', 'e.g. Sebenza 31', 2)}
+          {inputField('Model Number', 'modelNumber', 'e.g. 1122A4')}
+          {inputField('Designer', 'designer', 'e.g. Chris Reeve')}
+          {inputField('Country', 'country', 'e.g. USA')}
+          {inputField('Price', 'price', 'e.g. $525')}
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Construction"
+        description="Materials, finish, and locking details that define the build."
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {inputField('Blade Material', 'bladeMaterial', 'e.g. AEB-L')}
+          {inputField('Blade Style', 'bladeStyle', 'e.g. Drop Point')}
+          {inputField('Blade Coating / Finish', 'bladeCoating', 'e.g. Satin')}
+          {inputField('Handle Material', 'handleMaterial', 'e.g. Titanium')}
+          {inputField(
+            'Locking Mechanism',
+            'lockingMechanism',
+            'e.g. Compression lock',
+          )}
+          {inputField('Hardness', 'hardness', 'e.g. 58-60 HRC')}
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Dimensions"
+        description="Capture size and carry characteristics in the same format used on detail pages."
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {inputField('Overall Length', 'overallLength', 'e.g. 8.33 in')}
+          {inputField('Blade Length', 'bladeLength', 'e.g. 3.61 in')}
+          {inputField('Blade Thickness', 'bladeThickness', 'e.g. 3.7 mm')}
+          {inputField('Handle Length', 'handleLength', 'e.g. 3.77 in')}
+          {inputField('Weight', 'weight', 'e.g. 4.7 oz')}
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Notes"
+        description="Add the context that does not fit into a structured spec field."
+      >
+        <div className="space-y-2">
+          <label className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Description
+          </label>
+          <Textarea
+            value={form.description}
+            onChange={(e) => updateField('description', e.target.value)}
+            rows={5}
+            placeholder="Short description of the knife..."
+            className="bg-background/80"
+          />
+        </div>
+      </FormSection>
 
       {customFieldDefinitions.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Custom Fields
-          </div>
+        <FormSection
+          title="Custom Fields"
+          description="Team-specific metadata configured in settings."
+        >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {customFieldDefinitions.map((field) => (
-              <div key={field.id} className="space-y-1.5">
-                <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <div key={field.id} className="space-y-2">
+                <label className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
                   {field.name}
                 </label>
                 <Input
@@ -280,202 +352,199 @@ export function KnifeFormFields({
                     })
                   }
                   placeholder={field.name}
+                  className="bg-background/80"
                 />
               </div>
             ))}
           </div>
-        </div>
+        </FormSection>
       )}
 
-      <div className="space-y-1.5">
-        <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          Description
-        </label>
-        <Textarea
-          value={form.description}
-          onChange={(e) => updateField('description', e.target.value)}
-          rows={4}
-          placeholder="Short description of the knife..."
-        />
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Images
+      <FormSection
+        title="Images"
+        description="Choose which images stay with the item and which one leads as the cover."
+      >
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              Image Library
+              {form.images.length > 0 && (
+                <span className="ml-2 font-sans text-[10px] font-normal normal-case text-muted-foreground/70">
+                  {selectedImages.size} of {form.images.length} selected
+                </span>
+              )}
+            </label>
             {form.images.length > 0 && (
-              <span className="ml-2 font-sans text-[10px] font-normal normal-case text-muted-foreground/70">
-                {selectedImages.size} of {form.images.length} selected
-              </span>
-            )}
-          </label>
-          {form.images.length > 0 && (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={selectAllImages}
-                className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Select all
-              </button>
-              <span className="text-border">|</span>
-              <button
-                type="button"
-                onClick={deselectAllImages}
-                className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Deselect all
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <Input
-            type="url"
-            value={imageUrlInput}
-            onChange={(e) => setImageUrlInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addImageUrl()}
-            placeholder="Paste image URL and press Enter"
-          />
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={addImageUrl}
-            disabled={!imageUrlInput.trim()}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-          <input
-            id="image-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file && onImageFileSelect) {
-                onImageFileSelect(file)
-              }
-              e.target.value = ''
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-sm"
-            onClick={() => document.getElementById('image-upload')?.click()}
-            title="Upload image from computer"
-          >
-            <Upload className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {form.images.length > 0 ? (
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {form.images.map((src, index) => {
-              const isSelected = selectedImages.has(src)
-              const isFirst = index === 0
-              return (
-                <div
-                  key={`${src}-${index}`}
-                  onClick={() => toggleImageSelection(src)}
-                  className={`group relative aspect-square cursor-pointer overflow-hidden rounded-lg border bg-white transition-colors ${
-                    isSelected
-                      ? 'border-emerald-500'
-                      : 'border-border opacity-80 hover:opacity-100'
-                  }`}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={selectAllImages}
+                  className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  <Image
-                    src={getImageUrl(src)}
-                    alt={`Scraped image ${index + 1}`}
-                    fill
-                    sizes="(max-width: 640px) 33vw, 25vw"
-                    className="object-cover"
-                    referrerPolicy="no-referrer"
-                    unoptimized
-                  />
-                  <div className="absolute left-2 top-2 z-10">
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => toggleImageSelection(src)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      removeImage(index)
-                    }}
-                    className="absolute right-1 top-1 z-10 rounded-md bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                  Select all
+                </button>
+                <span className="text-border">|</span>
+                <button
+                  type="button"
+                  onClick={deselectAllImages}
+                  className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Deselect all
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2 rounded-lg border border-[var(--bladevault-line)]/70 bg-[color:var(--bladevault-surface-soft)]/45 p-2 sm:flex-row">
+            <Input
+              type="url"
+              value={imageUrlInput}
+              onChange={(e) => setImageUrlInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addImageUrl()}
+              placeholder="Paste image URL and press Enter"
+              className="bg-background/90"
+            />
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <Button
+                variant="outline"
+                size="icon-sm"
+                onClick={addImageUrl}
+                disabled={!imageUrlInput.trim()}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file && onImageFileSelect) {
+                    onImageFileSelect(file)
+                  }
+                  e.target.value = ''
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={() => document.getElementById('image-upload')?.click()}
+                title="Upload image from computer"
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {form.images.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+              {form.images.map((src, index) => {
+                const isSelected = selectedImages.has(src)
+                const isFirst = index === 0
+                return (
+                  <div
+                    key={`${src}-${index}`}
+                    onClick={() => toggleImageSelection(src)}
+                    className={`group relative aspect-square cursor-pointer overflow-hidden rounded-xl border bg-white transition-colors ${
+                      isSelected
+                        ? 'border-emerald-500 ring-2 ring-emerald-500/15'
+                        : 'border-border opacity-80 hover:opacity-100'
+                    }`}
                   >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                  {isFirst && (
-                    <div className="absolute top-1 left-1/2 z-10 -translate-x-1/2 rounded bg-emerald-500 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white">
-                      Cover
+                    <Image
+                      src={getImageUrl(src)}
+                      alt={`Scraped image ${index + 1}`}
+                      fill
+                      sizes="(max-width: 640px) 33vw, 25vw"
+                      className="object-cover"
+                      referrerPolicy="no-referrer"
+                      unoptimized
+                    />
+                    <div className="absolute left-2 top-2 z-10">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleImageSelection(src)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
                     </div>
-                  )}
-                  <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-center gap-2 px-1 py-1 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        reorderImage(index, -1)
+                        removeImage(index)
                       }}
-                      disabled={index === 0}
-                      className="rounded-full p-1 bg-white/90 text-foreground hover:bg-white disabled:opacity-30 disabled:hover:bg-white/90 transition-colors"
-                      aria-label="Move image earlier"
-                      title="Move earlier"
+                      className="absolute right-1 top-1 z-10 rounded-md bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                     >
-                      <ChevronLeft className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3 w-3" />
                     </button>
-                    {!isFirst && (
+                    {isFirst && (
+                      <div className="absolute top-1 left-1/2 z-10 -translate-x-1/2 rounded bg-emerald-500 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white">
+                        Cover
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-center gap-2 px-1 py-1 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          setFirstImage(index)
+                          reorderImage(index, -1)
                         }}
-                        className="rounded-full px-1.5 py-0.5 bg-white/90 text-[9px] font-medium uppercase tracking-wide text-foreground hover:bg-white transition-colors"
-                        aria-label="Set as cover image"
-                        title="Set as cover"
+                        disabled={index === 0}
+                        className="rounded-full p-1 bg-white/90 text-foreground hover:bg-white disabled:opacity-30 disabled:hover:bg-white/90 transition-colors"
+                        aria-label="Move image earlier"
+                        title="Move earlier"
                       >
-                        Cover
+                        <ChevronLeft className="h-3.5 w-3.5" />
                       </button>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        reorderImage(index, 1)
-                      }}
-                      disabled={index === form.images.length - 1}
-                      className="rounded-full p-1 bg-white/90 text-foreground hover:bg-white disabled:opacity-30 disabled:hover:bg-white/90 transition-colors"
-                      aria-label="Move image later"
-                      title="Move later"
-                    >
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  {isSelected && (
-                    <div className="absolute right-1 bottom-1 rounded-full bg-emerald-500 p-1">
-                      <Check className="h-2.5 w-2.5 text-white" />
+                      {!isFirst && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setFirstImage(index)
+                          }}
+                          className="rounded-full px-1.5 py-0.5 bg-white/90 text-[9px] font-medium uppercase tracking-wide text-foreground hover:bg-white transition-colors"
+                          aria-label="Set as cover image"
+                          title="Set as cover"
+                        >
+                          Cover
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          reorderImage(index, 1)
+                        }}
+                        disabled={index === form.images.length - 1}
+                        className="rounded-full p-1 bg-white/90 text-foreground hover:bg-white disabled:opacity-30 disabled:hover:bg-white/90 transition-colors"
+                        aria-label="Move image later"
+                        title="Move later"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                  )}
+                    {isSelected && (
+                      <div className="absolute right-1 bottom-1 rounded-full bg-emerald-500 p-1">
+                        <Check className="h-2.5 w-2.5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="flex w-full justify-center rounded-xl border border-dashed border-[var(--bladevault-line)] bg-[color:var(--bladevault-surface-soft)]/45 px-6 py-10">
+              <div className="text-center">
+                <div className="text-sm font-medium text-foreground/80">
+                  No images yet
                 </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="flex w-full justify-center rounded-lg border border-dashed border-border bg-muted/30 px-6 py-8">
-            <div className="text-center">
-              <div className="text-sm font-medium text-muted-foreground">
-                No images yet
-              </div>
-              <div className="mt-1 text-xs text-muted-foreground/70">
-                Scrape a URL or paste image URLs above
+                <div className="mt-1 text-xs text-muted-foreground/70">
+                  Scrape a URL or paste image URLs above
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </FormSection>
     </div>
   )
 }
