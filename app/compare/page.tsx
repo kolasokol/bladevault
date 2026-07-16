@@ -375,6 +375,7 @@ export default function ComparePage() {
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
       <PageHeader
         title="Compare"
+        description="Review selected knives side-by-side without leaving your collection workflow."
         actions={
           knives.length > 0 ? (
             <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto">
@@ -420,54 +421,68 @@ export default function ComparePage() {
         />
       ) : (
         <>
-          <div className="mb-6 overflow-x-auto">
-            <div className="flex min-w-max items-center">
-              {showAddSlot && (
-                <div className="flex items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
-                      Add knife
-                    </span>
-                    <Select
-                      value=""
-                      onValueChange={(value) => handleSelect(value ?? '')}
-                    >
-                      <SelectTrigger className="w-48" size="sm">
-                        <SelectValue placeholder="Select a knife" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableKnives.map((knife) => (
-                          <SelectItem key={knife.id} value={knife.id}>
-                            {knife.brand} {knife.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+          <Card className="mb-6 border-[var(--bladevault-line)]/80 bg-background shadow-none">
+            <CardContent className="space-y-3 p-4">
+              <div>
+                <div className="text-sm font-medium text-foreground">
+                  Compare Lineup
                 </div>
-              )}
-              {comparedKnives.map((knife, index) => (
-                <div key={knife.id} className="flex items-center">
-                  {(showAddSlot || index > 0) && (
-                    <div className="mx-3 h-4 w-px bg-border" />
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Add, remove, and reorder what you want to inspect in the
+                  matrix below.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <div className="flex min-w-max items-center rounded-lg border border-[var(--bladevault-line)]/70 bg-[color:var(--bladevault-surface-soft)]/45 px-3 py-2">
+                  {showAddSlot && (
+                    <div className="flex items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
+                          Add knife
+                        </span>
+                        <Select
+                          value=""
+                          onValueChange={(value) => handleSelect(value ?? '')}
+                        >
+                          <SelectTrigger className="w-48" size="sm">
+                            <SelectValue placeholder="Select a knife" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableKnives.map((knife) => (
+                              <SelectItem key={knife.id} value={knife.id}>
+                                {knife.brand} {knife.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   )}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleRemove(knife.id)}
-                      className="text-[var(--bladevault-local)] transition-colors hover:text-destructive"
-                      aria-label="Remove from compare"
-                      title="Remove"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
-                      {knife.brand} {knife.name}
-                    </span>
-                  </div>
+                  {comparedKnives.map((knife, index) => (
+                    <div key={knife.id} className="flex items-center">
+                      {(showAddSlot || index > 0) && (
+                        <div className="mx-3 h-4 w-px bg-border" />
+                      )}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleRemove(knife.id)}
+                          className="text-[var(--bladevault-local)] transition-colors hover:text-destructive"
+                          aria-label="Remove from compare"
+                          title="Remove"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
+                          {knife.brand} {knife.name}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {comparedKnives.length === 0 ? (
             <EmptyState
@@ -476,106 +491,130 @@ export default function ComparePage() {
               icon={<ArchiveX className="h-8 w-8" />}
             />
           ) : (
-            <Card>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-white hover:bg-white">
-                      <TableHead className="sticky left-0 z-10 w-40 bg-card text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">
-                        Feature
-                      </TableHead>
-                      {comparedKnives.map((knife) => (
-                        <TableHead
-                          key={knife.id}
-                          className={cn(
-                            'min-w-[180px] bg-white transition-colors',
-                            hoveredCell?.knifeId === knife.id && 'bg-muted/60',
-                          )}
-                        >
-                          <div className="group/image relative mb-2 aspect-video w-full overflow-hidden rounded-lg cursor-pointer">
-                            {knife.images.length > 0 ? (
-                              <Image
-                                src={getImageUrl(knife.images[0])}
-                                alt={knife.name}
-                                fill
-                                sizes="(max-width: 640px) 100vw, 180px"
-                                className="object-contain"
-                                referrerPolicy="no-referrer"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-muted/50">
-                                <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
-                              </div>
-                            )}
-                            <button
-                              onClick={() => handleRemove(knife.id)}
-                              className="absolute right-1.5 top-1.5 z-10 text-red-500 opacity-0 transition-opacity group-hover/image:opacity-100 hover:text-red-600"
-                              aria-label="Remove from compare"
-                              title="Remove"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                          <Link
-                            href={`/collection/${knife.id}`}
-                            className="block hover:underline"
-                          >
-                            <div className="text-sm font-medium">
-                              {knife.name}
-                            </div>
-                            <div className="text-[10px] uppercase tracking-wider text-[var(--bladevault-title)]">
-                              {knife.brand}
-                            </div>
-                          </Link>
+            <Card className="border-[var(--bladevault-line)]/80 bg-background shadow-none">
+              <CardContent className="space-y-3 p-4">
+                <div>
+                  <div className="text-sm font-medium text-foreground">
+                    Comparison Matrix
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Scroll horizontally to view every selected knife across all
+                    rows.
+                  </p>
+                </div>
+
+                <div className="max-h-[72vh] overflow-auto rounded-xl border border-[var(--bladevault-line)]/80 bg-[color:var(--bladevault-surface-soft)]/30">
+                  <Table className="min-w-full">
+                    <TableHeader>
+                      <TableRow className="bg-[color:var(--bladevault-surface-soft)]/70 hover:bg-[color:var(--bladevault-surface-soft)]/70">
+                        <TableHead className="sticky left-0 top-0 z-30 w-44 border-r border-[var(--bladevault-line)] bg-[color:var(--bladevault-surface-soft)] text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">
+                          Feature
                         </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {compareRows.map((row, idx) => (
-                      <TableRow
-                        key={row.key}
-                        className={cn(idx % 2 === 0 && 'bg-muted/30')}
-                      >
-                        <TableCell
+                        {comparedKnives.map((knife) => (
+                          <TableHead
+                            key={knife.id}
+                            className={cn(
+                              'sticky top-0 z-20 min-w-[200px] border-r border-[var(--bladevault-line)]/70 bg-background align-top transition-colors last:border-r-0',
+                              hoveredCell?.knifeId === knife.id &&
+                                'bg-[color:var(--bladevault-surface-hover)]/55',
+                            )}
+                          >
+                            <div className="space-y-2 rounded-lg bg-background/80 p-2">
+                              <div className="group/image relative aspect-video w-full cursor-pointer overflow-hidden rounded-md border border-[var(--bladevault-line)]/50 bg-[color:var(--bladevault-surface-soft)]/40">
+                                {knife.images.length > 0 ? (
+                                  <Image
+                                    src={getImageUrl(knife.images[0])}
+                                    alt={knife.name}
+                                    fill
+                                    sizes="(max-width: 640px) 100vw, 200px"
+                                    className="object-contain"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center bg-muted/30">
+                                    <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => handleRemove(knife.id)}
+                                  className="absolute right-1.5 top-1.5 z-10 rounded-full bg-background/90 p-0.5 text-red-500 opacity-0 transition-opacity group-hover/image:opacity-100 hover:text-red-600"
+                                  aria-label="Remove from compare"
+                                  title="Remove"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                              <Link
+                                href={`/collection/${knife.id}`}
+                                className="block space-y-0.5 hover:underline"
+                              >
+                                <div className="text-sm font-medium leading-tight whitespace-normal">
+                                  {knife.name}
+                                </div>
+                                <div className="text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] whitespace-normal">
+                                  {knife.brand}
+                                </div>
+                              </Link>
+                            </div>
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {compareRows.map((row, idx) => (
+                        <TableRow
+                          key={row.key}
                           className={cn(
-                            'sticky left-0 z-10 text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)] transition-colors',
                             idx % 2 === 0
-                              ? 'bg-[var(--bladevault-surface-soft)]'
-                              : 'bg-card',
-                            hoveredCell?.rowKey === row.key && 'bg-muted',
+                              ? 'bg-background'
+                              : 'bg-[color:var(--bladevault-surface-soft)]/35',
+                            hoveredCell?.rowKey === row.key &&
+                              'bg-[color:var(--bladevault-surface-hover)]/35',
                           )}
                         >
-                          {row.label}
-                        </TableCell>
-                        {comparedKnives.map((knife) => {
-                          const value = getRowValue(knife, row.key)
-                          return (
-                            <TableCell
-                              key={knife.id}
-                              className={cn(
-                                'text-sm text-foreground transition-colors',
-                                hoveredCell?.knifeId === knife.id &&
-                                  hoveredCell?.rowKey === row.key &&
-                                  'bg-muted',
-                              )}
-                              onMouseEnter={() =>
-                                setHoveredCell({
-                                  knifeId: knife.id,
-                                  rowKey: row.key,
-                                })
-                              }
-                              onMouseLeave={() => setHoveredCell(null)}
-                            >
-                              {value ?? '-'}
-                            </TableCell>
-                          )
-                        })}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                          <TableCell
+                            className={cn(
+                              'sticky left-0 z-10 border-r border-[var(--bladevault-line)] text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)] transition-colors',
+                              idx % 2 === 0
+                                ? 'bg-background'
+                                : 'bg-[color:var(--bladevault-surface-soft)]/45',
+                              hoveredCell?.rowKey === row.key &&
+                                'bg-[color:var(--bladevault-surface-hover)]/60',
+                            )}
+                          >
+                            {row.label}
+                          </TableCell>
+                          {comparedKnives.map((knife) => {
+                            const value = getRowValue(knife, row.key)
+                            return (
+                              <TableCell
+                                key={knife.id}
+                                className={cn(
+                                  'align-top border-r border-[var(--bladevault-line)]/45 py-2.5 text-sm leading-snug whitespace-normal wrap-break-word text-foreground transition-colors last:border-r-0',
+                                  hoveredCell?.knifeId === knife.id &&
+                                    'bg-[color:var(--bladevault-surface-hover)]/35',
+                                  hoveredCell?.knifeId === knife.id &&
+                                    hoveredCell?.rowKey === row.key &&
+                                    'bg-[color:var(--bladevault-surface-hover)]/60',
+                                )}
+                                onMouseEnter={() =>
+                                  setHoveredCell({
+                                    knifeId: knife.id,
+                                    rowKey: row.key,
+                                  })
+                                }
+                                onMouseLeave={() => setHoveredCell(null)}
+                              >
+                                {value ?? '-'}
+                              </TableCell>
+                            )
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
             </Card>
           )}
         </>
