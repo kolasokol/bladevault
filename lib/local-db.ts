@@ -35,7 +35,11 @@ function getLegacyDesktopDataDirs(): string[] {
     return []
   }
 
-  const appSupportDir = joinRuntimePath(homeDir, 'Library', 'Application Support')
+  const appSupportDir = joinRuntimePath(
+    homeDir,
+    'Library',
+    'Application Support',
+  )
   return [
     joinRuntimePath(appSupportDir, 'BladeVault', 'data'),
     joinRuntimePath(appSupportDir, 'bladevault', 'data'),
@@ -66,9 +70,9 @@ function getExistingDbKnifeCount(dataDir: string): number {
       return 0
     }
 
-    const result = dbHandle.prepare('SELECT COUNT(*) AS total FROM knives').get() as
-      | { total?: number }
-      | undefined
+    const result = dbHandle
+      .prepare('SELECT COUNT(*) AS total FROM knives')
+      .get() as { total?: number } | undefined
     return Number(result?.total ?? 0)
   } catch {
     return 0
@@ -116,8 +120,9 @@ function resolveDataDir(): string {
   ].filter((candidate, index, allCandidates) => {
     const normalized = path.resolve(candidate)
     return (
-      allCandidates.findIndex((otherCandidate) => path.resolve(otherCandidate) === normalized) ===
-        index && hasExistingDb(candidate)
+      allCandidates.findIndex(
+        (otherCandidate) => path.resolve(otherCandidate) === normalized,
+      ) === index && hasExistingDb(candidate)
     )
   })
 
