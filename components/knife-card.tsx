@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { memo } from 'react'
+import { memo, useCallback } from 'react'
 import { ImageIcon, Scale } from 'lucide-react'
 import { getImageUrl, Knife } from '@/lib/data'
 import { cn } from '@/lib/utils'
@@ -26,29 +26,35 @@ export const KnifeCard = memo(function KnifeCard({
   const pinned = knife.pinned
   const inCompare = compareIds.includes(knife.id)
 
-  const handlePinClick = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    try {
-      await updateKnife(knife.id, { pinned: !pinned })
-    } catch {
-      /* empty */
-    }
-  }
-
-  const handleCompareClick = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    try {
-      if (inCompare) {
-        await removeFromCompare(knife.id)
-      } else {
-        await addToCompare(knife.id)
+  const handlePinClick = useCallback(
+    async (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      try {
+        await updateKnife(knife.id, { pinned: !pinned })
+      } catch {
+        /* empty */
       }
-    } catch {
-      /* empty */
-    }
-  }
+    },
+    [updateKnife, knife.id, pinned],
+  )
+
+  const handleCompareClick = useCallback(
+    async (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      try {
+        if (inCompare) {
+          await removeFromCompare(knife.id)
+        } else {
+          await addToCompare(knife.id)
+        }
+      } catch {
+        /* empty */
+      }
+    },
+    [addToCompare, removeFromCompare, knife.id, inCompare],
+  )
 
   return (
     <Link
