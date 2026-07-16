@@ -1160,16 +1160,16 @@ export default function SettingsView() {
                     description="Define extra fields that apply to every knife. They appear in the add/edit form and as collection filters."
                   >
                     {settings.customFields.length === 0 ? (
-                      <div className="py-3 text-xs text-muted-foreground">
+                      <div className="py-3 text-sm text-muted-foreground">
                         No custom fields yet. Add one below to use it across
                         your library.
                       </div>
                     ) : (
-                      <div className="space-y-2 py-2">
+                      <div className="divide-y divide-[var(--bladevault-line)]/60">
                         {settings.customFields.map((field, index) => (
                           <div
                             key={field.id}
-                            className="flex items-start gap-2"
+                            className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center"
                           >
                             <Input
                               value={field.name}
@@ -1184,7 +1184,7 @@ export default function SettingsView() {
                                 )
                               }}
                               placeholder="Field name"
-                              className="h-8 flex-1 rounded-lg border-[var(--bladevault-line)] bg-background text-xs shadow-none dark:border-[#d3c097]/30"
+                              className="h-8 flex-1 rounded-lg border-[var(--bladevault-line)] bg-background text-sm shadow-none dark:border-[#d3c097]/30"
                             />
                             <Select
                               value={field.type}
@@ -1202,7 +1202,7 @@ export default function SettingsView() {
                             >
                               <SelectTrigger
                                 size="sm"
-                                className="h-8 w-28 rounded-lg border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)]"
+                                className="h-8 w-full rounded-lg border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)] sm:w-28"
                               >
                                 <SelectValue />
                               </SelectTrigger>
@@ -1222,7 +1222,7 @@ export default function SettingsView() {
                               type="button"
                               variant="outline"
                               size="icon-sm"
-                              className={`${settingsSecondaryButtonClassName} h-8 w-8 shrink-0 rounded-lg`}
+                              className={`${settingsSecondaryButtonClassName} h-8 w-8 shrink-0 self-end rounded-lg sm:self-auto`}
                               onClick={() =>
                                 void handleUpdateCustomFields((fields) =>
                                   fields.filter(
@@ -1239,57 +1239,62 @@ export default function SettingsView() {
                       </div>
                     )}
 
-                    <div className="flex items-start gap-2 border-t border-[var(--bladevault-line)]/60 pt-3">
-                      <Input
-                        value={newFieldName}
-                        onChange={(event) =>
-                          setNewFieldName(event.target.value)
-                        }
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault()
-                            handleAddField()
+                    <div className="border-t border-[var(--bladevault-line)]/60 py-3">
+                      <div className="mb-2 text-xs text-muted-foreground">
+                        Add a field to show on every knife.
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <Input
+                          value={newFieldName}
+                          onChange={(event) =>
+                            setNewFieldName(event.target.value)
                           }
-                        }}
-                        placeholder="New field name, e.g. Sold or Sell price"
-                        className="h-8 flex-1 rounded-lg border-[var(--bladevault-line)] bg-background text-xs shadow-none dark:border-[#d3c097]/30"
-                      />
-                      <Select
-                        value={newFieldType}
-                        onValueChange={(value) => {
-                          const type = value as CustomFieldType
-                          if (CUSTOM_FIELD_TYPES.includes(type)) {
-                            setNewFieldType(type)
-                          }
-                        }}
-                      >
-                        <SelectTrigger
-                          size="sm"
-                          className="h-8 w-28 rounded-lg border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)]"
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault()
+                              handleAddField()
+                            }
+                          }}
+                          placeholder="New field name, e.g. Sold or Sell price"
+                          className="h-8 flex-1 rounded-lg border-[var(--bladevault-line)] bg-background text-sm shadow-none dark:border-[#d3c097]/30"
+                        />
+                        <Select
+                          value={newFieldType}
+                          onValueChange={(value) => {
+                            const type = value as CustomFieldType
+                            if (CUSTOM_FIELD_TYPES.includes(type)) {
+                              setNewFieldType(type)
+                            }
+                          }}
                         >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CUSTOM_FIELD_TYPES.map((type) => (
-                            <SelectItem
-                              key={type}
-                              value={type}
-                              className="text-sm capitalize"
-                            >
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className={`${settingsPrimaryButtonClassName} h-8 rounded-lg`}
-                        onClick={handleAddField}
-                        disabled={!newFieldName.trim()}
-                      >
-                        Add
-                      </Button>
+                          <SelectTrigger
+                            size="sm"
+                            className="h-8 w-full rounded-lg border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)] sm:w-28"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CUSTOM_FIELD_TYPES.map((type) => (
+                              <SelectItem
+                                key={type}
+                                value={type}
+                                className="text-sm capitalize"
+                              >
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className={`${settingsPrimaryButtonClassName} h-8 rounded-lg sm:self-auto`}
+                          onClick={handleAddField}
+                          disabled={!newFieldName.trim()}
+                        >
+                          Add
+                        </Button>
+                      </div>
                     </div>
                   </SettingsSection>
                 </div>
