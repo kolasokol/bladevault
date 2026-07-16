@@ -322,8 +322,42 @@ export default function ComparePage() {
   return (
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
       <PageHeader
-        title="Comparison Check"
-        description="Select knives to compare specifications side-by-side."
+        title="Compare"
+        actions={
+          knives.length > 0 ? (
+            <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearCompare}
+                disabled={!hasComparedKnives}
+              >
+                <ArchiveX className="mr-2 h-4 w-4" />
+                Clear
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  void handleExportPdf()
+                }}
+                disabled={!hasComparedKnives}
+              >
+                <FileDown className="mr-2 h-4 w-4" />
+                Export PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrint}
+                disabled={!hasComparedKnives}
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+              </Button>
+            </div>
+          ) : undefined
+        }
       />
 
       {knives.length === 0 ? (
@@ -334,63 +368,10 @@ export default function ComparePage() {
         />
       ) : (
         <>
-          <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearCompare}
-              disabled={!hasComparedKnives}
-            >
-              <ArchiveX className="mr-2 h-4 w-4" />
-              Clear
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                void handleExportPdf()
-              }}
-              disabled={!hasComparedKnives}
-            >
-              <FileDown className="mr-2 h-4 w-4" />
-              Export PDF
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrint}
-              disabled={!hasComparedKnives}
-            >
-              <Printer className="mr-2 h-4 w-4" />
-              Print
-            </Button>
-          </div>
-
           <div className="mb-6 overflow-x-auto">
             <div className="flex min-w-max items-center">
-              {comparedKnives.map((knife, index) => (
-                <div key={knife.id} className="flex items-center">
-                  {index > 0 && <div className="mx-3 h-4 w-px bg-border" />}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleRemove(knife.id)}
-                      className="text-[var(--bladevault-local)] transition-colors hover:text-destructive"
-                      aria-label="Remove from compare"
-                      title="Remove"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
-                      {knife.brand} {knife.name}
-                    </span>
-                  </div>
-                </div>
-              ))}
               {showAddSlot && (
                 <div className="flex items-center">
-                  {comparedKnives.length > 0 && (
-                    <div className="mx-3 h-4 w-px bg-border" />
-                  )}
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
                       Add knife
@@ -413,6 +394,26 @@ export default function ComparePage() {
                   </div>
                 </div>
               )}
+              {comparedKnives.map((knife, index) => (
+                <div key={knife.id} className="flex items-center">
+                  {(showAddSlot || index > 0) && (
+                    <div className="mx-3 h-4 w-px bg-border" />
+                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleRemove(knife.id)}
+                      className="text-[var(--bladevault-local)] transition-colors hover:text-destructive"
+                      aria-label="Remove from compare"
+                      title="Remove"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)]">
+                      {knife.brand} {knife.name}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

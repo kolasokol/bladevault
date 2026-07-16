@@ -184,10 +184,7 @@ function CollectionContent() {
 
   return (
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
-      <PageHeader
-        title="My Library"
-        description="Manage and browse your complete knife inventory."
-      />
+      <PageHeader title="Collection" />
 
       {knives.length > 0 && (
         <div className="mb-4">
