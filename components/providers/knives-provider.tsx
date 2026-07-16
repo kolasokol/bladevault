@@ -7,6 +7,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -367,23 +368,38 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const contextValue = useMemo(
+    () => ({
+      knives,
+      addKnife,
+      updateKnife,
+      deleteKnife,
+      isLoading,
+      compareIds,
+      addToCompare,
+      removeFromCompare,
+      clearCompare,
+      isCloudSyncEnabled,
+      isAutoBackupEnabled,
+      isAutoBackupActive: isCloudSyncEnabled && isAutoBackupEnabled,
+    }),
+    [
+      knives,
+      addKnife,
+      updateKnife,
+      deleteKnife,
+      isLoading,
+      compareIds,
+      addToCompare,
+      removeFromCompare,
+      clearCompare,
+      isCloudSyncEnabled,
+      isAutoBackupEnabled,
+    ],
+  )
+
   return (
-    <KnivesContext.Provider
-      value={{
-        knives,
-        addKnife,
-        updateKnife,
-        deleteKnife,
-        isLoading,
-        compareIds,
-        addToCompare,
-        removeFromCompare,
-        clearCompare,
-        isCloudSyncEnabled,
-        isAutoBackupEnabled,
-        isAutoBackupActive: isCloudSyncEnabled && isAutoBackupEnabled,
-      }}
-    >
+    <KnivesContext.Provider value={contextValue}>
       {children}
       <div
         aria-live="polite"
