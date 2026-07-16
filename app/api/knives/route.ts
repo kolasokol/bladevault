@@ -20,6 +20,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
+    const customFields: Record<string, string> = {}
+    if (body.customFields && typeof body.customFields === 'object') {
+      for (const [key, value] of Object.entries(body.customFields)) {
+        if (typeof value === 'string') {
+          customFields[key] = value
+        }
+      }
+    }
+
     const storage = getStorage()
     const knife = await storage.createKnife({
       name: body.name,
@@ -42,6 +51,7 @@ export async function POST(request: Request) {
         price: body.specs?.price ?? '',
         country: body.specs?.country ?? '',
       },
+      customFields,
       imageUrls: Array.isArray(body.imageUrls) ? body.imageUrls : [],
       sourceUrl: typeof body.sourceUrl === 'string' ? body.sourceUrl : '',
       pinned: typeof body.pinned === 'boolean' ? body.pinned : false,

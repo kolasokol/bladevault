@@ -1,17 +1,26 @@
 import { getLocalDb } from './local-db'
 import {
   APP_THEMES,
+  CUSTOM_FIELD_TYPES,
   DEFAULT_SETTINGS,
   type AppSettings,
   type AppTheme,
+  type CustomField,
+  type CustomFieldType,
 } from './settings-shared'
 export { DEFAULT_SETTINGS, SETTINGS_UPDATED_EVENT } from './settings-shared'
-export type { AppSettings, AppTheme } from './settings-shared'
+export type {
+  AppSettings,
+  AppTheme,
+  CustomField,
+  CustomFieldType,
+} from './settings-shared'
 
 const SETTINGS_KEYS: Record<keyof AppSettings, string> = {
   theme: 'theme',
   cloudBackupLastSyncedAt: 'cloud_backup_last_synced_at',
   cloudAutoBackupEnabled: 'cloud_auto_backup_enabled',
+  customFields: 'custom_fields',
 }
 
 function getDb() {
@@ -24,6 +33,42 @@ function parseTheme(value: string | undefined): AppTheme {
   }
 
   return DEFAULT_SETTINGS.theme
+}
+
+function isCustomFieldType(value: unknown): value is CustomFieldType {
+  return (
+    typeof value === 'string' &&
+    CUSTOM_FIELD_TYPES.includes(value as CustomFieldType)
+  )
+}
+
+function parseCustomFields(value: string | undefined): CustomField[] {
+  if (!value) return DEFAULT_SETTINGS.customFields
+
+  try {
+    const parsed = JSON.parse(value) as unknown
+    if (!Array.isArray(parsed)) return DEFAULT_SETTINGS.customFields
+
+    const fields: CustomField[] = []
+    for (const item of parsed) {
+      if (
+        item &&
+        typeof item === 'object' &&
+        typeof (item as Record<string, unknown>).id === 'string' &&
+        typeof (item as Record<string, unknown>).name === 'string' &&
+        isCustomFieldType((item as Record<string, unknown>).type)
+      ) {
+        fields.push({
+          id: String((item as Record<string, unknown>).id),
+          name: String((item as Record<string, unknown>).name),
+          type: (item as Record<string, unknown>).type as CustomFieldType,
+        })
+      }
+    }
+    return fields
+  } catch {
+    return DEFAULT_SETTINGS.customFields
+  }
 }
 
 export function getSettings(): AppSettings {
@@ -42,6 +87,7 @@ export function getSettings(): AppSettings {
       map.get(SETTINGS_KEYS.cloudAutoBackupEnabled) === '1'
         ? true
         : DEFAULT_SETTINGS.cloudAutoBackupEnabled,
+    customFields: parseCustomFields(map.get(SETTINGS_KEYS.customFields)),
   }
 }
 
@@ -57,6 +103,7 @@ export function saveSettings(settings: Partial<AppSettings>): AppSettings {
     ['theme', next.theme],
     ['cloudBackupLastSyncedAt', next.cloudBackupLastSyncedAt],
     ['cloudAutoBackupEnabled', next.cloudAutoBackupEnabled ? '1' : '0'],
+    ['customFields', JSON.stringify(next.customFields)],
   ]
 
   const transaction = getDb().transaction(() => {

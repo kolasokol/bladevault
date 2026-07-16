@@ -20,6 +20,7 @@ export type Knife = {
     price?: string
     country: string
   }
+  customFields: Record<string, string>
   addedAt: string
   updatedAt: string
   description: string
@@ -30,9 +31,19 @@ export type Knife = {
 export type KnifeDraft = Omit<Knife, 'id' | 'addedAt' | 'updatedAt'>
 
 export type KnifeUpdates = Partial<
-  Omit<Knife, 'id' | 'addedAt' | 'updatedAt' | 'images' | 'specs' | 'pinned'>
+  Omit<
+    Knife,
+    | 'id'
+    | 'addedAt'
+    | 'updatedAt'
+    | 'images'
+    | 'specs'
+    | 'pinned'
+    | 'customFields'
+  >
 > & {
   specs?: Partial<Knife['specs']>
+  customFields?: Partial<Knife['customFields']>
   images?: string[]
   pinned?: boolean
 }

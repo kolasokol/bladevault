@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { SlidersHorizontal, X } from 'lucide-react'
@@ -11,11 +11,13 @@ import { FilterMultiSelect } from '@/components/filter-multi-select'
 import { SearchField } from '@/components/search-field'
 import { useKnives } from '@/components/providers/knives-provider'
 import { Knife, matchesKnifeSearch } from '@/lib/data'
+import { CustomField, CustomFieldType } from '@/lib/settings-shared'
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
-const filterDefinitions = [
+const builtInFilterDefinitions = [
   { key: 'brand', label: 'Brand', getValue: (knife: Knife) => knife.brand },
   {
     key: 'modelNumber',
@@ -89,7 +91,42 @@ const filterDefinitions = [
   },
 ] as const
 
-type FilterKey = (typeof filterDefinitions)[number]['key']
+type BuiltInFilterKey = (typeof builtInFilterDefinitions)[number]['key']
+type CustomFilterKey = `custom:${string}`
+type FilterKey = BuiltInFilterKey | CustomFilterKey
+
+function isCustomFilterKey(key: string): key is CustomFilterKey {
+  return key.startsWith('custom:')
+}
+
+function customFilterKeyToFieldId(key: string): string {
+  return key.slice('custom:'.length)
+}
+
+function formatCustomFilterValue(value: string, type: CustomFieldType): string {
+  if (type !== 'date' || !value) return value
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+    }).format(new Date(value))
+  } catch {
+    return value
+  }
+}
+
+function sortFilterOptions(options: string[], type: CustomFieldType): string[] {
+  if (type === 'number') {
+    return [...options].sort((left, right) => {
+      const leftNumber = Number.parseFloat(left)
+      const rightNumber = Number.parseFloat(right)
+      if (!Number.isNaN(leftNumber) && !Number.isNaN(rightNumber)) {
+        return leftNumber - rightNumber
+      }
+      return left.localeCompare(right)
+    })
+  }
+  return [...options].sort((left, right) => left.localeCompare(right))
+}
 
 function CollectionContent() {
   const { knives } = useKnives()
@@ -97,7 +134,45 @@ function CollectionContent() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState('')
+  const [customFields, setCustomFields] = useState<CustomField[]>([])
   const debouncedQuery = useDebouncedValue(query, 200)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/settings', { cache: 'no-store' })
+        const data = await readJsonResponse<{
+          error?: string
+          settings?: { customFields?: CustomField[] }
+        }>(response)
+        if (!cancelled && response.ok && data.settings?.customFields) {
+          setCustomFields(data.settings.customFields)
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    loadSettings()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const filterDefinitions = useMemo(
+    () => [
+      ...builtInFilterDefinitions,
+      ...customFields.map((field) => ({
+        key: `custom:${field.id}` as CustomFilterKey,
+        label: field.name,
+        type: field.type,
+        getValue: (knife: Knife) => knife.customFields[field.id],
+      })),
+    ],
+    [customFields],
+  )
 
   const selectedFilters = useMemo(
     () =>
@@ -107,26 +182,37 @@ function CollectionContent() {
           searchParams.getAll(definition.key).filter(Boolean),
         ]),
       ) as Record<FilterKey, string[]>,
-    [searchParams],
+    [searchParams, filterDefinitions],
   )
 
   const optionsByFilter = useMemo(
     () =>
       Object.fromEntries(
-        filterDefinitions.map((definition) => [
-          definition.key,
-          Array.from(
-            new Set(
-              knives
-                .map((knife) => definition.getValue(knife))
-                .filter((value): value is string =>
-                  Boolean(value && value.trim().length > 0),
+        filterDefinitions.map((definition) => {
+          const field = isCustomFilterKey(definition.key)
+            ? customFields.find(
+                (item) => item.id === customFilterKeyToFieldId(definition.key),
+              )
+            : undefined
+          const type = field?.type ?? 'text'
+          return [
+            definition.key,
+            sortFilterOptions(
+              Array.from(
+                new Set(
+                  knives
+                    .map((knife) => definition.getValue(knife))
+                    .filter((value): value is string =>
+                      Boolean(value && value.trim().length > 0),
+                    ),
                 ),
+              ),
+              type,
             ),
-          ).sort((left, right) => left.localeCompare(right)),
-        ]),
+          ]
+        }),
       ) as Record<FilterKey, string[]>,
-    [knives],
+    [knives, filterDefinitions, customFields],
   )
 
   const filteredKnives = useMemo(() => {
@@ -144,7 +230,7 @@ function CollectionContent() {
         return Boolean(value && selectedValues.includes(value))
       })
     })
-  }, [knives, debouncedQuery, selectedFilters])
+  }, [knives, debouncedQuery, selectedFilters, filterDefinitions])
 
   const setFilterValues = (key: FilterKey, values: string[]) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -176,7 +262,15 @@ function CollectionContent() {
     selectedFilters[definition.key].map((value) => ({
       key: definition.key,
       label: definition.label,
-      value,
+      value: isCustomFilterKey(definition.key)
+        ? formatCustomFilterValue(
+            value,
+            customFields.find(
+              (item) => item.id === customFilterKeyToFieldId(definition.key),
+            )?.type ?? 'text',
+          )
+        : value,
+      rawValue: value,
     })),
   )
 
@@ -225,7 +319,7 @@ function CollectionContent() {
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters.map((filter) => (
             <Badge
-              key={`${filter.key}-${filter.value}`}
+              key={`${filter.key}-${filter.rawValue}`}
               variant="secondary"
               className="gap-1 pr-1 text-xs"
             >
@@ -236,7 +330,7 @@ function CollectionContent() {
                   setFilterValues(
                     filter.key,
                     selectedFilters[filter.key].filter(
-                      (value) => value !== filter.value,
+                      (value) => value !== filter.rawValue,
                     ),
                   )
                 }

@@ -33,6 +33,7 @@ type KnifeTextShape = Partial<
   >
 > & {
   specs?: Partial<Knife['specs']>
+  customFields?: Partial<Knife['customFields']>
 }
 
 export function normalizeSingleLineText(value: string): string {
@@ -91,6 +92,16 @@ export function normalizeKnifeTextFields<T extends KnifeTextShape>(
       }
     }
     normalized.specs = specs as T['specs']
+  }
+
+  if (normalized.customFields) {
+    const customFields = { ...normalized.customFields }
+    for (const key of Object.keys(customFields)) {
+      if (typeof customFields[key] === 'string') {
+        customFields[key] = normalizeSingleLineText(customFields[key])
+      }
+    }
+    normalized.customFields = customFields as T['customFields']
   }
 
   return normalized

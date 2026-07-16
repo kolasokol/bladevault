@@ -14,15 +14,20 @@ import {
   Palette,
   RefreshCw,
   ShieldCheck,
+  SlidersHorizontal,
+  Trash2,
   Upload,
 } from 'lucide-react'
 import { FcGoogle } from 'react-icons/fc'
 import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import {
   APP_THEMES,
+  CUSTOM_FIELD_TYPES,
   SETTINGS_UPDATED_EVENT,
   type AppSettings,
   type AppTheme,
+  type CustomField,
+  type CustomFieldType,
 } from '@/lib/settings-shared'
 import {
   clearCloudAuthState,
@@ -63,7 +68,8 @@ import pkg from '@/package.json'
 import { useDesktopUpdates } from '@/hooks/use-desktop-updates'
 
 type StatusTone = 'idle' | 'loading' | 'success' | 'error'
-type SettingsTab = 'general' | 'cloud-backup' | 'appearance' | 'about'
+type SettingsTab =
+  'general' | 'cloud-backup' | 'appearance' | 'fields' | 'about'
 
 const settingsTabTriggerClassName =
   'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors'
@@ -160,6 +166,8 @@ export default function SettingsView() {
   const [localDataMessage, setLocalDataMessage] = useState('')
   const [loadAttemptKey, setLoadAttemptKey] = useState(0)
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
+  const [newFieldName, setNewFieldName] = useState('')
+  const [newFieldType, setNewFieldType] = useState<CustomFieldType>('text')
 
   const updateMessage =
     update.status === 'checking'
@@ -215,6 +223,11 @@ export default function SettingsView() {
       { id: 'general' as const, label: 'Local storage', icon: Database },
       { id: 'cloud-backup' as const, label: 'Cloud Backup', icon: Cloud },
       { id: 'appearance' as const, label: 'Appearance', icon: Palette },
+      {
+        id: 'fields' as const,
+        label: 'Custom Fields',
+        icon: SlidersHorizontal,
+      },
       { id: 'about' as const, label: 'About', icon: Info },
     ],
     [],
@@ -707,6 +720,59 @@ export default function SettingsView() {
     }
   }
 
+  const handleAddField = () => {
+    const name = newFieldName.trim()
+    if (!name) return
+
+    void handleUpdateCustomFields((fields) => [
+      ...fields,
+      {
+        id: generateFieldId(name, fields),
+        name,
+        type: newFieldType,
+      },
+    ])
+    setNewFieldName('')
+    setNewFieldType('text')
+  }
+
+  const handleUpdateCustomFields = async (
+    updater: (fields: CustomField[]) => CustomField[],
+  ) => {
+    if (!settings) return
+
+    const nextCustomFields = updater(settings.customFields)
+    if (
+      JSON.stringify(nextCustomFields) === JSON.stringify(settings.customFields)
+    ) {
+      return
+    }
+
+    try {
+      await saveSettings({ customFields: nextCustomFields })
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : 'Failed to save settings',
+      )
+    }
+  }
+
+  const generateFieldId = (name: string, existing: CustomField[]): string => {
+    const base =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 64) || `field-${Date.now()}`
+    const ids = new Set(existing.map((field) => field.id))
+    if (!ids.has(base)) return base
+    let counter = 2
+    while (ids.has(`${base}-${counter}`)) {
+      counter += 1
+    }
+    return `${base}-${counter}`
+  }
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       {isLoading ? (
@@ -1083,6 +1149,148 @@ export default function SettingsView() {
                         </SelectContent>
                       </Select>
                     </SettingsRow>
+                  </SettingsSection>
+                </div>
+              )}
+
+              {activeTab === 'fields' && (
+                <div className="mx-auto max-w-3xl space-y-3">
+                  <SettingsSection
+                    title="Custom Fields"
+                    description="Define extra fields that apply to every knife. They appear in the add/edit form and as collection filters."
+                  >
+                    {settings.customFields.length === 0 ? (
+                      <div className="py-3 text-xs text-muted-foreground">
+                        No custom fields yet. Add one below to use it across
+                        your library.
+                      </div>
+                    ) : (
+                      <div className="space-y-2 py-2">
+                        {settings.customFields.map((field, index) => (
+                          <div
+                            key={field.id}
+                            className="flex items-start gap-2"
+                          >
+                            <Input
+                              value={field.name}
+                              onChange={(event) => {
+                                const value = event.target.value
+                                void handleUpdateCustomFields((fields) =>
+                                  fields.map((item, itemIndex) =>
+                                    itemIndex === index
+                                      ? { ...item, name: value }
+                                      : item,
+                                  ),
+                                )
+                              }}
+                              placeholder="Field name"
+                              className="h-8 flex-1 rounded-lg border-[var(--bladevault-line)] bg-background text-xs shadow-none dark:border-[#d3c097]/30"
+                            />
+                            <Select
+                              value={field.type}
+                              onValueChange={(value) => {
+                                const type = value as CustomFieldType
+                                if (!CUSTOM_FIELD_TYPES.includes(type)) return
+                                void handleUpdateCustomFields((fields) =>
+                                  fields.map((item, itemIndex) =>
+                                    itemIndex === index
+                                      ? { ...item, type }
+                                      : item,
+                                  ),
+                                )
+                              }}
+                            >
+                              <SelectTrigger
+                                size="sm"
+                                className="h-8 w-28 rounded-lg border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)]"
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {CUSTOM_FIELD_TYPES.map((type) => (
+                                  <SelectItem
+                                    key={type}
+                                    value={type}
+                                    className="text-sm capitalize"
+                                  >
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              className={`${settingsSecondaryButtonClassName} h-8 w-8 shrink-0 rounded-lg`}
+                              onClick={() =>
+                                void handleUpdateCustomFields((fields) =>
+                                  fields.filter(
+                                    (_, itemIndex) => itemIndex !== index,
+                                  ),
+                                )
+                              }
+                              aria-label={`Delete ${field.name} field`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-start gap-2 border-t border-[var(--bladevault-line)]/60 pt-3">
+                      <Input
+                        value={newFieldName}
+                        onChange={(event) =>
+                          setNewFieldName(event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            handleAddField()
+                          }
+                        }}
+                        placeholder="New field name, e.g. Sold or Sell price"
+                        className="h-8 flex-1 rounded-lg border-[var(--bladevault-line)] bg-background text-xs shadow-none dark:border-[#d3c097]/30"
+                      />
+                      <Select
+                        value={newFieldType}
+                        onValueChange={(value) => {
+                          const type = value as CustomFieldType
+                          if (CUSTOM_FIELD_TYPES.includes(type)) {
+                            setNewFieldType(type)
+                          }
+                        }}
+                      >
+                        <SelectTrigger
+                          size="sm"
+                          className="h-8 w-28 rounded-lg border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)]"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CUSTOM_FIELD_TYPES.map((type) => (
+                            <SelectItem
+                              key={type}
+                              value={type}
+                              className="text-sm capitalize"
+                            >
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className={`${settingsPrimaryButtonClassName} h-8 rounded-lg`}
+                        onClick={handleAddField}
+                        disabled={!newFieldName.trim()}
+                      >
+                        Add
+                      </Button>
+                    </div>
                   </SettingsSection>
                 </div>
               )}

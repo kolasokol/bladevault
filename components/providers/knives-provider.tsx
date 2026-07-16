@@ -250,6 +250,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
           handleMaterial: draft.handleMaterial,
           description: draft.description,
           specs: draft.specs,
+          customFields: draft.customFields,
           imageUrls: toImageUrls(draft),
           sourceUrl: draft.sourceUrl,
           pinned: draft.pinned,

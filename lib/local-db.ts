@@ -96,7 +96,9 @@ export function getLocalImagesDirPath(): string {
   return joinRuntimePath(getLocalDataDirPath(), 'images')
 }
 
-export function setPersistedLocalDataDirPath(nextDataDir: string | null): string | null {
+export function setPersistedLocalDataDirPath(
+  nextDataDir: string | null,
+): string | null {
   if (isLocalDataDirManagedByEnv()) {
     throw new Error(
       'This runtime is managed by BLADEVAULT_DATA_DIR and cannot be changed from the app.',
@@ -247,6 +249,12 @@ function migrateSchema(database: Database.Database) {
   if (!hasUpdatedAt) {
     database.exec(`ALTER TABLE knives ADD COLUMN updated_at TEXT`)
   }
+  const hasCustomFields = columns.some((col) => col.name === 'custom_fields')
+  if (!hasCustomFields) {
+    database.exec(
+      `ALTER TABLE knives ADD COLUMN custom_fields TEXT NOT NULL DEFAULT '{}'`,
+    )
+  }
   database
     .prepare(
       `UPDATE knives
@@ -279,7 +287,7 @@ function normalizeKnifeRows(database: Database.Database) {
     FROM knives
   `,
     )
-  .all() as Array<{
+    .all() as Array<{
     id: string
     name: string
     brand: string
@@ -298,7 +306,7 @@ function normalizeKnifeRows(database: Database.Database) {
 
   const updateKnife = database.prepare(`
     UPDATE knives
-    SET name = ?, brand = ?, blade_style = ?, handle_material = ?, specs = ?, description = ?, source_url = ?, updated_at = ?
+    SET name = ?, brand = ?, blade_style = ?, handle_material = ?, specs = ?, description = ?, source_url = ?, updated_at = ?, custom_fields = ?
     WHERE id = ?
   `)
 
@@ -319,6 +327,11 @@ function normalizeKnifeRows(database: Database.Database) {
         price?: string
         country: string
       }>
+      const customFields = (row as Record<string, unknown>).custom_fields
+        ? (JSON.parse(
+            String((row as Record<string, unknown>).custom_fields),
+          ) as Record<string, string>)
+        : {}
       const normalized = normalizeKnifeTextFields({
         name: row.name,
         brand: row.brand,
@@ -327,9 +340,13 @@ function normalizeKnifeRows(database: Database.Database) {
         description: row.description,
         sourceUrl: row.source_url,
         specs,
+        customFields,
       })
 
       const normalizedSpecs = JSON.stringify(normalized.specs ?? {})
+      const normalizedCustomFields = JSON.stringify(
+        normalized.customFields ?? {},
+      )
       const normalizedUpdatedAt =
         row.updated_at?.trim() || row.added_at || new Date().toISOString()
       const hasChanges =
@@ -340,6 +357,8 @@ function normalizeKnifeRows(database: Database.Database) {
         normalized.description !== row.description ||
         normalized.sourceUrl !== row.source_url ||
         normalizedSpecs !== row.specs ||
+        normalizedCustomFields !==
+          String((row as Record<string, unknown>).custom_fields ?? '{}') ||
         normalizedUpdatedAt !== (row.updated_at ?? '')
 
       if (!hasChanges) {
@@ -355,6 +374,7 @@ function normalizeKnifeRows(database: Database.Database) {
         normalized.description,
         normalized.sourceUrl,
         normalizedUpdatedAt,
+        normalizedCustomFields,
         row.id,
       )
     }
@@ -374,6 +394,7 @@ function initSchema(database: Database.Database) {
       handle_material TEXT NOT NULL,
       images TEXT NOT NULL,
       specs TEXT NOT NULL,
+      custom_fields TEXT NOT NULL DEFAULT '{}',
       description TEXT NOT NULL,
       added_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,

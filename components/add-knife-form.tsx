@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Loader2,
@@ -26,6 +26,7 @@ import {
 } from '@/components/knife-form'
 import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import { ScrapedProduct } from '@/lib/scrape'
+import { CustomField } from '@/lib/settings-shared'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,11 +52,52 @@ export function AddKnifeForm() {
   const [showPreview, setShowPreview] = useState(true)
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
   const [isSaving, setIsSaving] = useState(false)
-  const [interactiveSessionId, setInteractiveSessionId] = useState<string | null>(null)
+  const [interactiveSessionId, setInteractiveSessionId] = useState<
+    string | null
+  >(null)
   const interactiveSessionIdRef = useRef<string | null>(null)
-  const [interactiveStatus, setInteractiveStatus] = useState<'starting' | 'waiting' | 'scraping' | null>(null)
-  const [interactiveIsChallenge, setInteractiveIsChallenge] = useState<boolean | null>(null)
+  const [interactiveStatus, setInteractiveStatus] = useState<
+    'starting' | 'waiting' | 'scraping' | null
+  >(null)
+  const [interactiveIsChallenge, setInteractiveIsChallenge] = useState<
+    boolean | null
+  >(null)
   const [interactiveError, setInteractiveError] = useState<string | null>(null)
+  const [customFields, setCustomFields] = useState<CustomField[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/settings', { cache: 'no-store' })
+        const data = await readJsonResponse<{
+          error?: string
+          settings?: { customFields?: CustomField[] }
+        }>(response)
+        if (!cancelled && response.ok && data.settings?.customFields) {
+          setCustomFields(data.settings.customFields)
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    loadSettings()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const seededForm = useMemo(() => {
+    const seeded: KnifeFormData = { ...form }
+    for (const field of customFields) {
+      if (!(field.id in seeded.customFields)) {
+        seeded.customFields[field.id] = ''
+      }
+    }
+    return seeded
+  }, [form, customFields])
 
   const updateField = <K extends keyof KnifeFormData>(
     field: K,
@@ -141,7 +183,8 @@ export function AddKnifeForm() {
     html: string,
     finalUrl: string,
   ) => {
-    setForm({
+    setForm((prev) => ({
+      ...prev,
       brand: product.brand ?? '',
       name: product.name ?? '',
       handleMaterial: product.handleMaterial ?? '',
@@ -162,7 +205,7 @@ export function AddKnifeForm() {
       country: product.specs?.country ?? '',
       images: Array.isArray(product.images) ? product.images : [],
       sourceUrl: product.sourceUrl ?? url.trim(),
-    })
+    }))
     setSelectedImages(
       new Set(Array.isArray(product.images) ? product.images : []),
     )
@@ -241,9 +284,10 @@ export function AddKnifeForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
       })
-      const data = await readJsonResponse<{ error?: string; sessionId?: string }>(
-        response,
-      )
+      const data = await readJsonResponse<{
+        error?: string
+        sessionId?: string
+      }>(response)
 
       if (!response.ok) {
         throw new Error(
@@ -532,8 +576,9 @@ export function AddKnifeForm() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 flex-1 min-h-0">
             <div className="flex flex-col min-h-0 overflow-y-auto space-y-4 pr-1">
               <KnifeFormFields
-                form={form}
+                form={seededForm}
                 updateField={updateField}
+                customFieldDefinitions={customFields}
                 imageUrlInput={imageUrlInput}
                 setImageUrlInput={setImageUrlInput}
                 addImageUrl={addImageUrl}
@@ -598,8 +643,9 @@ export function AddKnifeForm() {
         ) : (
           activeTab === 'Manual' && (
             <KnifeFormFields
-              form={form}
+              form={seededForm}
               updateField={updateField}
+              customFieldDefinitions={customFields}
               imageUrlInput={imageUrlInput}
               setImageUrlInput={setImageUrlInput}
               addImageUrl={addImageUrl}

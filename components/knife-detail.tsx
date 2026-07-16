@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -15,6 +15,8 @@ import { BookmarkIcon } from '@/components/bookmark-icon'
 import { useKnives } from '@/components/providers/knives-provider'
 import { Knife, KnifeUpdates } from '@/lib/data'
 import { knifeToFormData, KnifeScrapeEditor } from '@/components/knife-form'
+import { CustomField } from '@/lib/settings-shared'
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import { PageHeader } from '@/components/page-header'
 import { Gallery } from '@/components/gallery'
 import { Button } from '@/components/ui/button'
@@ -61,6 +63,31 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
   const [isTogglingPin, setIsTogglingPin] = useState(false)
   const [isTogglingCompare, setIsTogglingCompare] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [customFields, setCustomFields] = useState<CustomField[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/settings', { cache: 'no-store' })
+        const data = await readJsonResponse<{
+          error?: string
+          settings?: { customFields?: CustomField[] }
+        }>(response)
+        if (!cancelled && response.ok && data.settings?.customFields) {
+          setCustomFields(data.settings.customFields)
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    loadSettings()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleCancel = () => {
     setError(null)
@@ -126,6 +153,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
           price: form.price,
           country: form.country,
         },
+        customFields: form.customFields,
       }
       await updateKnife(knife.id, updates)
       setIsEditing(false)
@@ -160,7 +188,8 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
       <div className="flex flex-col min-h-0 flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
         <KnifeScrapeEditor
           mode="edit"
-          initialData={knifeToFormData(knife)}
+          initialData={knifeToFormData(knife, customFields)}
+          customFieldDefinitions={customFields}
           title="Edit Knife"
           description="Edit knife details manually. Scrape loads a page preview without changing fields."
           breadcrumbs={knifeBreadcrumbs}
@@ -413,6 +442,30 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                     <Separator />
                   </div>
                 ))}
+
+                {customFields.length > 0 && (
+                  <>
+                    <div className="flex items-center justify-between pt-3">
+                      <h3 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        Custom Fields
+                      </h3>
+                    </div>
+                    <Separator />
+                    {customFields.map((field) => (
+                      <div key={field.id}>
+                        <div className="flex items-center justify-between gap-4 py-1.5">
+                          <span className="text-xs text-muted-foreground">
+                            {field.name}
+                          </span>
+                          <span className="text-xs text-foreground">
+                            {knife.customFields[field.id] || 'N/A'}
+                          </span>
+                        </div>
+                        <Separator />
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

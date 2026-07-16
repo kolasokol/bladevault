@@ -61,6 +61,15 @@ export async function PATCH(
       }
     }
 
+    if (body.customFields && typeof body.customFields === 'object') {
+      updates.customFields = {}
+      for (const [key, value] of Object.entries(body.customFields)) {
+        if (typeof value === 'string') {
+          updates.customFields[key] = value
+        }
+      }
+    }
+
     if (
       body.images &&
       Array.isArray(body.images) &&

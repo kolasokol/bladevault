@@ -54,6 +54,9 @@ export function rowToKnife(row: Record<string, unknown>): Knife {
     specs:
       (JSON.parse(String(row.specs)) as Knife['specs'] | null) ??
       ({} as Knife['specs']),
+    customFields:
+      (JSON.parse(String(row.custom_fields)) as Knife['customFields'] | null) ??
+      {},
     description: String(row.description),
     addedAt,
     updatedAt:
@@ -211,6 +214,12 @@ export class LocalStorage implements Storage {
       }
     }
 
+    const customFields: Knife['customFields'] = Object.fromEntries(
+      Object.entries(normalizedInput.customFields ?? {}).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string',
+      ),
+    )
+
     const newKnife: Knife = {
       id,
       name: normalizedInput.name,
@@ -219,6 +228,7 @@ export class LocalStorage implements Storage {
       handleMaterial: normalizedInput.handleMaterial,
       images: imagePaths,
       specs: normalizedInput.specs,
+      customFields,
       description: normalizedInput.description,
       addedAt,
       updatedAt,
@@ -228,8 +238,8 @@ export class LocalStorage implements Storage {
 
     getDb()
       .prepare(
-        `INSERT INTO knives (id, name, brand, steel, blade_style, handle_material, images, specs, description, added_at, updated_at, source_url, pinned)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO knives (id, name, brand, steel, blade_style, handle_material, images, specs, custom_fields, description, added_at, updated_at, source_url, pinned)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         newKnife.id,
@@ -240,6 +250,7 @@ export class LocalStorage implements Storage {
         newKnife.handleMaterial,
         JSON.stringify(newKnife.images),
         JSON.stringify(newKnife.specs),
+        JSON.stringify(newKnife.customFields),
         newKnife.description,
         newKnife.addedAt,
         newKnife.updatedAt,
@@ -330,12 +341,20 @@ export class LocalStorage implements Storage {
         ...existing.specs,
         ...(normalizedUpdates.specs ?? {}),
       },
+      customFields: Object.fromEntries(
+        Object.entries({
+          ...existing.customFields,
+          ...normalizedUpdates.customFields,
+        }).filter(
+          (entry): entry is [string, string] => typeof entry[1] === 'string',
+        ),
+      ),
     }
 
     getDb()
       .prepare(
         `UPDATE knives
-         SET name = ?, brand = ?, steel = ?, blade_style = ?, handle_material = ?, images = ?, specs = ?, description = ?, updated_at = ?, source_url = ?, pinned = ?
+         SET name = ?, brand = ?, steel = ?, blade_style = ?, handle_material = ?, images = ?, specs = ?, custom_fields = ?, description = ?, updated_at = ?, source_url = ?, pinned = ?
          WHERE id = ?`,
       )
       .run(
@@ -346,6 +365,7 @@ export class LocalStorage implements Storage {
         updated.handleMaterial,
         JSON.stringify(updated.images),
         JSON.stringify(updated.specs),
+        JSON.stringify(updated.customFields),
         updated.description,
         updated.updatedAt,
         updated.sourceUrl,

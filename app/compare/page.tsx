@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArchiveX, FileDown, ImageIcon, Printer, X } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { getImageUrl, Knife } from '@/lib/data'
+import { CustomField } from '@/lib/settings-shared'
+import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import { useKnives } from '@/components/providers/knives-provider'
 import { cn } from '@/lib/utils'
 import {
@@ -27,7 +29,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-const compareRows = [
+const builtInCompareRows = [
   { label: 'Model Number', key: 'specs.modelNumber' },
   { label: 'Blade Material', key: 'specs.bladeMaterial' },
   { label: 'Blade Style', key: 'bladeStyle' },
@@ -44,9 +46,15 @@ const compareRows = [
   { label: 'Country', key: 'specs.country' },
 ] as const
 
-type CompareRowKey = (typeof compareRows)[number]['key']
+type BuiltInCompareRowKey = (typeof builtInCompareRows)[number]['key']
+type CompareRowKey = BuiltInCompareRowKey | `custom:${string}`
 
 function getRowValue(knife: Knife, rowKey: CompareRowKey): string {
+  if (rowKey.startsWith('custom:')) {
+    const fieldId = rowKey.slice('custom:'.length)
+    return knife.customFields[fieldId] ?? '-'
+  }
+
   if (rowKey.includes('.')) {
     const specKey = rowKey.split('.')[1] as keyof Knife['specs']
     return knife.specs[specKey] ?? '-'
@@ -65,7 +73,11 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;')
 }
 
-function buildPrintableHtml(comparedKnives: Knife[], generatedAt: string) {
+function buildPrintableHtml(
+  comparedKnives: Knife[],
+  generatedAt: string,
+  compareRows: { label: string; key: CompareRowKey }[],
+) {
   const headerCells = comparedKnives
     .map((knife) => `<th>${escapeHtml(`${knife.brand} ${knife.name}`)}</th>`)
     .join('')
@@ -158,11 +170,47 @@ function buildPrintableHtml(comparedKnives: Knife[], generatedAt: string) {
 export default function ComparePage() {
   const { knives, compareIds, addToCompare, removeFromCompare, clearCompare } =
     useKnives()
+  const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [hoveredCell, setHoveredCell] = useState<{
     knifeId: string
-    rowKey: (typeof compareRows)[number]['key']
+    rowKey: CompareRowKey
   } | null>(null)
   const printFrameRef = useRef<HTMLIFrameElement | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/settings', { cache: 'no-store' })
+        const data = await readJsonResponse<{
+          error?: string
+          settings?: { customFields?: CustomField[] }
+        }>(response)
+        if (!cancelled && response.ok && data.settings?.customFields) {
+          setCustomFields(data.settings.customFields)
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    loadSettings()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const compareRows: { label: string; key: CompareRowKey }[] = useMemo(
+    () => [
+      ...builtInCompareRows,
+      ...customFields.map((field) => ({
+        label: field.name,
+        key: `custom:${field.id}` as `custom:${string}`,
+      })),
+    ],
+    [customFields],
+  )
 
   useEffect(() => {
     return () => {
@@ -261,7 +309,11 @@ export default function ComparePage() {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(new Date())
-    const printableHtml = buildPrintableHtml(comparedKnives, generatedAt)
+    const printableHtml = buildPrintableHtml(
+      comparedKnives,
+      generatedAt,
+      compareRows,
+    )
 
     printFrameRef.current?.remove()
 
@@ -482,7 +534,7 @@ export default function ComparePage() {
                   <TableBody>
                     {compareRows.map((row, idx) => (
                       <TableRow
-                        key={row.label}
+                        key={row.key}
                         className={cn(idx % 2 === 0 && 'bg-muted/30')}
                       >
                         <TableCell

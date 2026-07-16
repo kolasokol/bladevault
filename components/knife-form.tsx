@@ -22,6 +22,7 @@ import {
 import { getImageUrl, Knife, KnifeDraft } from '@/lib/data'
 import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import { ScrapedProduct } from '@/lib/scrape'
+import { CustomField, CustomFieldType } from '@/lib/settings-shared'
 import { PageHeader, BreadcrumbItemData } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -48,6 +49,7 @@ export type KnifeFormData = {
   hardness: string
   price: string
   country: string
+  customFields: Record<string, string>
   images: string[]
   sourceUrl: string
 }
@@ -71,11 +73,26 @@ export const EMPTY_KNIFE_FORM: KnifeFormData = {
   hardness: '',
   price: '',
   country: '',
+  customFields: {},
   images: [],
   sourceUrl: '',
 }
 
-export function knifeToFormData(knife: Knife): KnifeFormData {
+function seedCustomFields(
+  customFields: Record<string, string>,
+  definitions: CustomField[],
+): Record<string, string> {
+  const seeded: Record<string, string> = {}
+  for (const field of definitions) {
+    seeded[field.id] = customFields[field.id] ?? ''
+  }
+  return seeded
+}
+
+export function knifeToFormData(
+  knife: Knife,
+  customFieldDefinitions: CustomField[] = [],
+): KnifeFormData {
   return {
     brand: knife.brand,
     name: knife.name,
@@ -95,6 +112,7 @@ export function knifeToFormData(knife: Knife): KnifeFormData {
     hardness: knife.specs.hardness ?? '',
     price: knife.specs.price ?? '',
     country: knife.specs.country,
+    customFields: seedCustomFields(knife.customFields, customFieldDefinitions),
     images: knife.images,
     sourceUrl: knife.sourceUrl,
   }
@@ -126,6 +144,7 @@ export function formDataToKnifeDraft(
       price: form.price,
       country: form.country,
     },
+    customFields: form.customFields,
     description: form.description,
     sourceUrl: form.sourceUrl,
   }
@@ -137,6 +156,7 @@ type KnifeFormFieldsProps = {
     field: K,
     value: KnifeFormData[K],
   ) => void
+  customFieldDefinitions: CustomField[]
   imageUrlInput: string
   setImageUrlInput: (value: string) => void
   addImageUrl: () => void
@@ -148,9 +168,21 @@ type KnifeFormFieldsProps = {
   removeImage: (index: number) => void
 }
 
+function inputTypeForCustomField(type: CustomFieldType): string {
+  switch (type) {
+    case 'number':
+      return 'number'
+    case 'date':
+      return 'date'
+    default:
+      return 'text'
+  }
+}
+
 export function KnifeFormFields({
   form,
   updateField,
+  customFieldDefinitions,
   imageUrlInput,
   setImageUrlInput,
   addImageUrl,
@@ -225,6 +257,35 @@ export function KnifeFormFields({
         {inputField('Price', 'price', 'e.g. $525')}
         {inputField('Country', 'country', 'e.g. USA')}
       </div>
+
+      {customFieldDefinitions.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Custom Fields
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {customFieldDefinitions.map((field) => (
+              <div key={field.id} className="space-y-1.5">
+                <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {field.name}
+                </label>
+                <Input
+                  type={inputTypeForCustomField(field.type)}
+                  step={field.type === 'number' ? 'any' : undefined}
+                  value={form.customFields[field.id] ?? ''}
+                  onChange={(e) =>
+                    updateField('customFields', {
+                      ...form.customFields,
+                      [field.id]: e.target.value,
+                    })
+                  }
+                  placeholder={field.name}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -421,6 +482,7 @@ export function KnifeFormFields({
 
 type KnifeScrapeEditorProps = {
   initialData: KnifeFormData
+  customFieldDefinitions?: CustomField[]
   mode: 'add' | 'edit'
   title: string
   description?: string
@@ -434,6 +496,7 @@ type KnifeScrapeEditorProps = {
 
 export function KnifeScrapeEditor({
   initialData,
+  customFieldDefinitions = [],
   mode,
   title,
   description,
@@ -758,6 +821,7 @@ export function KnifeScrapeEditor({
               <KnifeFormFields
                 form={form}
                 updateField={updateField}
+                customFieldDefinitions={customFieldDefinitions}
                 imageUrlInput={imageUrlInput}
                 setImageUrlInput={setImageUrlInput}
                 addImageUrl={addImageUrl}

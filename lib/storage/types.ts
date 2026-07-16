@@ -2,9 +2,10 @@ import { Knife, KnifeUpdates } from '@/lib/data'
 
 export type CreateKnifeInput = Omit<
   Knife,
-  'id' | 'addedAt' | 'updatedAt' | 'images'
+  'id' | 'addedAt' | 'updatedAt' | 'images' | 'customFields'
 > & {
   imageUrls: string[]
+  customFields?: Partial<Knife['customFields']>
 }
 
 export interface ImageData {
