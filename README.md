@@ -38,6 +38,7 @@ Choose the fastest path for how you want to use BladeVault:
 
 - **Docker**: `docker compose up -d --build`
 - **Source**: `npm install` then `npx playwright install chromium` and `npm run dev`
+- **Dev Container**: open the repository in VS Code and run **Dev Containers: Reopen in Container**, then run `npm run dev`
 - **Desktop shell**: `npm run desktop:dev`
 
 If you only want to try the app, Docker is the quickest setup. If you want to develop or customize it, run from source.
@@ -276,6 +277,21 @@ By default, source mode stores its SQLite database and downloaded images in
 `BLADEVAULT_DATA_DIR` if you want a custom location. Older local checkouts with
 an existing repo-level `data/bladevault.sqlite` keep using that legacy path
 until you move the file.
+
+### Dev Container
+
+The included `.devcontainer` configuration provides Node.js and Playwright's
+matching Chromium build.
+In VS Code, choose **Dev Containers: Reopen in Container**. Dependencies install
+automatically; then run:
+
+```bash
+npm run dev
+```
+
+The app opens through the forwarded port 3000. Container runtime data is stored
+in the checkout's ignored `data/` folder, while `node_modules` stays in a Docker
+volume so it is never shared with the host OS.
 
 ---
 
