@@ -7,7 +7,7 @@ const {
   ipcMain,
   shell,
 } = require('electron')
-const { spawn } = require('child_process')
+const { spawn, spawnSync } = require('child_process')
 const crypto = require('crypto')
 const fs = require('fs')
 const https = require('https')
@@ -19,6 +19,13 @@ const DEV_SERVER_URL = process.env.ELECTRON_START_URL || 'http://127.0.0.1:3000'
 const DEV_SERVER_ORIGIN = new URL(DEV_SERVER_URL).origin
 const FORCE_PRODUCTION_SERVER = process.env.BLADEVAULT_FORCE_PROD_SERVER === '1'
 const SMOKE_TEST_MODE = process.env.BLADEVAULT_SMOKE_TEST === '1'
+const UPDATE_DEBUG_ENABLED =
+  process.platform === 'win32' && process.env.BLADEVAULT_UPDATE_DEBUG !== '0'
+const UPDATE_ALLOW_SAME_VERSION =
+  process.env.BLADEVAULT_UPDATE_ALLOW_SAME_VERSION === '1'
+const UPDATE_AUTO_TEST = process.env.BLADEVAULT_UPDATE_AUTOTEST === '1'
+const UPDATE_AUTO_TEST_INSTALL =
+  process.env.BLADEVAULT_UPDATE_AUTOTEST_INSTALL === '1'
 const PREFERRED_DESKTOP_PORT = Number.parseInt(
   process.env.BLADEVAULT_DESKTOP_PORT || '3000',
   10,
@@ -43,6 +50,99 @@ let serverOrigin = null
 let isQuitting = false
 let isInstallingUpdate = false
 let updateStatus = { status: 'idle' }
+let updateDebugLogPath = null
+
+function getUpdateDebugLogPath() {
+  if (!UPDATE_DEBUG_ENABLED || process.platform !== 'win32') {
+    return null
+  }
+
+  if (updateDebugLogPath) {
+    return updateDebugLogPath
+  }
+
+  try {
+    const userDataPath = app.getPath('userData')
+    fs.mkdirSync(userDataPath, { recursive: true })
+    updateDebugLogPath = path.join(userDataPath, 'update-debug.log')
+    return updateDebugLogPath
+  } catch {
+    return null
+  }
+}
+
+function appendUpdateDebug(message, details) {
+  const debugLogPath = getUpdateDebugLogPath()
+  if (!debugLogPath) {
+    return
+  }
+
+  const timestamp = new Date().toISOString()
+  const serializedDetails = details ? ` ${JSON.stringify(details)}` : ''
+  const line = `[${timestamp}] ${message}${serializedDetails}\n`
+
+  try {
+    fs.appendFileSync(debugLogPath, line, 'utf8')
+  } catch {
+    // Best effort only: update debugging should never break runtime behavior.
+  }
+}
+
+function collectBladeVaultProcessSnapshot() {
+  if (!UPDATE_DEBUG_ENABLED || process.platform !== 'win32') {
+    return []
+  }
+
+  const snapshotScript = [
+    "$processes = Get-CimInstance Win32_Process | Where-Object { $_.Name -like 'BladeVault*' -or $_.CommandLine -like '*BladeVault*' }",
+    '$processes | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress',
+  ].join('; ')
+
+  const result = spawnSync(
+    'powershell.exe',
+    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', snapshotScript],
+    {
+      encoding: 'utf8',
+      timeout: 4000,
+      windowsHide: true,
+    },
+  )
+
+  if (result.error && result.error.name === 'Error') {
+    return [
+      {
+        error: 'snapshot_failed',
+        stderr: result.error.message,
+      },
+    ]
+  }
+
+  if (result.status !== 0) {
+    return [
+      {
+        error: 'snapshot_failed',
+        stderr: String(result.stderr || '').trim(),
+      },
+    ]
+  }
+
+  const stdout = String(result.stdout || '').trim()
+  if (!stdout) {
+    return []
+  }
+
+  try {
+    const parsed = JSON.parse(stdout)
+    return Array.isArray(parsed) ? parsed : [parsed]
+  } catch {
+    return [
+      {
+        error: 'snapshot_parse_failed',
+        stdout,
+      },
+    ]
+  }
+}
 
 function publishUpdateStatus(nextStatus) {
   updateStatus = { ...nextStatus, platform: process.platform }
@@ -66,47 +166,90 @@ function compareVersions(left, right) {
 
 function requestJson(url) {
   return new Promise((resolve, reject) => {
-    https
-      .get(
-        url,
-        { headers: { 'User-Agent': 'BladeVault desktop updater' } },
-        (response) => {
-          if (
-            response.statusCode &&
-            response.statusCode >= 300 &&
-            response.statusCode < 400 &&
-            response.headers.location
-          ) {
-            response.resume()
-            requestJson(response.headers.location).then(resolve, reject)
+    const request = https.get(
+      url,
+      { headers: { 'User-Agent': 'BladeVault desktop updater' } },
+      (response) => {
+        if (
+          response.statusCode &&
+          response.statusCode >= 300 &&
+          response.statusCode < 400 &&
+          response.headers.location
+        ) {
+          response.resume()
+          requestJson(response.headers.location).then(resolve, reject)
+          return
+        }
+
+        let body = ''
+        response.setEncoding('utf8')
+        response.on('data', (chunk) => {
+          body += chunk
+        })
+        response.on('end', () => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`GitHub returned HTTP ${response.statusCode}.`))
             return
           }
 
-          let body = ''
-          response.setEncoding('utf8')
-          response.on('data', (chunk) => {
-            body += chunk
-          })
-          response.on('end', () => {
-            if (response.statusCode !== 200) {
-              reject(new Error(`GitHub returned HTTP ${response.statusCode}.`))
-              return
-            }
+          try {
+            resolve(JSON.parse(body))
+          } catch {
+            reject(new Error('GitHub returned invalid release metadata.'))
+          }
+        })
+      },
+    )
 
-            try {
-              resolve(JSON.parse(body))
-            } catch {
-              reject(new Error('GitHub returned invalid release metadata.'))
-            }
-          })
-        },
+    request.setTimeout(15000, () => {
+      request.destroy(
+        new Error('Timed out requesting GitHub release metadata.'),
       )
-      .on('error', reject)
+    })
+    request.on('error', reject)
   })
 }
 
 function downloadFile(url, destination) {
   return new Promise((resolve, reject) => {
+    let settled = false
+    let finalizeTimer = null
+
+    const clearFinalizeTimer = () => {
+      if (finalizeTimer) {
+        clearTimeout(finalizeTimer)
+        finalizeTimer = null
+      }
+    }
+
+    const armFinalizeTimer = () => {
+      clearFinalizeTimer()
+      finalizeTimer = setTimeout(() => {
+        if (!settled) {
+          settled = true
+          reject(new Error('Timed out finalizing downloaded update file.'))
+        }
+      }, 15000)
+    }
+
+    const settleResolve = (value) => {
+      if (settled) {
+        return
+      }
+      settled = true
+      clearFinalizeTimer()
+      resolve(value)
+    }
+
+    const settleReject = (error) => {
+      if (settled) {
+        return
+      }
+      settled = true
+      clearFinalizeTimer()
+      reject(error)
+    }
+
     const request = https.get(
       url,
       { headers: { 'User-Agent': 'BladeVault desktop updater' } },
@@ -134,28 +277,75 @@ function downloadFile(url, destination) {
         const file = fs.createWriteStream(destination)
         const hash = crypto.createHash('sha256')
         let transferred = 0
+        let responseEnded = false
         const total = Number(response.headers['content-length'] || 0)
+
+        armFinalizeTimer()
 
         response.on('data', (chunk) => {
           transferred += chunk.length
           hash.update(chunk)
+          armFinalizeTimer()
           publishUpdateStatus({
             status: 'downloading',
             percent: total ? Math.round((transferred / total) * 100) : null,
           })
         })
-        response.pipe(file)
-        file.on('finish', () => {
-          file.close(() => resolve({ sha256: hash.digest('hex') }))
+
+        response.on('end', () => {
+          responseEnded = true
+          armFinalizeTimer()
         })
+
+        response.on('aborted', () => {
+          settleReject(
+            new Error('Update download was aborted by the remote host.'),
+          )
+        })
+
+        response.on('error', (error) => {
+          settleReject(error)
+        })
+
+        response.pipe(file)
+
+        file.on('finish', () => {
+          armFinalizeTimer()
+          file.close()
+        })
+
+        file.on('close', () => {
+          if (!responseEnded) {
+            return
+          }
+
+          try {
+            settleResolve({ sha256: hash.digest('hex') })
+          } catch (error) {
+            settleReject(
+              error instanceof Error ? error : new Error(String(error)),
+            )
+          }
+        })
+
         file.on('error', (error) => {
           file.destroy()
-          reject(error)
+          settleReject(error)
         })
       },
     )
-    request.on('error', reject)
+
+    request.setTimeout(30000, () => {
+      request.destroy(new Error('Timed out downloading update installer.'))
+    })
+    request.on('error', (error) => {
+      settleReject(error)
+    })
   })
+}
+
+function toPowerShellSingleQuoted(value) {
+  return `'${String(value).replace(/'/g, "''")}'`
 }
 
 function getUpdateAssetName() {
@@ -165,12 +355,39 @@ function getUpdateAssetName() {
 }
 
 async function checkPlatformUpdate() {
+  appendUpdateDebug('check_platform_update_started', {
+    currentVersion: app.getVersion(),
+  })
+
   const release = await requestJson(
     'https://api.github.com/repos/dedkola/bladevault/releases/latest',
   )
   const version = String(release.tag_name || '').replace(/^v/, '')
 
-  if (!version || compareVersions(version, app.getVersion()) <= 0) {
+  appendUpdateDebug('check_platform_update_release', {
+    latestVersion: version || null,
+    releaseUrl: release.html_url || null,
+    allowSameVersion: UPDATE_ALLOW_SAME_VERSION,
+  })
+
+  const versionComparison = version
+    ? compareVersions(version, app.getVersion())
+    : 0
+  const isSameVersion = versionComparison === 0
+  const shouldTreatAsAvailable =
+    Boolean(version) &&
+    (versionComparison > 0 ||
+      (UPDATE_ALLOW_SAME_VERSION &&
+        isSameVersion &&
+        process.platform === 'win32'))
+
+  if (!shouldTreatAsAvailable) {
+    appendUpdateDebug('check_platform_update_not_available', {
+      latestVersion: version || null,
+      currentVersion: app.getVersion(),
+      versionComparison,
+      allowSameVersion: UPDATE_ALLOW_SAME_VERSION,
+    })
     publishUpdateStatus({
       status: 'not-available',
       currentVersion: app.getVersion(),
@@ -183,8 +400,19 @@ async function checkPlatformUpdate() {
     ? release.assets.find((candidate) => candidate.name === assetName)
     : null
   if (!asset?.browser_download_url) {
+    appendUpdateDebug('check_platform_update_missing_asset', {
+      assetName,
+      latestVersion: version,
+    })
     throw new Error(`The latest release does not contain ${assetName}.`)
   }
+
+  appendUpdateDebug('check_platform_update_available', {
+    latestVersion: version,
+    downloadUrl: asset.browser_download_url,
+    versionComparison,
+    allowSameVersion: UPDATE_ALLOW_SAME_VERSION,
+  })
 
   publishUpdateStatus({
     status: 'available',
@@ -196,6 +424,10 @@ async function checkPlatformUpdate() {
 }
 
 async function downloadPlatformUpdate() {
+  appendUpdateDebug('download_platform_update_started', {
+    currentVersion: app.getVersion(),
+  })
+
   const release = await requestJson(
     'https://api.github.com/repos/dedkola/bladevault/releases/latest',
   )
@@ -205,15 +437,18 @@ async function downloadPlatformUpdate() {
     ? release.assets.find((candidate) => candidate.name === assetName)
     : null
   if (!asset?.browser_download_url || !version) {
+    appendUpdateDebug('download_platform_update_missing_asset', {
+      assetName,
+      latestVersion: version || null,
+    })
     throw new Error(`The latest release does not contain ${assetName}.`)
   }
 
   const extension = process.platform === 'win32' ? 'exe' : 'dmg'
   const destination = path.join(
     os.tmpdir(),
-    `BladeVault-${version}.${extension}`,
+    `BladeVault-${version}-${Date.now()}-${process.pid}.${extension}`,
   )
-  fs.rmSync(destination, { force: true })
   const result = await downloadFile(asset.browser_download_url, destination)
   const expectedDigest = String(asset.digest || '')
     .replace(/^sha256:/, '')
@@ -228,6 +463,13 @@ async function downloadPlatformUpdate() {
     path: destination,
     sha256: result.sha256,
   })
+
+  appendUpdateDebug('download_platform_update_completed', {
+    latestVersion: version,
+    destination,
+    sha256: result.sha256,
+  })
+
   if (process.platform === 'darwin') {
     const openError = await shell.openPath(destination)
     if (openError) {
@@ -238,42 +480,111 @@ async function downloadPlatformUpdate() {
 }
 
 function installDownloadedUpdate() {
+  appendUpdateDebug('install_downloaded_update_called', {
+    pid: process.pid,
+    status: updateStatus.status,
+    installerPath: updateStatus.path || null,
+  })
+
   if (isInstallingUpdate) {
+    appendUpdateDebug('install_already_in_progress')
     return updateStatus
   }
 
   if (updateStatus.status !== 'downloaded' || !updateStatus.path) {
+    appendUpdateDebug('install_aborted_no_downloaded_update')
     throw new Error('No downloaded update is ready to install yet.')
   }
 
   if (process.platform !== 'win32') {
+    appendUpdateDebug('install_aborted_not_win32', {
+      platform: process.platform,
+    })
     return updateStatus
   }
 
   const installerPath = updateStatus.path
   if (!fs.existsSync(installerPath)) {
+    appendUpdateDebug('install_aborted_installer_missing', {
+      installerPath,
+    })
     throw new Error(
       'Downloaded installer was not found. Please download again.',
     )
   }
 
+  appendUpdateDebug('install_pre_quit_snapshot', {
+    snapshot: collectBladeVaultProcessSnapshot(),
+  })
+
   // The embedded Next server runs as a child BladeVault.exe on Windows.
   // Ask it to exit before starting the installer to avoid NSIS lock checks.
   if (serverProcess && serverProcess.exitCode === null) {
+    appendUpdateDebug('install_stopping_embedded_server')
     serverProcess.kill()
   }
 
   isInstallingUpdate = true
+  publishUpdateStatus({ status: 'installing' })
+
   app.once('will-quit', () => {
-    const escapedInstallerPath = installerPath.replace(/"/g, '""')
+    const installerPathQuoted = toPowerShellSingleQuoted(installerPath)
+    const debugLogPath = getUpdateDebugLogPath()
+    const debugLogPathQuoted = toPowerShellSingleQuoted(debugLogPath || '')
+    const currentPid = process.pid
+    appendUpdateDebug('will_quit_received_for_install', {
+      currentPid,
+      debugLogPath,
+      snapshot: collectBladeVaultProcessSnapshot(),
+    })
+
+    const psScript = [
+      `$installerPath = ${installerPathQuoted}`,
+      `$logPath = ${debugLogPathQuoted}`,
+      'function Write-UpdateLog([string]$message) {',
+      '  if (-not $logPath) { return }',
+      '  try {',
+      "    Add-Content -Path $logPath -Value ('[' + (Get-Date -Format o) + '] [installer-bootstrap] ' + $message) -Encoding UTF8",
+      '  } catch {}',
+      '}',
+      "Write-UpdateLog ('bootstrap_started pid=' + $PID + ' installer=' + $installerPath)",
+      '$deadline = (Get-Date).AddSeconds(45)',
+      'do {',
+      "  $bladeVaultProcesses = @(Get-Process -Name 'BladeVault' -ErrorAction SilentlyContinue)",
+      '  $currentProcess = Get-Process -Id ' +
+        currentPid +
+        ' -ErrorAction SilentlyContinue',
+      '  if ($bladeVaultProcesses.Count -eq 0 -and -not $currentProcess) { break }',
+      '  foreach ($proc in $bladeVaultProcesses) {',
+      '    try {',
+      '      $null = $proc.CloseMainWindow()',
+      '    } catch {}',
+      '  }',
+      "  Write-UpdateLog ('waiting_for_exit bladevault_count=' + $bladeVaultProcesses.Count)",
+      '  Start-Sleep -Milliseconds 300',
+      '} while ((Get-Date) -lt $deadline)',
+      "$leftover = @(Get-Process -Name 'BladeVault' -ErrorAction SilentlyContinue)",
+      'if ($leftover.Count -gt 0) {',
+      "  Write-UpdateLog ('leftover_processes=' + $leftover.Count + ' force_killing')",
+      '  foreach ($proc in $leftover) {',
+      '    try {',
+      '      Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue',
+      '    } catch {}',
+      '  }',
+      '}',
+      'try {',
+      '  $installerProcess = Start-Process -FilePath $installerPath -PassThru',
+      "  Write-UpdateLog ('installer_started pid=' + $installerProcess.Id)",
+      '  $installerProcess.WaitForExit()',
+      "  Write-UpdateLog ('installer_exited code=' + $installerProcess.ExitCode)",
+      '} catch {',
+      "  Write-UpdateLog ('installer_start_failed message=' + $_.Exception.Message)",
+      '}',
+    ].join('; ')
+
     const installer = spawn(
-      'cmd.exe',
-      [
-        '/d',
-        '/s',
-        '/c',
-        `timeout /t 2 /nobreak >nul & start "" "${escapedInstallerPath}"`,
-      ],
+      'powershell.exe',
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript],
       {
         detached: true,
         stdio: 'ignore',
@@ -281,24 +592,87 @@ function installDownloadedUpdate() {
       },
     )
     installer.unref()
+    appendUpdateDebug('installer_bootstrap_spawned')
   })
+
+  appendUpdateDebug('calling_app_quit_for_install')
   app.quit()
   return updateStatus
 }
 
 async function checkForUpdates() {
-  publishUpdateStatus({ status: 'checking' })
-  if (getUpdateAssetName()) return checkPlatformUpdate()
-  publishUpdateStatus({
-    status: 'not-available',
+  appendUpdateDebug('check_for_updates_called', {
     currentVersion: app.getVersion(),
+    platform: process.platform,
   })
-  return updateStatus
+
+  try {
+    publishUpdateStatus({ status: 'checking' })
+    if (getUpdateAssetName()) return checkPlatformUpdate()
+    publishUpdateStatus({
+      status: 'not-available',
+      currentVersion: app.getVersion(),
+    })
+    return updateStatus
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    appendUpdateDebug('check_for_updates_failed', { message })
+    publishUpdateStatus({ status: 'error', message })
+    return updateStatus
+  }
 }
 
 async function downloadUpdate() {
-  if (getUpdateAssetName()) return downloadPlatformUpdate()
-  return updateStatus
+  appendUpdateDebug('download_update_called', {
+    platform: process.platform,
+    status: updateStatus.status,
+  })
+
+  try {
+    if (getUpdateAssetName()) return downloadPlatformUpdate()
+    return updateStatus
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    appendUpdateDebug('download_update_failed', { message })
+    publishUpdateStatus({ status: 'error', message })
+    return updateStatus
+  }
+}
+
+async function runUpdateAutoTest() {
+  appendUpdateDebug('autotest_started', {
+    autoInstall: UPDATE_AUTO_TEST_INSTALL,
+    currentVersion: app.getVersion(),
+  })
+
+  const checked = await checkForUpdates()
+  appendUpdateDebug('autotest_after_check', {
+    status: checked.status,
+  })
+
+  if (checked.status === 'available') {
+    const downloaded = await downloadUpdate()
+    appendUpdateDebug('autotest_after_download', {
+      status: downloaded.status,
+      path: downloaded.path || null,
+    })
+  }
+
+  if (
+    UPDATE_AUTO_TEST_INSTALL &&
+    process.platform === 'win32' &&
+    updateStatus.status === 'downloaded'
+  ) {
+    appendUpdateDebug('autotest_before_install', {
+      status: updateStatus.status,
+    })
+    installDownloadedUpdate()
+    return
+  }
+
+  appendUpdateDebug('autotest_finished', {
+    status: updateStatus.status,
+  })
 }
 
 function isUsingEmbeddedServer() {
@@ -422,12 +796,25 @@ async function getPreferredPort() {
     try {
       return await reservePort(PREFERRED_DESKTOP_PORT)
     } catch (error) {
-      if (!(
+      const canFallbackToRandomPort =
         error &&
         typeof error === 'object' &&
         'code' in error &&
-        error.code === 'EADDRINUSE'
-      )) {
+        (error.code === 'EADDRINUSE' ||
+          error.code === 'EACCES' ||
+          error.code === 'EPERM')
+
+      appendUpdateDebug('preferred_port_unavailable', {
+        preferredPort: PREFERRED_DESKTOP_PORT,
+        errorCode:
+          error && typeof error === 'object' && 'code' in error
+            ? error.code
+            : null,
+        message: error instanceof Error ? error.message : String(error),
+        canFallbackToRandomPort,
+      })
+
+      if (!canFallbackToRandomPort) {
         throw error
       }
     }
@@ -774,11 +1161,36 @@ app.on('activate', async () => {
 app
   .whenReady()
   .then(async () => {
+    appendUpdateDebug('app_ready', {
+      pid: process.pid,
+      version: app.getVersion(),
+      updateDebugEnabled: UPDATE_DEBUG_ENABLED,
+      startUrl: DEV_SERVER_URL,
+      forceProductionServer: FORCE_PRODUCTION_SERVER,
+      smokeTestMode: SMOKE_TEST_MODE,
+    })
+
+    const runInitialUpdateFlow = () => {
+      if (UPDATE_AUTO_TEST) {
+        void runUpdateAutoTest().catch((error) => {
+          const message = error instanceof Error ? error.message : String(error)
+          appendUpdateDebug('autotest_failed', { message })
+          publishUpdateStatus({ status: 'error', message })
+        })
+        return
+      }
+
+      void checkForUpdates().catch((error) => {
+        const message = error instanceof Error ? error.message : String(error)
+        appendUpdateDebug('initial_check_for_updates_failed', { message })
+        publishUpdateStatus({ status: 'error', message })
+      })
+    }
+
+    runInitialUpdateFlow()
+
     try {
       await createMainWindow()
-      void checkForUpdates().catch((error) => {
-        publishUpdateStatus({ status: 'error', message: error.message })
-      })
     } catch (error) {
       dialog.showErrorBox(
         'BladeVault failed to start',
