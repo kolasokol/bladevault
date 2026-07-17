@@ -170,23 +170,17 @@ export function Gallery({
           </button>
 
           <div className="relative h-full w-full bg-black">
-            {images.length > 0 ? (
-              images.map((image, index) => (
-                <Image
-                  key={`${image}-${index}`}
-                  src={getImageUrl(image)}
-                  alt={index === activeIdx ? 'Knife full screen' : ''}
-                  aria-hidden={index !== activeIdx}
-                  fill
-                  loading="eager"
-                  sizes="90vw"
-                  className={cn(
-                    'object-contain',
-                    index === activeIdx ? 'z-10 opacity-100' : 'z-0 opacity-0',
-                  )}
-                  referrerPolicy="no-referrer"
-                />
-              ))
+            {images.length > 0 && activeIdx >= 0 && activeIdx < images.length ? (
+              <Image
+                key={`${images[activeIdx]}-${activeIdx}`}
+                src={getImageUrl(images[activeIdx])}
+                alt="Knife full screen"
+                fill
+                loading="eager"
+                sizes="90vw"
+                className="object-contain"
+                referrerPolicy="no-referrer"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <ImageIcon className="h-16 w-16 text-white/50" />
