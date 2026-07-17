@@ -41,6 +41,7 @@ let mainWindow = null
 let serverProcess = null
 let serverOrigin = null
 let isQuitting = false
+let isInstallingUpdate = false
 let updateStatus = { status: 'idle' }
 
 function publishUpdateStatus(nextStatus) {
@@ -212,6 +213,7 @@ async function downloadPlatformUpdate() {
     os.tmpdir(),
     `BladeVault-${version}.${extension}`,
   )
+  fs.rmSync(destination, { force: true })
   const result = await downloadFile(asset.browser_download_url, destination)
   const expectedDigest = String(asset.digest || '')
     .replace(/^sha256:/, '')
@@ -226,7 +228,45 @@ async function downloadPlatformUpdate() {
     path: destination,
     sha256: result.sha256,
   })
-  await shell.openPath(destination)
+  if (process.platform === 'darwin') {
+    const openError = await shell.openPath(destination)
+    if (openError) {
+      throw new Error(`Failed to open downloaded update: ${openError}`)
+    }
+  }
+  return updateStatus
+}
+
+function installDownloadedUpdate() {
+  if (isInstallingUpdate) {
+    return updateStatus
+  }
+
+  if (updateStatus.status !== 'downloaded' || !updateStatus.path) {
+    throw new Error('No downloaded update is ready to install yet.')
+  }
+
+  if (process.platform !== 'win32') {
+    return updateStatus
+  }
+
+  const installerPath = updateStatus.path
+  if (!fs.existsSync(installerPath)) {
+    throw new Error(
+      'Downloaded installer was not found. Please download again.',
+    )
+  }
+
+  isInstallingUpdate = true
+  app.once('will-quit', () => {
+    const installer = spawn(installerPath, [], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: false,
+    })
+    installer.unref()
+  })
+  app.quit()
   return updateStatus
 }
 
@@ -636,6 +676,7 @@ ipcMain.handle('bladevault:select-directory', async () => {
 ipcMain.handle('bladevault:get-update-status', () => updateStatus)
 ipcMain.handle('bladevault:check-for-updates', () => checkForUpdates())
 ipcMain.handle('bladevault:download-update', () => downloadUpdate())
+ipcMain.handle('bladevault:install-update', () => installDownloadedUpdate())
 async function createMainWindow() {
   const startUrl = isUsingEmbeddedServer()
     ? await startEmbeddedServer()

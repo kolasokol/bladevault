@@ -27,6 +27,7 @@ declare global {
       getUpdateStatus: () => Promise<BladeVaultUpdateStatus>
       checkForUpdates: () => Promise<BladeVaultUpdateStatus>
       downloadUpdate: () => Promise<BladeVaultUpdateStatus>
+      installUpdate: () => Promise<BladeVaultUpdateStatus>
       onUpdateStatus: (
         callback: (status: BladeVaultUpdateStatus) => void,
       ) => () => void

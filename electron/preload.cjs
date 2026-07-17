@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('bladevaultDesktop', {
   getUpdateStatus: () => ipcRenderer.invoke('bladevault:get-update-status'),
   checkForUpdates: () => ipcRenderer.invoke('bladevault:check-for-updates'),
   downloadUpdate: () => ipcRenderer.invoke('bladevault:download-update'),
+  installUpdate: () => ipcRenderer.invoke('bladevault:install-update'),
   onUpdateStatus: (callback) => {
     const listener = (_event, status) => callback(status)
     ipcRenderer.on('bladevault:update-status', listener)

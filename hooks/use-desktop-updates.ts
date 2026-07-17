@@ -39,5 +39,13 @@ export function useDesktopUpdates() {
     return status
   }, [])
 
-  return { update, checkForUpdates, downloadUpdate }
+  const installUpdate = useCallback(async () => {
+    const desktop = window.bladevaultDesktop
+    if (!desktop?.installUpdate) return null
+    const status = await desktop.installUpdate()
+    setUpdate(status)
+    return status
+  }, [])
+
+  return { update, checkForUpdates, downloadUpdate, installUpdate }
 }

@@ -135,7 +135,8 @@ function applyThemePreference(theme: AppSettings['theme']) {
 }
 
 export default function SettingsView() {
-  const { update, checkForUpdates, downloadUpdate } = useDesktopUpdates()
+  const { update, checkForUpdates, downloadUpdate, installUpdate } =
+    useDesktopUpdates()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [localDataPath, setLocalDataPath] = useState('')
   const [configuredLocalDataPath, setConfiguredLocalDataPath] = useState('')
@@ -177,7 +178,7 @@ export default function SettingsView() {
         : update.status === 'downloaded'
           ? update.platform === 'darwin'
             ? 'DMG opened. Quit BladeVault and replace the app in Applications.'
-            : 'Installer opened. Follow the installer steps to update BladeVault.'
+            : 'Update downloaded. Restart BladeVault to install.'
           : update.status === 'not-available'
             ? 'BladeVault is up to date.'
             : update.status === 'error'
@@ -194,6 +195,11 @@ export default function SettingsView() {
           : 'idle'
 
   const handleUpdateAction = async () => {
+    if (update.status === 'downloaded' && update.platform === 'win32') {
+      await installUpdate()
+      return
+    }
+
     if (update.status === 'available') {
       await downloadUpdate()
       return
@@ -1319,7 +1325,7 @@ export default function SettingsView() {
                         ) : update.status === 'available' ? (
                           <Download />
                         ) : update.status === 'downloaded' &&
-                          updateMessage.includes('Restart') ? (
+                          update.platform === 'win32' ? (
                           <RefreshCw />
                         ) : (
                           <RefreshCw />
@@ -1327,7 +1333,7 @@ export default function SettingsView() {
                         {update.status === 'available'
                           ? 'Download update'
                           : update.status === 'downloaded' &&
-                              updateMessage.includes('Restart')
+                              update.platform === 'win32'
                             ? 'Restart to update'
                             : 'Check for updates'}
                       </Button>
