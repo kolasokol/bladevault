@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { scrapeAndEnrichProduct } from '@/lib/scrape'
+import { validateExternalUrl } from '@/lib/url-validation'
 
 export async function POST(request: Request) {
   try {
@@ -10,12 +11,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 })
     }
 
-    let normalizedUrl: string
-    try {
-      normalizedUrl = new URL(url).href
-    } catch {
-      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
+    const validation = validateExternalUrl(url)
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.reason }, { status: 400 })
     }
+
+    const normalizedUrl = validation.url.href
 
     let html: string
     let finalUrl: string

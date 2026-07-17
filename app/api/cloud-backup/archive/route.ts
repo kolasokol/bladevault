@@ -7,6 +7,10 @@ import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
 import * as tar from 'tar'
 import { NextResponse } from 'next/server'
+import {
+  getConfiguredCloudBackupUrl,
+  isBackupUrlAllowed,
+} from '@/lib/cloud-backup-server'
 import { clearStorageCache } from '@/lib/storage'
 import {
   beginLocalRestore,
@@ -23,6 +27,18 @@ function isTarGzipFile(buffer: Buffer): boolean {
   return buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b
 }
 
+function isSafeTarEntry(entryPath: string, expectedTopDir: string): boolean {
+  // Reject absolute paths and any path component that escapes the archive root.
+  if (path.isAbsolute(entryPath)) return false
+  const normalized = path.normalize(entryPath)
+  if (normalized.startsWith('..')) return false
+  if (normalized.split(path.sep).includes('..')) return false
+  // All entries must live inside the expected top-level data directory.
+  const topDir = normalized.split(path.sep)[0]
+  if (topDir !== expectedTopDir) return false
+  return true
+}
+
 async function createArchive(sourceDir: string, outputPath: string) {
   await tar.create(
     {
@@ -36,21 +52,33 @@ async function createArchive(sourceDir: string, outputPath: string) {
   )
 }
 
-async function extractArchive(archivePath: string, outputDir: string) {
+async function extractArchive(
+  archivePath: string,
+  outputDir: string,
+  expectedTopDir: string,
+) {
   await tar.extract({
     cwd: outputDir,
     file: archivePath,
-    filter: (entryPath) => !shouldIgnoreBackupEntry(path.basename(entryPath)),
+    filter: (entryPath) =>
+      !shouldIgnoreBackupEntry(path.basename(entryPath)) &&
+      isSafeTarEntry(entryPath, expectedTopDir),
     gzip: true,
     strict: true,
   })
 }
 
-async function validateArchive(archivePath: string) {
+async function validateArchive(archivePath: string, expectedTopDir: string) {
   await tar.list({
     file: archivePath,
     gzip: true,
     strict: true,
+    onReadEntry: (entry) => {
+      const entryPath = entry.path || String(entry.header?.path)
+      if (!isSafeTarEntry(entryPath, expectedTopDir)) {
+        throw new Error(`Unsafe backup archive entry: ${entryPath}`)
+      }
+    },
   })
 }
 
@@ -146,16 +174,14 @@ async function restoreArchiveFromPath(archivePath: string) {
     path.join(os.tmpdir(), 'bladevault-backup-import-'),
   )
   const extractRoot = path.join(tempRoot, 'extract')
+  const expectedTopDir = path.basename(getLocalDataDirPath())
 
   try {
     await fs.mkdir(extractRoot, { recursive: true })
-    await validateArchive(archivePath)
-    await extractArchive(archivePath, extractRoot)
+    await validateArchive(archivePath, expectedTopDir)
+    await extractArchive(archivePath, extractRoot, expectedTopDir)
 
-    const extractedDataDir = path.join(
-      extractRoot,
-      path.basename(getLocalDataDirPath()),
-    )
+    const extractedDataDir = path.join(extractRoot, expectedTopDir)
     const extractedDbPath = path.join(extractedDataDir, 'bladevault.sqlite')
 
     await fs.access(extractedDataDir)
@@ -346,7 +372,25 @@ export async function POST(request: Request) {
       )
     }
 
-    const downloadUrl = new URL('/backup/latest', backupUrl).toString()
+    let downloadUrl: string
+    try {
+      downloadUrl = new URL('/backup/latest', backupUrl).toString()
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid backupUrl' },
+        { status: 400 },
+      )
+    }
+
+    if (!isBackupUrlAllowed(downloadUrl)) {
+      return NextResponse.json(
+        {
+          error: `backupUrl must point to the configured backup server (${getConfiguredCloudBackupUrl()})`,
+        },
+        { status: 400 },
+      )
+    }
+
     await downloadArchiveToPath(downloadUrl, accessToken, archivePath)
 
     const result = await restoreArchiveFromPath(archivePath)

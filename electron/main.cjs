@@ -23,6 +23,19 @@ const PREFERRED_DESKTOP_PORT = Number.parseInt(
   process.env.BLADEVAULT_DESKTOP_PORT || '3000',
   10,
 )
+const FALLBACK_CLOUD_AUTH_URL = 'https://auth.bladevault.pro'
+
+function getCloudAuthUrl() {
+  const fromEnv = process.env.NEXT_PUBLIC_BLADEVAULT_AUTH_URL?.trim()
+  if (fromEnv) {
+    let normalized = fromEnv
+    if (!/^https?:\/\//i.test(normalized)) {
+      normalized = `https://${normalized}`
+    }
+    return normalized.replace(/\/$/, '')
+  }
+  return FALLBACK_CLOUD_AUTH_URL
+}
 
 let mainWindow = null
 let serverProcess = null
@@ -313,7 +326,12 @@ function isAllowedPopupUrl(url) {
 
   try {
     const parsed = new URL(url)
-    return parsed.protocol === 'https:' && parsed.pathname.startsWith('/auth/')
+    const allowedOrigin = new URL(getCloudAuthUrl()).origin
+    return (
+      parsed.protocol === 'https:' &&
+      parsed.origin === allowedOrigin &&
+      parsed.pathname.startsWith('/auth/')
+    )
   } catch {
     return false
   }
