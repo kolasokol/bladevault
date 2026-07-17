@@ -257,13 +257,29 @@ function installDownloadedUpdate() {
     )
   }
 
+  // The embedded Next server runs as a child BladeVault.exe on Windows.
+  // Ask it to exit before starting the installer to avoid NSIS lock checks.
+  if (serverProcess && serverProcess.exitCode === null) {
+    serverProcess.kill()
+  }
+
   isInstallingUpdate = true
   app.once('will-quit', () => {
-    const installer = spawn(installerPath, [], {
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: false,
-    })
+    const escapedInstallerPath = installerPath.replace(/"/g, '""')
+    const installer = spawn(
+      'cmd.exe',
+      [
+        '/d',
+        '/s',
+        '/c',
+        `timeout /t 2 /nobreak >nul & start "" "${escapedInstallerPath}"`,
+      ],
+      {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      },
+    )
     installer.unref()
   })
   app.quit()
