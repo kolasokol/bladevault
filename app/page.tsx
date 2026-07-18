@@ -117,7 +117,7 @@ export default function Dashboard() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 [overflow-anchor:none] sm:grid-cols-2 lg:grid-cols-4">
             {recentKnives.map((knife, index) => (
               <KnifeCard key={knife.id} knife={knife} eager={index === 0} />
             ))}

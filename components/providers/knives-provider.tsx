@@ -342,7 +342,14 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
       const knife = data.knife as Knife
       setKnives((prev) => prev.map((k) => (k.id === id ? knife : k)))
-      if (isCloudSyncEnabled && isAutoBackupEnabled) {
+      const hasBackupWorthyUpdate = Object.keys(updates).some(
+        (field) => field !== 'pinned',
+      )
+      if (
+        hasBackupWorthyUpdate &&
+        isCloudSyncEnabled &&
+        isAutoBackupEnabled
+      ) {
         scheduleAutoBackup('mutation')
       }
       return knife
@@ -370,6 +377,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     [isAutoBackupEnabled, isCloudSyncEnabled, scheduleAutoBackup],
   )
 
+  // Comparison is transient UI state and intentionally never triggers backup.
   const addToCompare = useCallback(async (id: string): Promise<void> => {
     const response = await fetch('/api/compare', {
       method: 'POST',

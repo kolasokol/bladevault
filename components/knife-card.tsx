@@ -26,6 +26,7 @@ export const KnifeCard = memo(function KnifeCard({
     compareIds,
     addToCompare,
     removeFromCompare,
+    pinnedItemsFirst,
     showFeedback,
   } = useKnives()
   const pinned = knife.pinned
@@ -40,7 +41,13 @@ export const KnifeCard = memo(function KnifeCard({
       try {
         setIsTogglingPin(true)
         await updateKnife(knife.id, { pinned: !pinned })
-        showFeedback(pinned ? 'Unpinned' : 'Pinned')
+        showFeedback(
+          pinned
+            ? 'Unpinned'
+            : pinnedItemsFirst
+              ? 'Pinned — moved to top'
+              : 'Pinned',
+        )
       } catch (error) {
         showFeedback(
           error instanceof Error ? error.message : 'Could not update pin.',
@@ -50,7 +57,7 @@ export const KnifeCard = memo(function KnifeCard({
         setIsTogglingPin(false)
       }
     },
-    [updateKnife, knife.id, pinned, showFeedback],
+    [updateKnife, knife.id, pinned, pinnedItemsFirst, showFeedback],
   )
 
   const handleCompareClick = useCallback(

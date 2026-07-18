@@ -472,7 +472,7 @@ function CollectionContent() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 [overflow-anchor:none] sm:grid-cols-2 lg:grid-cols-3">
           {filteredKnives.map((knife, index) => (
             <KnifeCard key={knife.id} knife={knife} eager={index === 0} />
           ))}
