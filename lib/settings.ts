@@ -18,6 +18,7 @@ export type {
 
 const SETTINGS_KEYS: Record<keyof AppSettings, string> = {
   theme: 'theme',
+  pinnedItemsFirst: 'pinned_items_first',
   cloudBackupLastSyncedAt: 'cloud_backup_last_synced_at',
   cloudAutoBackupEnabled: 'cloud_auto_backup_enabled',
   customFields: 'custom_fields',
@@ -40,6 +41,12 @@ function isCustomFieldType(value: unknown): value is CustomFieldType {
     typeof value === 'string' &&
     CUSTOM_FIELD_TYPES.includes(value as CustomFieldType)
   )
+}
+
+function parseBool(value: string | undefined, defaultValue: boolean): boolean {
+  if (value === '1') return true
+  if (value === '0') return false
+  return defaultValue
 }
 
 function parseCustomFields(value: string | undefined): CustomField[] {
@@ -80,13 +87,17 @@ export function getSettings(): AppSettings {
 
   return {
     theme: parseTheme(map.get(SETTINGS_KEYS.theme)),
+    pinnedItemsFirst: parseBool(
+      map.get(SETTINGS_KEYS.pinnedItemsFirst),
+      DEFAULT_SETTINGS.pinnedItemsFirst,
+    ),
     cloudBackupLastSyncedAt:
       map.get(SETTINGS_KEYS.cloudBackupLastSyncedAt) ||
       DEFAULT_SETTINGS.cloudBackupLastSyncedAt,
-    cloudAutoBackupEnabled:
-      map.get(SETTINGS_KEYS.cloudAutoBackupEnabled) === '1'
-        ? true
-        : DEFAULT_SETTINGS.cloudAutoBackupEnabled,
+    cloudAutoBackupEnabled: parseBool(
+      map.get(SETTINGS_KEYS.cloudAutoBackupEnabled),
+      DEFAULT_SETTINGS.cloudAutoBackupEnabled,
+    ),
     customFields: parseCustomFields(map.get(SETTINGS_KEYS.customFields)),
   }
 }
@@ -101,6 +112,7 @@ export function saveSettings(settings: Partial<AppSettings>): AppSettings {
 
   const entries: Array<[keyof AppSettings, string]> = [
     ['theme', next.theme],
+    ['pinnedItemsFirst', next.pinnedItemsFirst ? '1' : '0'],
     ['cloudBackupLastSyncedAt', next.cloudBackupLastSyncedAt],
     ['cloudAutoBackupEnabled', next.cloudAutoBackupEnabled ? '1' : '0'],
     ['customFields', JSON.stringify(next.customFields)],

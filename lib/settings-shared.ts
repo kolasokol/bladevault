@@ -14,6 +14,7 @@ export type CustomField = {
 
 export type AppSettings = {
   theme: AppTheme
+  pinnedItemsFirst: boolean
   cloudBackupLastSyncedAt: string
   cloudAutoBackupEnabled: boolean
   customFields: CustomField[]
@@ -21,6 +22,7 @@ export type AppSettings = {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
+  pinnedItemsFirst: true,
   cloudBackupLastSyncedAt: '',
   cloudAutoBackupEnabled: false,
   customFields: [],

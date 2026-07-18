@@ -726,6 +726,18 @@ export default function SettingsView() {
     }
   }
 
+  const handlePinnedItemsFirstToggle = async (checked: boolean) => {
+    if (!settings) return
+
+    try {
+      await saveSettings({ pinnedItemsFirst: checked })
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : 'Failed to save settings',
+      )
+    }
+  }
+
   const handleAddField = () => {
     const name = newFieldName.trim()
     if (!name) return
@@ -1154,6 +1166,19 @@ export default function SettingsView() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </SettingsRow>
+                  </SettingsSection>
+                  <SettingsSection title="Collection">
+                    <SettingsRow
+                      label="Keep pinned knives first"
+                      description="Place pinned knives before other items in the Dashboard, Collection, and Compare views."
+                    >
+                      <Checkbox
+                        checked={settings.pinnedItemsFirst}
+                        onCheckedChange={(checked) =>
+                          handlePinnedItemsFirstToggle(checked === true)
+                        }
+                      />
                     </SettingsRow>
                   </SettingsSection>
                 </div>

@@ -281,14 +281,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 )}
                 {pinned ? 'Pinned' : 'Pin'}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancel}
-                disabled={isSaving}
-              >
-                Cancel
-              </Button>
             </>
           }
         />
