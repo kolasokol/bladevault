@@ -87,6 +87,7 @@ const config = {
     // app-closing macro treats a matching filename as its own app process and
     // skips the shutdown check, leaving the installed files locked on upgrade.
     artifactName: 'BladeVault-Setup.${ext}',
+    include: 'installer.nsh',
     oneClick: false,
     allowToChangeInstallationDirectory: true,
   },
