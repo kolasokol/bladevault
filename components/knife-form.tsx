@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { useUnsavedChanges } from '@/hooks/use-unsaved-changes'
 
 export type KnifeFormData = {
   brand: string
@@ -563,6 +564,16 @@ type KnifeScrapeEditorProps = {
   actions?: React.ReactNode
 }
 
+function getKnifeFormSnapshot(
+  form: KnifeFormData,
+  selectedImages: Set<string>,
+): string {
+  return JSON.stringify({
+    ...form,
+    images: form.images.filter((image) => selectedImages.has(image)),
+  })
+}
+
 export function KnifeScrapeEditor({
   initialData,
   customFieldDefinitions = [],
@@ -590,6 +601,18 @@ export function KnifeScrapeEditor({
   )
   const [lastScrapedProduct, setLastScrapedProduct] =
     useState<ScrapedProduct | null>(null)
+  const [initialSnapshot] = useState(() =>
+    getKnifeFormSnapshot(initialData, new Set(initialData.images)),
+  )
+  const hasUnsavedChanges =
+    getKnifeFormSnapshot(form, selectedImages) !== initialSnapshot ||
+    imageUrlInput.trim().length > 0 ||
+    url !== initialData.sourceUrl
+  const { confirmDiscard } = useUnsavedChanges(hasUnsavedChanges)
+
+  const handleCancel = () => {
+    if (confirmDiscard()) onCancel()
+  }
 
   const updateField = <K extends keyof KnifeFormData>(
     field: K,
@@ -780,16 +803,17 @@ export function KnifeScrapeEditor({
         description={description}
         breadcrumbs={breadcrumbs}
         actions={
-          actions ?? (
+          <>
+            {actions}
             <Button
               variant="outline"
               size="sm"
-              onClick={onCancel}
+              onClick={handleCancel}
               disabled={isSaving}
             >
               Cancel
             </Button>
-          )
+          </>
         }
       />
 
@@ -972,7 +996,7 @@ export function KnifeScrapeEditor({
         <Button
           variant="outline"
           size="sm"
-          onClick={onCancel}
+          onClick={handleCancel}
           disabled={isSaving}
         >
           Cancel

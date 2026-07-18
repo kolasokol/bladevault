@@ -1,8 +1,14 @@
 'use client'
 
-import { Suspense, useEffect } from 'react'
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useMemo, useState } from 'react'
 import { SlidersHorizontal, X } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { KnifeCard } from '@/components/knife-card'
@@ -10,7 +16,7 @@ import { EmptyState } from '@/components/empty-state'
 import { FilterMultiSelect } from '@/components/filter-multi-select'
 import { SearchField } from '@/components/search-field'
 import { useKnives } from '@/components/providers/knives-provider'
-import { Knife, matchesKnifeSearch } from '@/lib/data'
+import { Knife, matchesKnifeSearch, prioritizePinnedKnives } from '@/lib/data'
 import { CustomField, CustomFieldType } from '@/lib/settings-shared'
 import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
@@ -129,13 +135,77 @@ function sortFilterOptions(options: string[], type: CustomFieldType): string[] {
 }
 
 function CollectionContent() {
-  const { knives } = useKnives()
+  const { knives, pinnedItemsFirst } = useKnives()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const [query, setQuery] = useState('')
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const query = searchParams.get('q') ?? ''
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const debouncedQuery = useDebouncedValue(query, 200)
+
+  const replaceParams = useCallback(
+    (
+      update: (params: URLSearchParams) => void,
+      mode: 'router' | 'history' = 'router',
+    ) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('sort')
+      update(params)
+      const nextQuery = params.toString()
+      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
+
+      if (mode === 'history') {
+        window.history.replaceState(null, '', nextUrl)
+        return
+      }
+
+      router.replace(nextUrl, { scroll: false })
+    },
+    [pathname, router, searchParams],
+  )
+
+  const setQuery = useCallback(
+    (value: string) => {
+      replaceParams((params) => {
+        if (value) {
+          params.set('q', value)
+        } else {
+          params.delete('q')
+        }
+      }, 'history')
+    },
+    [replaceParams],
+  )
+
+  useEffect(() => {
+    const handleSearchShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const isTyping =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable
+
+      if (event.key === '/' && !isTyping) {
+        event.preventDefault()
+        searchInputRef.current?.focus()
+        return
+      }
+
+      if (
+        event.key === 'Escape' &&
+        document.activeElement === searchInputRef.current &&
+        query
+      ) {
+        event.preventDefault()
+        setQuery('')
+      }
+    }
+
+    window.addEventListener('keydown', handleSearchShortcut)
+    return () => window.removeEventListener('keydown', handleSearchShortcut)
+  }, [query, setQuery])
 
   useEffect(() => {
     let cancelled = false
@@ -216,7 +286,7 @@ function CollectionContent() {
   )
 
   const filteredKnives = useMemo(() => {
-    return knives.filter((knife) => {
+    const matches = knives.filter((knife) => {
       if (!matchesKnifeSearch(knife, debouncedQuery)) return false
 
       return filterDefinitions.every((definition) => {
@@ -230,18 +300,23 @@ function CollectionContent() {
         return Boolean(value && selectedValues.includes(value))
       })
     })
-  }, [knives, debouncedQuery, selectedFilters, filterDefinitions])
+
+    return prioritizePinnedKnives(matches, pinnedItemsFirst)
+  }, [
+    knives,
+    debouncedQuery,
+    selectedFilters,
+    filterDefinitions,
+    pinnedItemsFirst,
+  ])
 
   const setFilterValues = (key: FilterKey, values: string[]) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.delete(key)
-
-    values.forEach((value) => {
-      params.append(key, value)
+    replaceParams((params) => {
+      params.delete(key)
+      values.forEach((value) => {
+        params.append(key, value)
+      })
     })
-
-    const nextQuery = params.toString()
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname)
   }
 
   const toggleFilterValue = (key: FilterKey, value: string) => {
@@ -254,8 +329,10 @@ function CollectionContent() {
   }
 
   const clearAllFilters = () => {
-    router.replace(pathname)
-    setQuery('')
+    replaceParams((params) => {
+      params.delete('q')
+      filterDefinitions.forEach((definition) => params.delete(definition.key))
+    })
   }
 
   const activeFilters = filterDefinitions.flatMap((definition) =>
@@ -281,8 +358,22 @@ function CollectionContent() {
       <PageHeader title="Collection" />
 
       {knives.length > 0 && (
-        <div className="mb-4">
-          <SearchField value={query} onChange={setQuery} />
+        <div className="mb-4 flex flex-col gap-3 border border-[var(--bladevault-line)]/80 bg-[color:var(--bladevault-surface-soft)]/35 p-3 sm:flex-row sm:items-center">
+          <SearchField
+            value={query}
+            onChange={setQuery}
+            placeholder="Search names, specs, materials…"
+            className="mx-0 max-w-none sm:max-w-sm sm:flex-1"
+            inputRef={searchInputRef}
+            shortcutHint="/"
+          />
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto sm:justify-end">
+            <span className="mr-1 text-xs tabular-nums text-muted-foreground">
+              {filteredKnives.length === knives.length
+                ? `${knives.length} ${knives.length === 1 ? 'knife' : 'knives'}`
+                : `${filteredKnives.length} of ${knives.length} knives`}
+            </span>
+          </div>
         </div>
       )}
 

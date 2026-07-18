@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle2, Cloud } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Cloud } from 'lucide-react'
 import {
   createContext,
   startTransition,
@@ -33,10 +33,15 @@ type KnivesContextValue = {
   isCloudSyncEnabled: boolean
   isAutoBackupEnabled: boolean
   isAutoBackupActive: boolean
+  pinnedItemsFirst: boolean
+  showFeedback: (message: string, tone?: FeedbackTone) => void
 }
+
+type FeedbackTone = 'success' | 'error'
 
 const KnivesContext = createContext<KnivesContextValue | null>(null)
 const BACKUP_NOTICE_DURATION_MS = 3200
+const FEEDBACK_DURATION_MS = 3200
 
 function toImageUrls(draft: KnifeDraft): string[] {
   return draft.images.filter(
@@ -54,11 +59,19 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     id: number
     message: string
   } | null>(null)
+  const [feedback, setFeedback] = useState<{
+    id: number
+    message: string
+    tone: FeedbackTone
+  } | null>(null)
   const [isCloudSyncEnabled, setIsCloudSyncEnabled] = useState(() =>
     Boolean(getCloudAuthState()?.sessionToken),
   )
   const [isAutoBackupEnabled, setIsAutoBackupEnabled] = useState(
     DEFAULT_SETTINGS.cloudAutoBackupEnabled,
+  )
+  const [pinnedItemsFirst, setPinnedItemsFirst] = useState(
+    DEFAULT_SETTINGS.pinnedItemsFirst,
   )
   const backupInFlightRef = useRef(false)
   const pendingBackupRef = useRef(false)
@@ -69,13 +82,14 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false
 
-    const syncAutoBackupSetting = async () => {
+    const syncCollectionSettings = async () => {
       try {
         const response = await fetch('/api/settings', { cache: 'no-store' })
         const data = await readJsonResponse<{
           error?: string
           settings?: {
             cloudAutoBackupEnabled?: boolean
+            pinnedItemsFirst?: boolean
           }
         }>(response)
         if (!response.ok) {
@@ -84,27 +98,39 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
 
         if (!cancelled) {
           setIsAutoBackupEnabled(Boolean(data.settings?.cloudAutoBackupEnabled))
+          setPinnedItemsFirst(Boolean(data.settings?.pinnedItemsFirst))
         }
       } catch {
         if (!cancelled) {
           setIsAutoBackupEnabled(DEFAULT_SETTINGS.cloudAutoBackupEnabled)
+          setPinnedItemsFirst(DEFAULT_SETTINGS.pinnedItemsFirst)
         }
       }
     }
 
     const onSettingsUpdated = (event: Event) => {
       const detail = (
-        event as CustomEvent<{ cloudAutoBackupEnabled?: boolean }>
+        event as CustomEvent<{
+          cloudAutoBackupEnabled?: boolean
+          pinnedItemsFirst?: boolean
+        }>
       ).detail
+      let didUpdate = false
+
       if (typeof detail?.cloudAutoBackupEnabled === 'boolean') {
         setIsAutoBackupEnabled(detail.cloudAutoBackupEnabled)
-        return
+        didUpdate = true
       }
 
-      void syncAutoBackupSetting()
+      if (typeof detail?.pinnedItemsFirst === 'boolean') {
+        setPinnedItemsFirst(detail.pinnedItemsFirst)
+        didUpdate = true
+      }
+
+      if (!didUpdate) void syncCollectionSettings()
     }
 
-    void syncAutoBackupSetting()
+    void syncCollectionSettings()
     window.addEventListener(
       SETTINGS_UPDATED_EVENT,
       onSettingsUpdated as EventListener,
@@ -142,6 +168,19 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       })
     })
   }, [])
+
+  const showFeedback = useCallback(
+    (message: string, tone: FeedbackTone = 'success') => {
+      startTransition(() => {
+        setFeedback({
+          id: Date.now(),
+          message,
+          tone,
+        })
+      })
+    },
+    [],
+  )
 
   const runAutoBackup = useCallback(
     async (_reason: 'mutation' | 'queued') => {
@@ -237,6 +276,20 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       window.clearTimeout(timeout)
     }
   }, [backupNotice])
+
+  useEffect(() => {
+    if (!feedback) return
+
+    const timeout = window.setTimeout(() => {
+      startTransition(() => {
+        setFeedback((current) => (current?.id === feedback.id ? null : current))
+      })
+    }, FEEDBACK_DURATION_MS)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [feedback])
 
   const addKnife = useCallback(
     async (draft: KnifeDraft): Promise<Knife> => {
@@ -383,6 +436,8 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       isCloudSyncEnabled,
       isAutoBackupEnabled,
       isAutoBackupActive: isCloudSyncEnabled && isAutoBackupEnabled,
+      pinnedItemsFirst,
+      showFeedback,
     }),
     [
       knives,
@@ -396,6 +451,8 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       clearCompare,
       isCloudSyncEnabled,
       isAutoBackupEnabled,
+      pinnedItemsFirst,
+      showFeedback,
     ],
   )
 
@@ -404,16 +461,41 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed bottom-4 right-4 z-50"
+        className="pointer-events-none fixed bottom-4 right-4 z-50 flex max-w-sm flex-col gap-3"
       >
+        {feedback && (
+          <div
+            role={feedback.tone === 'error' ? 'alert' : 'status'}
+            className={
+              feedback.tone === 'error'
+                ? 'flex items-center gap-3 rounded-xl border border-destructive/40 bg-background/95 px-3 py-2.5 text-sm text-destructive shadow-md backdrop-blur'
+                : 'flex items-center gap-3 rounded-xl border border-[var(--bladevault-line)] bg-background/95 px-3 py-2.5 text-sm text-foreground shadow-md backdrop-blur'
+            }
+          >
+            <div
+              className={
+                feedback.tone === 'error'
+                  ? 'flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10 text-destructive'
+                  : 'flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bladevault-surface-soft)] text-[var(--bladevault-local)] dark:text-[var(--bladevault-gold)]'
+              }
+            >
+              {feedback.tone === 'error' ? (
+                <AlertCircle className="h-4 w-4" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+            </div>
+            <span className="font-medium">{feedback.message}</span>
+          </div>
+        )}
         {backupNotice && (
-          <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-lg backdrop-blur dark:border-emerald-900/60 dark:bg-slate-950/95 dark:text-slate-100">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+          <div className="flex items-center gap-3 rounded-xl border border-[var(--bladevault-line)] bg-background/95 px-3 py-2.5 text-sm text-foreground shadow-md backdrop-blur">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bladevault-surface-soft)] text-[var(--bladevault-local)] dark:text-[var(--bladevault-gold)]">
               <CheckCircle2 className="h-4 w-4" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 font-medium">
-                <Cloud className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+                <Cloud className="h-4 w-4 text-[var(--bladevault-local)] dark:text-[var(--bladevault-gold)]" />
                 <span>{backupNotice.message}</span>
               </div>
               <p className="text-xs text-muted-foreground">

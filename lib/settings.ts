@@ -18,6 +18,7 @@ export type {
 
 const SETTINGS_KEYS: Record<keyof AppSettings, string> = {
   theme: 'theme',
+  pinnedItemsFirst: 'pinned_items_first',
   cloudBackupLastSyncedAt: 'cloud_backup_last_synced_at',
   cloudAutoBackupEnabled: 'cloud_auto_backup_enabled',
   customFields: 'custom_fields',
@@ -80,6 +81,10 @@ export function getSettings(): AppSettings {
 
   return {
     theme: parseTheme(map.get(SETTINGS_KEYS.theme)),
+    pinnedItemsFirst:
+      map.get(SETTINGS_KEYS.pinnedItemsFirst) === '1'
+        ? true
+        : DEFAULT_SETTINGS.pinnedItemsFirst,
     cloudBackupLastSyncedAt:
       map.get(SETTINGS_KEYS.cloudBackupLastSyncedAt) ||
       DEFAULT_SETTINGS.cloudBackupLastSyncedAt,
@@ -101,6 +106,7 @@ export function saveSettings(settings: Partial<AppSettings>): AppSettings {
 
   const entries: Array<[keyof AppSettings, string]> = [
     ['theme', next.theme],
+    ['pinnedItemsFirst', next.pinnedItemsFirst ? '1' : '0'],
     ['cloudBackupLastSyncedAt', next.cloudBackupLastSyncedAt],
     ['cloudAutoBackupEnabled', next.cloudAutoBackupEnabled ? '1' : '0'],
     ['customFields', JSON.stringify(next.customFields)],
