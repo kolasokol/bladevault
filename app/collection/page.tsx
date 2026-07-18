@@ -173,7 +173,7 @@ function CollectionContent() {
         } else {
           params.delete('q')
         }
-      }, 'history')
+      })
     },
     [replaceParams],
   )

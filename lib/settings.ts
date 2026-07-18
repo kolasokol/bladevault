@@ -43,6 +43,12 @@ function isCustomFieldType(value: unknown): value is CustomFieldType {
   )
 }
 
+function parseBool(value: string | undefined, defaultValue: boolean): boolean {
+  if (value === '1') return true
+  if (value === '0') return false
+  return defaultValue
+}
+
 function parseCustomFields(value: string | undefined): CustomField[] {
   if (!value) return DEFAULT_SETTINGS.customFields
 
@@ -81,17 +87,17 @@ export function getSettings(): AppSettings {
 
   return {
     theme: parseTheme(map.get(SETTINGS_KEYS.theme)),
-    pinnedItemsFirst:
-      map.get(SETTINGS_KEYS.pinnedItemsFirst) === '1'
-        ? true
-        : DEFAULT_SETTINGS.pinnedItemsFirst,
+    pinnedItemsFirst: parseBool(
+      map.get(SETTINGS_KEYS.pinnedItemsFirst),
+      DEFAULT_SETTINGS.pinnedItemsFirst,
+    ),
     cloudBackupLastSyncedAt:
       map.get(SETTINGS_KEYS.cloudBackupLastSyncedAt) ||
       DEFAULT_SETTINGS.cloudBackupLastSyncedAt,
-    cloudAutoBackupEnabled:
-      map.get(SETTINGS_KEYS.cloudAutoBackupEnabled) === '1'
-        ? true
-        : DEFAULT_SETTINGS.cloudAutoBackupEnabled,
+    cloudAutoBackupEnabled: parseBool(
+      map.get(SETTINGS_KEYS.cloudAutoBackupEnabled),
+      DEFAULT_SETTINGS.cloudAutoBackupEnabled,
+    ),
     customFields: parseCustomFields(map.get(SETTINGS_KEYS.customFields)),
   }
 }
