@@ -432,14 +432,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
             </div>
           </DetailSection>
 
-          <DetailSection
-            title="History"
-            description="Reserved for future tracking of acquisitions, updates, and notes."
-          >
-            <p className="text-sm text-muted-foreground">
-              History tracking coming soon.
-            </p>
-          </DetailSection>
         </div>
 
         <div className="flex flex-col gap-6">
