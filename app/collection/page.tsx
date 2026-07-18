@@ -1,8 +1,7 @@
 'use client'
 
-import { Suspense, useEffect } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useMemo, useState } from 'react'
 import { SlidersHorizontal, X } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { KnifeCard } from '@/components/knife-card'
@@ -16,6 +15,8 @@ import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+
+const PAGE_SIZE = 24
 
 const builtInFilterDefinitions = [
   { key: 'brand', label: 'Brand', getValue: (knife: Knife) => knife.brand },
@@ -135,7 +136,10 @@ function CollectionContent() {
   const searchParams = useSearchParams()
   const [query, setQuery] = useState('')
   const [customFields, setCustomFields] = useState<CustomField[]>([])
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const debouncedQuery = useDebouncedValue(query, 200)
+
+  const resetVisibleCount = () => setVisibleCount(PAGE_SIZE)
 
   useEffect(() => {
     let cancelled = false
@@ -242,6 +246,7 @@ function CollectionContent() {
 
     const nextQuery = params.toString()
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname)
+    resetVisibleCount()
   }
 
   const toggleFilterValue = (key: FilterKey, value: string) => {
@@ -256,6 +261,7 @@ function CollectionContent() {
   const clearAllFilters = () => {
     router.replace(pathname)
     setQuery('')
+    resetVisibleCount()
   }
 
   const activeFilters = filterDefinitions.flatMap((definition) =>
@@ -282,7 +288,13 @@ function CollectionContent() {
 
       {knives.length > 0 && (
         <div className="mb-4">
-          <SearchField value={query} onChange={setQuery} />
+          <SearchField
+            value={query}
+            onChange={(value) => {
+              setQuery(value)
+              resetVisibleCount()
+            }}
+          />
         </div>
       )}
 
@@ -381,10 +393,27 @@ function CollectionContent() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredKnives.map((knife, index) => (
-            <KnifeCard key={knife.id} knife={knife} eager={index === 0} />
-          ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredKnives.slice(0, visibleCount).map((knife, index) => (
+              <KnifeCard key={knife.id} knife={knife} eager={index === 0} />
+            ))}
+          </div>
+          {visibleCount < filteredKnives.length && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setVisibleCount((count) =>
+                    Math.min(count + PAGE_SIZE, filteredKnives.length),
+                  )
+                }
+              >
+                Load more ({filteredKnives.length - visibleCount} remaining)
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

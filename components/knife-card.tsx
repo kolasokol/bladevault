@@ -69,6 +69,8 @@ export const KnifeCard = memo(function KnifeCard({
               alt={knife.name}
               fill
               loading={eager ? 'eager' : 'lazy'}
+              preload={eager}
+              fetchPriority={eager ? 'high' : 'auto'}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               className="object-contain transition-transform duration-500 group-hover:scale-105"
               referrerPolicy="no-referrer"
