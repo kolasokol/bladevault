@@ -26,11 +26,6 @@ import { useKnives } from '@/components/providers/knives-provider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { readJsonResponse } from '@/lib/api-response'
 import {
   Collapsible,
@@ -412,44 +407,30 @@ export function Sidebar() {
           </Button>
 
           <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={toggleTheme}
-                  >
-                    <Sun className="h-3.5 w-3.5 dark:hidden" />
-                    <Moon className="hidden h-3.5 w-3.5 dark:block" />
-                  </Button>
-                }
-              />
-              <TooltipContent>Toggle theme</TooltipContent>
-            </Tooltip>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={toggleTheme}
+            >
+              <Sun className="h-3.5 w-3.5 dark:hidden" />
+              <Moon className="hidden h-3.5 w-3.5 dark:block" />
+            </Button>
 
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label="Settings"
-                    className={cn(
-                      'flex-1',
-                      isSettingsActive &&
-                        'border-[var(--bladevault-olive)] bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)] hover:bg-[var(--bladevault-olive)] hover:text-[var(--bladevault-gold)]',
-                    )}
-                    render={<Link href="/settings" onClick={handleNavigate} />}
-                    nativeButton={false}
-                  >
-                    <Settings className="h-3.5 w-3.5" />
-                  </Button>
-                }
-              />
-              <TooltipContent>Settings</TooltipContent>
-            </Tooltip>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Settings"
+              className={cn(
+                'flex-1',
+                isSettingsActive &&
+                  'border-[var(--bladevault-olive)] bg-[var(--bladevault-olive)] text-[var(--bladevault-gold)] hover:bg-[var(--bladevault-olive)] hover:text-[var(--bladevault-gold)]',
+              )}
+              render={<Link href="/settings" onClick={handleNavigate} />}
+              nativeButton={false}
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
       </aside>
