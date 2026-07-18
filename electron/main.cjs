@@ -7,7 +7,8 @@ const {
   ipcMain,
   shell,
 } = require('electron')
-const { spawn, spawnSync } = require('child_process')
+const { spawn } = require('child_process')
+const { autoUpdater } = require('electron-updater')
 const crypto = require('crypto')
 const fs = require('fs')
 const https = require('https')
@@ -21,8 +22,6 @@ const FORCE_PRODUCTION_SERVER = process.env.BLADEVAULT_FORCE_PROD_SERVER === '1'
 const SMOKE_TEST_MODE = process.env.BLADEVAULT_SMOKE_TEST === '1'
 const UPDATE_DEBUG_ENABLED =
   process.platform === 'win32' && process.env.BLADEVAULT_UPDATE_DEBUG !== '0'
-const UPDATE_ALLOW_SAME_VERSION =
-  process.env.BLADEVAULT_UPDATE_ALLOW_SAME_VERSION === '1'
 const UPDATE_AUTO_TEST = process.env.BLADEVAULT_UPDATE_AUTOTEST === '1'
 const UPDATE_AUTO_TEST_INSTALL =
   process.env.BLADEVAULT_UPDATE_AUTOTEST_INSTALL === '1'
@@ -51,6 +50,7 @@ let isQuitting = false
 let isInstallingUpdate = false
 let updateStatus = { status: 'idle' }
 let updateDebugLogPath = null
+let windowsUpdaterConfigured = false
 
 function getUpdateDebugLogPath() {
   if (!UPDATE_DEBUG_ENABLED || process.platform !== 'win32') {
@@ -85,62 +85,6 @@ function appendUpdateDebug(message, details) {
     fs.appendFileSync(debugLogPath, line, 'utf8')
   } catch {
     // Best effort only: update debugging should never break runtime behavior.
-  }
-}
-
-function collectBladeVaultProcessSnapshot() {
-  if (!UPDATE_DEBUG_ENABLED || process.platform !== 'win32') {
-    return []
-  }
-
-  const snapshotScript = [
-    "$processes = Get-CimInstance Win32_Process | Where-Object { $_.Name -like 'BladeVault*' -or $_.CommandLine -like '*BladeVault*' }",
-    '$processes | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress',
-  ].join('; ')
-
-  const result = spawnSync(
-    'powershell.exe',
-    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', snapshotScript],
-    {
-      encoding: 'utf8',
-      timeout: 4000,
-      windowsHide: true,
-    },
-  )
-
-  if (result.error && result.error.name === 'Error') {
-    return [
-      {
-        error: 'snapshot_failed',
-        stderr: result.error.message,
-      },
-    ]
-  }
-
-  if (result.status !== 0) {
-    return [
-      {
-        error: 'snapshot_failed',
-        stderr: String(result.stderr || '').trim(),
-      },
-    ]
-  }
-
-  const stdout = String(result.stdout || '').trim()
-  if (!stdout) {
-    return []
-  }
-
-  try {
-    const parsed = JSON.parse(stdout)
-    return Array.isArray(parsed) ? parsed : [parsed]
-  } catch {
-    return [
-      {
-        error: 'snapshot_parse_failed',
-        stdout,
-      },
-    ]
   }
 }
 
@@ -344,18 +288,111 @@ function downloadFile(url, destination) {
   })
 }
 
-function toPowerShellSingleQuoted(value) {
-  return `'${String(value).replace(/'/g, "''")}'`
-}
-
 function getUpdateAssetName() {
   if (process.platform === 'darwin') return 'BladeVault.dmg'
-  if (process.platform === 'win32') return 'BladeVault.exe'
   return null
 }
 
-async function checkPlatformUpdate() {
-  appendUpdateDebug('check_platform_update_started', {
+function configureWindowsUpdater() {
+  if (process.platform !== 'win32' || windowsUpdaterConfigured) {
+    return
+  }
+
+  windowsUpdaterConfigured = true
+  autoUpdater.autoDownload = false
+  autoUpdater.autoInstallOnAppQuit = true
+  autoUpdater.allowPrerelease = false
+  autoUpdater.logger = {
+    debug: (message) =>
+      appendUpdateDebug('electron_updater_debug', { message: String(message) }),
+    info: (message) =>
+      appendUpdateDebug('electron_updater_info', { message: String(message) }),
+    warn: (message) =>
+      appendUpdateDebug('electron_updater_warn', { message: String(message) }),
+    error: (message) =>
+      appendUpdateDebug('electron_updater_error', { message: String(message) }),
+  }
+
+  autoUpdater.on('checking-for-update', () => {
+    appendUpdateDebug('windows_update_checking')
+    publishUpdateStatus({ status: 'checking' })
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    appendUpdateDebug('windows_update_available', {
+      latestVersion: info.version,
+    })
+    publishUpdateStatus({
+      status: 'available',
+      version: info.version,
+      releaseUrl: `https://github.com/dedkola/bladevault/releases/tag/v${info.version}`,
+    })
+  })
+
+  autoUpdater.on('update-not-available', (info) => {
+    appendUpdateDebug('windows_update_not_available', {
+      latestVersion: info.version,
+      currentVersion: app.getVersion(),
+    })
+    publishUpdateStatus({
+      status: 'not-available',
+      currentVersion: app.getVersion(),
+    })
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    publishUpdateStatus({
+      status: 'downloading',
+      percent: Math.round(progress.percent),
+    })
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    appendUpdateDebug('windows_update_downloaded', {
+      latestVersion: info.version,
+      downloadedFile: info.downloadedFile || null,
+    })
+    publishUpdateStatus({
+      status: 'downloaded',
+      version: info.version,
+    })
+  })
+
+  autoUpdater.on('error', (error) => {
+    const message = error instanceof Error ? error.message : String(error)
+    appendUpdateDebug('windows_updater_failed', {
+      message,
+      stack: error instanceof Error ? error.stack : null,
+    })
+    publishUpdateStatus({ status: 'error', message })
+  })
+}
+
+async function checkWindowsUpdate() {
+  configureWindowsUpdater()
+
+  if (!app.isPackaged) {
+    appendUpdateDebug('windows_update_skipped_unpacked_app')
+    publishUpdateStatus({
+      status: 'not-available',
+      currentVersion: app.getVersion(),
+    })
+    return updateStatus
+  }
+
+  await autoUpdater.checkForUpdates()
+  return updateStatus
+}
+
+async function downloadWindowsUpdate() {
+  configureWindowsUpdater()
+  publishUpdateStatus({ status: 'downloading', percent: 0 })
+  await autoUpdater.downloadUpdate()
+  return updateStatus
+}
+
+async function checkMacUpdate() {
+  appendUpdateDebug('check_mac_update_started', {
     currentVersion: app.getVersion(),
   })
 
@@ -364,29 +401,21 @@ async function checkPlatformUpdate() {
   )
   const version = String(release.tag_name || '').replace(/^v/, '')
 
-  appendUpdateDebug('check_platform_update_release', {
+  appendUpdateDebug('check_mac_update_release', {
     latestVersion: version || null,
     releaseUrl: release.html_url || null,
-    allowSameVersion: UPDATE_ALLOW_SAME_VERSION,
   })
 
   const versionComparison = version
     ? compareVersions(version, app.getVersion())
     : 0
-  const isSameVersion = versionComparison === 0
-  const shouldTreatAsAvailable =
-    Boolean(version) &&
-    (versionComparison > 0 ||
-      (UPDATE_ALLOW_SAME_VERSION &&
-        isSameVersion &&
-        process.platform === 'win32'))
+  const shouldTreatAsAvailable = Boolean(version) && versionComparison > 0
 
   if (!shouldTreatAsAvailable) {
-    appendUpdateDebug('check_platform_update_not_available', {
+    appendUpdateDebug('check_mac_update_not_available', {
       latestVersion: version || null,
       currentVersion: app.getVersion(),
       versionComparison,
-      allowSameVersion: UPDATE_ALLOW_SAME_VERSION,
     })
     publishUpdateStatus({
       status: 'not-available',
@@ -400,18 +429,17 @@ async function checkPlatformUpdate() {
     ? release.assets.find((candidate) => candidate.name === assetName)
     : null
   if (!asset?.browser_download_url) {
-    appendUpdateDebug('check_platform_update_missing_asset', {
+    appendUpdateDebug('check_mac_update_missing_asset', {
       assetName,
       latestVersion: version,
     })
     throw new Error(`The latest release does not contain ${assetName}.`)
   }
 
-  appendUpdateDebug('check_platform_update_available', {
+  appendUpdateDebug('check_mac_update_available', {
     latestVersion: version,
     downloadUrl: asset.browser_download_url,
     versionComparison,
-    allowSameVersion: UPDATE_ALLOW_SAME_VERSION,
   })
 
   publishUpdateStatus({
@@ -423,8 +451,8 @@ async function checkPlatformUpdate() {
   return updateStatus
 }
 
-async function downloadPlatformUpdate() {
-  appendUpdateDebug('download_platform_update_started', {
+async function downloadMacUpdate() {
+  appendUpdateDebug('download_mac_update_started', {
     currentVersion: app.getVersion(),
   })
 
@@ -437,17 +465,16 @@ async function downloadPlatformUpdate() {
     ? release.assets.find((candidate) => candidate.name === assetName)
     : null
   if (!asset?.browser_download_url || !version) {
-    appendUpdateDebug('download_platform_update_missing_asset', {
+    appendUpdateDebug('download_mac_update_missing_asset', {
       assetName,
       latestVersion: version || null,
     })
     throw new Error(`The latest release does not contain ${assetName}.`)
   }
 
-  const extension = process.platform === 'win32' ? 'exe' : 'dmg'
   const destination = path.join(
     os.tmpdir(),
-    `BladeVault-${version}-${Date.now()}-${process.pid}.${extension}`,
+    `BladeVault-${version}-${Date.now()}-${process.pid}.dmg`,
   )
   const result = await downloadFile(asset.browser_download_url, destination)
   const expectedDigest = String(asset.digest || '')
@@ -464,17 +491,15 @@ async function downloadPlatformUpdate() {
     sha256: result.sha256,
   })
 
-  appendUpdateDebug('download_platform_update_completed', {
+  appendUpdateDebug('download_mac_update_completed', {
     latestVersion: version,
     destination,
     sha256: result.sha256,
   })
 
-  if (process.platform === 'darwin') {
-    const openError = await shell.openPath(destination)
-    if (openError) {
-      throw new Error(`Failed to open downloaded update: ${openError}`)
-    }
+  const openError = await shell.openPath(destination)
+  if (openError) {
+    throw new Error(`Failed to open downloaded update: ${openError}`)
   }
   return updateStatus
 }
@@ -483,7 +508,6 @@ function installDownloadedUpdate() {
   appendUpdateDebug('install_downloaded_update_called', {
     pid: process.pid,
     status: updateStatus.status,
-    installerPath: updateStatus.path || null,
   })
 
   if (isInstallingUpdate) {
@@ -491,7 +515,7 @@ function installDownloadedUpdate() {
     return updateStatus
   }
 
-  if (updateStatus.status !== 'downloaded' || !updateStatus.path) {
+  if (updateStatus.status !== 'downloaded') {
     appendUpdateDebug('install_aborted_no_downloaded_update')
     throw new Error('No downloaded update is ready to install yet.')
   }
@@ -503,22 +527,8 @@ function installDownloadedUpdate() {
     return updateStatus
   }
 
-  const installerPath = updateStatus.path
-  if (!fs.existsSync(installerPath)) {
-    appendUpdateDebug('install_aborted_installer_missing', {
-      installerPath,
-    })
-    throw new Error(
-      'Downloaded installer was not found. Please download again.',
-    )
-  }
-
-  appendUpdateDebug('install_pre_quit_snapshot', {
-    snapshot: collectBladeVaultProcessSnapshot(),
-  })
-
   // The embedded Next server runs as a child BladeVault.exe on Windows.
-  // Ask it to exit before starting the installer to avoid NSIS lock checks.
+  // Stop it before handing control to the NSIS updater.
   if (serverProcess && serverProcess.exitCode === null) {
     appendUpdateDebug('install_stopping_embedded_server')
     serverProcess.kill()
@@ -526,77 +536,8 @@ function installDownloadedUpdate() {
 
   isInstallingUpdate = true
   publishUpdateStatus({ status: 'installing' })
-
-  app.once('will-quit', () => {
-    const installerPathQuoted = toPowerShellSingleQuoted(installerPath)
-    const debugLogPath = getUpdateDebugLogPath()
-    const debugLogPathQuoted = toPowerShellSingleQuoted(debugLogPath || '')
-    const currentPid = process.pid
-    appendUpdateDebug('will_quit_received_for_install', {
-      currentPid,
-      debugLogPath,
-      snapshot: collectBladeVaultProcessSnapshot(),
-    })
-
-    const psScript = [
-      `$installerPath = ${installerPathQuoted}`,
-      `$logPath = ${debugLogPathQuoted}`,
-      'function Write-UpdateLog([string]$message) {',
-      '  if (-not $logPath) { return }',
-      '  try {',
-      "    Add-Content -Path $logPath -Value ('[' + (Get-Date -Format o) + '] [installer-bootstrap] ' + $message) -Encoding UTF8",
-      '  } catch {}',
-      '}',
-      "Write-UpdateLog ('bootstrap_started pid=' + $PID + ' installer=' + $installerPath)",
-      '$deadline = (Get-Date).AddSeconds(45)',
-      'do {',
-      "  $bladeVaultProcesses = @(Get-Process -Name 'BladeVault' -ErrorAction SilentlyContinue)",
-      '  $currentProcess = Get-Process -Id ' +
-        currentPid +
-        ' -ErrorAction SilentlyContinue',
-      '  if ($bladeVaultProcesses.Count -eq 0 -and -not $currentProcess) { break }',
-      '  foreach ($proc in $bladeVaultProcesses) {',
-      '    try {',
-      '      $null = $proc.CloseMainWindow()',
-      '    } catch {}',
-      '  }',
-      "  Write-UpdateLog ('waiting_for_exit bladevault_count=' + $bladeVaultProcesses.Count)",
-      '  Start-Sleep -Milliseconds 300',
-      '} while ((Get-Date) -lt $deadline)',
-      "$leftover = @(Get-Process -Name 'BladeVault' -ErrorAction SilentlyContinue)",
-      'if ($leftover.Count -gt 0) {',
-      "  Write-UpdateLog ('leftover_processes=' + $leftover.Count + ' force_killing')",
-      '  foreach ($proc in $leftover) {',
-      '    try {',
-      '      Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue',
-      '    } catch {}',
-      '  }',
-      '}',
-      'try {',
-      '  $installerProcess = Start-Process -FilePath $installerPath -PassThru',
-      "  Write-UpdateLog ('installer_started pid=' + $installerProcess.Id)",
-      '  $installerProcess.WaitForExit()',
-      "  Write-UpdateLog ('installer_exited code=' + $installerProcess.ExitCode)",
-      '} catch {',
-      "  Write-UpdateLog ('installer_start_failed message=' + $_.Exception.Message)",
-      '}',
-    ].join('; ')
-
-    const installer = spawn(
-      'powershell.exe',
-      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript],
-      {
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: true,
-      },
-    )
-    installer.unref()
-    appendUpdateDebug('installer_bootstrap_spawned')
-  })
-
-  appendUpdateDebug('calling_app_quit_for_install')
-  app.quit()
+  appendUpdateDebug('calling_electron_updater_quit_and_install')
+  autoUpdater.quitAndInstall(false, true)
   return updateStatus
 }
 
@@ -608,7 +549,8 @@ async function checkForUpdates() {
 
   try {
     publishUpdateStatus({ status: 'checking' })
-    if (getUpdateAssetName()) return checkPlatformUpdate()
+    if (process.platform === 'win32') return checkWindowsUpdate()
+    if (process.platform === 'darwin') return checkMacUpdate()
     publishUpdateStatus({
       status: 'not-available',
       currentVersion: app.getVersion(),
@@ -629,7 +571,8 @@ async function downloadUpdate() {
   })
 
   try {
-    if (getUpdateAssetName()) return downloadPlatformUpdate()
+    if (process.platform === 'win32') return downloadWindowsUpdate()
+    if (process.platform === 'darwin') return downloadMacUpdate()
     return updateStatus
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

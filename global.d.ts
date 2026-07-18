@@ -8,6 +8,7 @@ declare global {
       | 'available'
       | 'downloading'
       | 'downloaded'
+      | 'installing'
       | 'not-available'
       | 'error'
     platform?: NodeJS.Platform
