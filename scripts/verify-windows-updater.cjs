@@ -1,4 +1,5 @@
 const assert = require('assert/strict')
+const path = require('path')
 const { app } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const builderConfig = require('../electron-builder.config.cjs')
@@ -14,6 +15,16 @@ async function verify() {
   )
 
   assert.equal(hasNsisTarget, true, 'Windows must be packaged with NSIS.')
+
+  const installerArtifact = String(builderConfig.nsis?.artifactName || '')
+    .replace('${ext}', 'exe')
+    .replace('${version}', require('../package.json').version)
+  const appExecutable = `${builderConfig.productName}.exe`
+  assert.notEqual(
+    path.basename(installerArtifact).toLowerCase(),
+    appExecutable.toLowerCase(),
+    'The NSIS installer filename must differ from the app executable; otherwise NSIS skips closing the running app during upgrades.',
+  )
   assert.equal(
     builderConfig.publish?.provider,
     'github',

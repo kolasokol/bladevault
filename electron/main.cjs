@@ -301,6 +301,7 @@ function configureWindowsUpdater() {
   windowsUpdaterConfigured = true
   autoUpdater.autoDownload = false
   autoUpdater.autoInstallOnAppQuit = true
+  autoUpdater.disableWebInstaller = true
   autoUpdater.allowPrerelease = false
   autoUpdater.logger = {
     debug: (message) =>
@@ -504,7 +505,7 @@ async function downloadMacUpdate() {
   return updateStatus
 }
 
-function installDownloadedUpdate() {
+async function installDownloadedUpdate() {
   appendUpdateDebug('install_downloaded_update_called', {
     pid: process.pid,
     status: updateStatus.status,
@@ -527,17 +528,26 @@ function installDownloadedUpdate() {
     return updateStatus
   }
 
-  // The embedded Next server runs as a child BladeVault.exe on Windows.
-  // Stop it before handing control to the NSIS updater.
-  if (serverProcess && serverProcess.exitCode === null) {
-    appendUpdateDebug('install_stopping_embedded_server')
-    serverProcess.kill()
-  }
-
   isInstallingUpdate = true
+  isQuitting = true
   publishUpdateStatus({ status: 'installing' })
+
+  // The embedded Next server runs as a child BladeVault.exe on Windows. Wait
+  // for it to release the installation files before starting NSIS.
+  appendUpdateDebug('install_stopping_embedded_server')
+  await stopEmbeddedServerAndWait()
+
+  // A renderer beforeunload handler can delay app.quit(), allowing NSIS to
+  // race the still-running app. The user already chose Install & Restart, so
+  // destroy the windows before the updater performs its final app.quit().
+  const windows = BrowserWindow.getAllWindows()
+  for (const window of windows) {
+    window.destroy()
+  }
+  appendUpdateDebug('install_windows_destroyed', { count: windows.length })
+
   appendUpdateDebug('calling_electron_updater_quit_and_install')
-  autoUpdater.quitAndInstall(false, true)
+  autoUpdater.quitAndInstall(true, true)
   return updateStatus
 }
 
@@ -609,7 +619,7 @@ async function runUpdateAutoTest() {
     appendUpdateDebug('autotest_before_install', {
       status: updateStatus.status,
     })
-    installDownloadedUpdate()
+    await installDownloadedUpdate()
     return
   }
 
@@ -848,6 +858,47 @@ function stopEmbeddedServer() {
   serverProcess = null
 }
 
+function waitForChildExit(child, timeoutMs) {
+  if (child.exitCode !== null) {
+    return Promise.resolve(true)
+  }
+
+  return new Promise((resolve) => {
+    let timeout = null
+    const finish = (didExit) => {
+      child.removeListener('exit', handleExit)
+      if (timeout) clearTimeout(timeout)
+      resolve(didExit)
+    }
+    const handleExit = () => finish(true)
+
+    child.once('exit', handleExit)
+    timeout = setTimeout(() => finish(false), timeoutMs)
+  })
+}
+
+async function stopEmbeddedServerAndWait(timeoutMs = 5000) {
+  const child = serverProcess
+  serverProcess = null
+
+  if (!child || child.exitCode !== null) {
+    appendUpdateDebug('embedded_server_already_stopped')
+    return
+  }
+
+  const pid = child.pid ?? null
+  const exitPromise = waitForChildExit(child, timeoutMs)
+  const killRequested = child.kill()
+  const didExit = await exitPromise
+
+  appendUpdateDebug('embedded_server_stop_completed', {
+    pid,
+    killRequested,
+    didExit,
+    exitCode: child.exitCode,
+  })
+}
+
 function getEditableContextMenuTemplate(editFlags) {
   return [
     {
@@ -1082,6 +1133,10 @@ app.on('browser-window-created', (_event, window) => {
 })
 
 app.on('window-all-closed', () => {
+  if (isInstallingUpdate) {
+    return
+  }
+
   if (process.platform !== 'darwin') {
     app.quit()
   }

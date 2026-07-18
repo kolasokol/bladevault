@@ -71,8 +71,8 @@ If you only want to try the app, Docker is the quickest setup. If you want to de
 - **PDF Export** — Export knife details and comparison views as PDF files for sharing or archiving.
 - **Print Support** — Use print-friendly layouts to generate clean hard copies of knife records.
 - **Smart URL Scraping** — Paste a product URL and BladeVault auto-fetches title, brand, images, steel, and specs.
-  - Includes special handling for **Shopify** stores via their `.json` product endpoint.
-  - Uses **Playwright** for JavaScript-rendered pages.
+    - Includes special handling for **Shopify** stores via their `.json` product endpoint.
+    - Uses **Playwright** for JavaScript-rendered pages.
 - **Manual Entry** — Add knives by hand with a clean, structured form.
 - **Image Management** — Downloaded images are stored locally; cloud backup can sync them to the BladeVault backend when you want an off-device copy.
 - **Dark & Light Mode** — Toggle themes instantly from the sidebar.
@@ -221,7 +221,7 @@ if macOS blocks the unsigned app.
 If you downloaded the Windows installer:
 
 Permanent latest-release download:
-[BladeVault.exe](https://github.com/dedkola/bladevault/releases/latest/download/BladeVault.exe)
+[BladeVault-Setup.exe](https://github.com/dedkola/bladevault/releases/latest/download/BladeVault-Setup.exe)
 
 1. Open the `.exe` file.
 2. Follow the installer prompts.
