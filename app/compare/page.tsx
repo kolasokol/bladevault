@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { getImageUrl, Knife, prioritizePinnedKnives } from '@/lib/data'
 import { CustomField } from '@/lib/settings-shared'
-import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
+import { readJsonResponse } from '@/lib/api-response'
 import { useKnives } from '@/components/providers/knives-provider'
 import { cn } from '@/lib/utils'
 import {

@@ -93,10 +93,6 @@ export function getDefaultLocalDataDirPath(): string {
   return getDefaultHomeDataDir()
 }
 
-export function getLegacyLocalDataDirPath(): string {
-  return LEGACY_DATA_DIR
-}
-
 export function getConfiguredLocalDataDirPath(): string | null {
   const configuredDataDir = process.env.BLADEVAULT_DATA_DIR?.trim()
   if (configuredDataDir) {

@@ -159,13 +159,3 @@ export async function fetchRenderedHtml(url: string): Promise<RenderedPage> {
     await releaseBrowser()
   }
 }
-
-export async function closeScraperBrowser(): Promise<void> {
-  if (state) {
-    const { browser } = state
-    state = null
-    await browser.close().catch(() => {
-      // ignore close errors
-    })
-  }
-}

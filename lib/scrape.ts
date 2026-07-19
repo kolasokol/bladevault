@@ -54,31 +54,6 @@ export type ScrapeResult = {
   confidence: ScrapeConfidence
 }
 
-const EMPTY_PRODUCT: ScrapedProduct = {
-  name: '',
-  brand: '',
-  description: '',
-  images: [],
-  bladeStyle: '',
-  handleMaterial: '',
-  specs: {
-    weight: '',
-    overallLength: '',
-    bladeLength: '',
-    bladeThickness: '',
-    bladeCoating: '',
-    bladeMaterial: '',
-    lockingMechanism: '',
-    designer: '',
-    modelNumber: '',
-    handleLength: '',
-    hardness: '',
-    price: '',
-    country: '',
-  },
-  sourceUrl: '',
-}
-
 function resolveUrl(
   href: string | undefined,
   base: string,

@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import {
   Loader2,
   Link2,
-  Plus,
-  Trash2,
   AlertCircle,
   Check,
   ExternalLink,
@@ -31,7 +29,7 @@ import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes'
 
 const TABS = ['Scrape URL', 'Manual'] as const

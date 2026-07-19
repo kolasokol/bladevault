@@ -1,8 +1,4 @@
-import {
-  DEFAULT_CLOUD_AUTH_URL,
-  DEFAULT_CLOUD_BACKUP_URL,
-  normalizeCloudUrl,
-} from '@/lib/cloud-backup'
+import { DEFAULT_CLOUD_BACKUP_URL, normalizeCloudUrl } from '@/lib/cloud-backup'
 
 function readBackupUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_BLADEVAULT_BACKUP_URL?.trim()
@@ -12,20 +8,8 @@ function readBackupUrl(): string {
   return normalized || DEFAULT_CLOUD_BACKUP_URL
 }
 
-function readAuthUrl(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_BLADEVAULT_AUTH_URL?.trim()
-  const normalized = fromEnv
-    ? normalizeCloudUrl(fromEnv)
-    : DEFAULT_CLOUD_AUTH_URL
-  return normalized || DEFAULT_CLOUD_AUTH_URL
-}
-
 export function getConfiguredCloudBackupUrl(): string {
   return readBackupUrl()
-}
-
-export function getConfiguredCloudAuthUrl(): string {
-  return readAuthUrl()
 }
 
 export function isBackupUrlAllowed(targetUrl: string): boolean {

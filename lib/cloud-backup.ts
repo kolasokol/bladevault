@@ -78,14 +78,6 @@ export function normalizeCloudUrl(url: string): string {
   return normalized.replace(/\/$/, '')
 }
 
-export function getCloudAuthUrl(): string {
-  return runtimeCloudConfig.authUrl
-}
-
-export function getCloudBackupUrl(): string {
-  return runtimeCloudConfig.backupUrl
-}
-
 export function getCloudRuntimeConfig(): CloudRuntimeConfig {
   return { ...runtimeCloudConfig }
 }
@@ -187,15 +179,6 @@ export function createCloudAuthHeaders(init?: HeadersInit): Headers {
   const state = getCloudAuthState()
   if (state?.sessionToken && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${state.sessionToken}`)
-  }
-  return headers
-}
-
-export function createCloudBackupHeaders(init?: HeadersInit): Headers {
-  const headers = new Headers(init)
-  const state = getCloudAuthState()
-  if (state?.accessToken && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${state.accessToken}`)
   }
   return headers
 }
