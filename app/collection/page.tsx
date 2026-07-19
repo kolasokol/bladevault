@@ -23,6 +23,8 @@ import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
+const PAGE_SIZE = 24
+
 const builtInFilterDefinitions = [
   { key: 'brand', label: 'Brand', getValue: (knife: Knife) => knife.brand },
   {
@@ -142,6 +144,7 @@ function CollectionContent() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const query = searchParams.get('q') ?? ''
   const [customFields, setCustomFields] = useState<CustomField[]>([])
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const debouncedQuery = useDebouncedValue(query, 200)
 
   const replaceParams = useCallback(
@@ -174,6 +177,7 @@ function CollectionContent() {
           params.delete('q')
         }
       })
+      setVisibleCount(PAGE_SIZE)
     },
     [replaceParams],
   )
@@ -317,6 +321,7 @@ function CollectionContent() {
         params.append(key, value)
       })
     })
+    setVisibleCount(PAGE_SIZE)
   }
 
   const toggleFilterValue = (key: FilterKey, value: string) => {
@@ -333,6 +338,7 @@ function CollectionContent() {
       params.delete('q')
       filterDefinitions.forEach((definition) => params.delete(definition.key))
     })
+    setVisibleCount(PAGE_SIZE)
   }
 
   const activeFilters = filterDefinitions.flatMap((definition) =>
@@ -472,10 +478,27 @@ function CollectionContent() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-6 [overflow-anchor:none] sm:grid-cols-2 lg:grid-cols-3">
-          {filteredKnives.map((knife, index) => (
-            <KnifeCard key={knife.id} knife={knife} eager={index === 0} />
-          ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 [overflow-anchor:none] sm:grid-cols-2 lg:grid-cols-3">
+            {filteredKnives.slice(0, visibleCount).map((knife, index) => (
+              <KnifeCard key={knife.id} knife={knife} eager={index === 0} />
+            ))}
+          </div>
+          {visibleCount < filteredKnives.length && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setVisibleCount((count) =>
+                    Math.min(count + PAGE_SIZE, filteredKnives.length),
+                  )
+                }
+              >
+                Load more ({filteredKnives.length - visibleCount} remaining)
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
