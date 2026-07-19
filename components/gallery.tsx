@@ -12,7 +12,7 @@ import {
   GripHorizontal,
   ImageIcon,
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 
 export function Gallery({

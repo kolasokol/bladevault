@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/page-header'
@@ -9,19 +9,53 @@ import { KnifeCard } from '@/components/knife-card'
 import { SearchField } from '@/components/search-field'
 import { CollectionPulse } from '@/components/collection-pulse'
 import { useKnives } from '@/components/providers/knives-provider'
-import { matchesKnifeSearch } from '@/lib/data'
+import { matchesKnifeSearch, prioritizePinnedKnives } from '@/lib/data'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 
 const RECENTLY_ADDED_LIMIT = 12
 
 export default function Dashboard() {
-  const { knives } = useKnives()
+  const { knives, pinnedItemsFirst } = useKnives()
   const [query, setQuery] = useState('')
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const debouncedQuery = useDebouncedValue(query, 200)
 
+  useEffect(() => {
+    const handleSearchShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const isTyping =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable
+
+      if (event.key === '/' && !isTyping) {
+        event.preventDefault()
+        searchInputRef.current?.focus()
+        return
+      }
+
+      if (
+        event.key === 'Escape' &&
+        document.activeElement === searchInputRef.current &&
+        query
+      ) {
+        event.preventDefault()
+        setQuery('')
+      }
+    }
+
+    window.addEventListener('keydown', handleSearchShortcut)
+    return () => window.removeEventListener('keydown', handleSearchShortcut)
+  }, [query])
+
   const visibleKnives = useMemo(
-    () => knives.filter((k) => matchesKnifeSearch(k, debouncedQuery)),
-    [knives, debouncedQuery],
+    () =>
+      prioritizePinnedKnives(
+        knives.filter((knife) => matchesKnifeSearch(knife, debouncedQuery)),
+        pinnedItemsFirst,
+      ),
+    [knives, debouncedQuery, pinnedItemsFirst],
   )
 
   const recentKnives = visibleKnives.slice(0, RECENTLY_ADDED_LIMIT)
@@ -51,7 +85,12 @@ export default function Dashboard() {
 
       {knives.length > 0 && (
         <div className="mb-8">
-          <SearchField value={query} onChange={setQuery} />
+          <SearchField
+            value={query}
+            onChange={setQuery}
+            inputRef={searchInputRef}
+            shortcutHint="/"
+          />
         </div>
       )}
 
@@ -78,14 +117,19 @@ export default function Dashboard() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 [overflow-anchor:none] sm:grid-cols-2 lg:grid-cols-4">
             {recentKnives.map((knife, index) => (
               <KnifeCard key={knife.id} knife={knife} eager={index === 0} />
             ))}
           </div>
           {hasMore && (
             <div className="flex justify-center">
-              <Button variant="outline" size="sm" render={<Link href="/collection">View all</Link>} nativeButton={false}>
+              <Button
+                variant="outline"
+                size="sm"
+                render={<Link href="/collection">View all</Link>}
+                nativeButton={false}
+              >
                 View all {visibleKnives.length} knives
               </Button>
             </div>

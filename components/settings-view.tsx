@@ -157,8 +157,6 @@ export default function SettingsView() {
 
   const [authStatus, setAuthStatus] = useState<StatusTone>('idle')
   const [authMessage, setAuthMessage] = useState('')
-  const [sessionStatus, setSessionStatus] = useState<StatusTone>('idle')
-  const [sessionMessage, setSessionMessage] = useState('')
   const [backupStatus, setBackupStatus] = useState<StatusTone>('idle')
   const [backupMessage, setBackupMessage] = useState('')
   const [restoreStatus, setRestoreStatus] = useState<StatusTone>('idle')
@@ -251,14 +249,9 @@ export default function SettingsView() {
       if (!state?.sessionToken) {
         if (!cancellation?.cancelled) {
           setCloudSession(null)
-          setSessionStatus('idle')
-          setSessionMessage('')
         }
         return
       }
-
-      setSessionStatus('loading')
-      setSessionMessage('Checking cloud session...')
 
       try {
         const nextConfig = await refreshCloudConfig()
@@ -293,20 +286,12 @@ export default function SettingsView() {
             })
           }
           setCloudSession(data)
-          setSessionStatus('success')
-          setSessionMessage(`Signed in as ${data.user.email}`)
         } else {
           setCloudSession(null)
-          setSessionStatus('idle')
-          setSessionMessage('')
         }
-      } catch (error) {
+      } catch {
         if (!cancellation?.cancelled) {
           setCloudSession(null)
-          setSessionStatus('error')
-          setSessionMessage(
-            formatCloudBackupError(error, getCloudRuntimeConfig().authUrl),
-          )
         }
       }
     },
@@ -594,9 +579,6 @@ export default function SettingsView() {
   const handleLogout = async () => {
     if (!settings) return
 
-    setSessionStatus('loading')
-    setSessionMessage('Signing out...')
-
     try {
       const nextConfig = await refreshCloudConfig()
       if (!nextConfig.authUrl) {
@@ -615,13 +597,8 @@ export default function SettingsView() {
 
       setCloudSession(null)
       clearCloudAuthState()
-      setSessionStatus('success')
-      setSessionMessage('Signed out')
-    } catch (error) {
-      setSessionStatus('error')
-      setSessionMessage(
-        formatCloudBackupError(error, getCloudRuntimeConfig().authUrl),
-      )
+    } catch {
+      // Leave the current session intact when remote sign-out fails.
     }
   }
 
@@ -719,6 +696,18 @@ export default function SettingsView() {
 
     try {
       await saveSettings({ theme })
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : 'Failed to save settings',
+      )
+    }
+  }
+
+  const handlePinnedItemsFirstToggle = async (checked: boolean) => {
+    if (!settings) return
+
+    try {
+      await saveSettings({ pinnedItemsFirst: checked })
     } catch (error) {
       setLoadError(
         error instanceof Error ? error.message : 'Failed to save settings',
@@ -1154,6 +1143,19 @@ export default function SettingsView() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </SettingsRow>
+                  </SettingsSection>
+                  <SettingsSection title="Collection">
+                    <SettingsRow
+                      label="Keep pinned knives first"
+                      description="Place pinned knives before other items in the Dashboard, Collection, and Compare views."
+                    >
+                      <Checkbox
+                        checked={settings.pinnedItemsFirst}
+                        onCheckedChange={(checked) =>
+                          handlePinnedItemsFirstToggle(checked === true)
+                        }
+                      />
                     </SettingsRow>
                   </SettingsSection>
                 </div>

@@ -83,7 +83,11 @@ const config = {
     ],
   },
   nsis: {
-    artifactName: 'BladeVault.${ext}',
+    // Keep the installer process name different from BladeVault.exe. The NSIS
+    // app-closing macro treats a matching filename as its own app process and
+    // skips the shutdown check, leaving the installed files locked on upgrade.
+    artifactName: 'BladeVault-Setup.${ext}',
+    include: 'installer.nsh',
     oneClick: false,
     allowToChangeInstallationDirectory: true,
   },

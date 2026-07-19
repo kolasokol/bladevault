@@ -7,9 +7,11 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: '**' },
-    ],
+    // The desktop server runs from the installed application directory. Keep
+    // Next's image optimizer in memory so runtime cache files never make that
+    // directory mutable or create Windows paths too long for NSIS upgrades.
+    maximumDiskCacheSize: 0,
+    remotePatterns: [{ protocol: 'https', hostname: '**' }],
   },
   allowedDevOrigins: ['192.168.0.155'],
   output: 'standalone',

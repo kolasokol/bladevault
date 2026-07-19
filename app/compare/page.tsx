@@ -6,9 +6,9 @@ import Link from 'next/link'
 import { ArchiveX, FileDown, ImageIcon, Printer, X } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
-import { getImageUrl, Knife } from '@/lib/data'
+import { getImageUrl, Knife, prioritizePinnedKnives } from '@/lib/data'
 import { CustomField } from '@/lib/settings-shared'
-import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
+import { readJsonResponse } from '@/lib/api-response'
 import { useKnives } from '@/components/providers/knives-provider'
 import { cn } from '@/lib/utils'
 import {
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
@@ -168,13 +169,20 @@ function buildPrintableHtml(
 }
 
 export default function ComparePage() {
-  const { knives, compareIds, addToCompare, removeFromCompare, clearCompare } =
-    useKnives()
+  const {
+    knives,
+    compareIds,
+    addToCompare,
+    removeFromCompare,
+    clearCompare,
+    pinnedItemsFirst,
+  } = useKnives()
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [hoveredCell, setHoveredCell] = useState<{
     knifeId: string
     rowKey: CompareRowKey
   } | null>(null)
+  const [showDifferencesOnly, setShowDifferencesOnly] = useState(false)
   const printFrameRef = useRef<HTMLIFrameElement | null>(null)
 
   useEffect(() => {
@@ -219,12 +227,24 @@ export default function ComparePage() {
     }
   }, [])
 
-  const comparedKnives = compareIds
-    .map((id) => knives.find((k) => k.id === id))
-    .filter((k): k is Knife => Boolean(k))
+  const comparedKnives = prioritizePinnedKnives(
+    compareIds
+      .map((id) => knives.find((k) => k.id === id))
+      .filter((k): k is Knife => Boolean(k)),
+    pinnedItemsFirst,
+  )
   const availableKnives = knives
     .filter((knife) => !compareIds.includes(knife.id))
-    .sort((a, b) => a.brand.localeCompare(b.brand))
+    .sort((left, right) => {
+      if (pinnedItemsFirst && left.pinned !== right.pinned) {
+        return left.pinned ? -1 : 1
+      }
+
+      return (
+        left.brand.localeCompare(right.brand) ||
+        left.name.localeCompare(right.name)
+      )
+    })
 
   const handleSelect = (id: string) => {
     if (!id) return
@@ -242,6 +262,16 @@ export default function ComparePage() {
 
   const hasComparedKnives = comparedKnives.length > 0
   const showAddSlot = availableKnives.length > 0
+  const visibleCompareRows = useMemo(() => {
+    if (!showDifferencesOnly) return compareRows
+
+    return compareRows.filter((row) => {
+      const values = new Set(
+        comparedKnives.map((knife) => getRowValue(knife, row.key)),
+      )
+      return values.size > 1
+    })
+  }, [compareRows, comparedKnives, showDifferencesOnly])
 
   const handleExportPdf = async () => {
     if (!hasComparedKnives) return
@@ -264,7 +294,7 @@ export default function ComparePage() {
         ...comparedKnives.map((knife) => `${knife.brand} ${knife.name}`),
       ],
     ]
-    const body = compareRows.map((row) => [
+    const body = visibleCompareRows.map((row) => [
       row.label,
       ...comparedKnives.map((knife) => getRowValue(knife, row.key)),
     ])
@@ -312,7 +342,7 @@ export default function ComparePage() {
     const printableHtml = buildPrintableHtml(
       comparedKnives,
       generatedAt,
-      compareRows,
+      visibleCompareRows,
     )
 
     printFrameRef.current?.remove()
@@ -488,10 +518,25 @@ export default function ComparePage() {
           ) : (
             <Card className="border-[var(--bladevault-line)]/80 bg-background shadow-none">
               <CardContent className="space-y-3 p-4">
-                <div>
-                  <div className="text-sm font-medium text-foreground">
-                    Comparison Matrix
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-foreground">
+                      Comparison Matrix
+                    </div>
                   </div>
+                  <label
+                    htmlFor="differences-only"
+                    className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <Checkbox
+                      id="differences-only"
+                      checked={showDifferencesOnly}
+                      onCheckedChange={(checked) =>
+                        setShowDifferencesOnly(checked === true)
+                      }
+                    />
+                    Differences only
+                  </label>
                 </div>
 
                 <div className="max-h-[72vh] overflow-auto rounded-xl border border-[var(--bladevault-line)]/80 bg-[color:var(--bladevault-surface-soft)]/30">
@@ -552,7 +597,7 @@ export default function ComparePage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {compareRows.map((row, idx) => (
+                      {visibleCompareRows.map((row, idx) => (
                         <TableRow
                           key={row.key}
                           className={cn(
@@ -602,6 +647,16 @@ export default function ComparePage() {
                           })}
                         </TableRow>
                       ))}
+                      {visibleCompareRows.length === 0 && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={comparedKnives.length + 1}
+                            className="py-8 text-center text-sm text-muted-foreground"
+                          >
+                            All selected knives have matching values.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>

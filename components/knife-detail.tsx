@@ -16,7 +16,7 @@ import { useKnives } from '@/components/providers/knives-provider'
 import { Knife, KnifeUpdates } from '@/lib/data'
 import { knifeToFormData, KnifeScrapeEditor } from '@/components/knife-form'
 import { CustomField } from '@/lib/settings-shared'
-import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
+import { readJsonResponse } from '@/lib/api-response'
 import { PageHeader } from '@/components/page-header'
 import { Gallery } from '@/components/gallery'
 import { Button } from '@/components/ui/button'
@@ -281,14 +281,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
                 )}
                 {pinned ? 'Pinned' : 'Pin'}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancel}
-                disabled={isSaving}
-              >
-                Cancel
-              </Button>
             </>
           }
         />
@@ -440,14 +432,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
             </div>
           </DetailSection>
 
-          <DetailSection
-            title="History"
-            description="Reserved for future tracking of acquisitions, updates, and notes."
-          >
-            <p className="text-sm text-muted-foreground">
-              History tracking coming soon.
-            </p>
-          </DetailSection>
         </div>
 
         <div className="flex flex-col gap-6">

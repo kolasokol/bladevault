@@ -8,7 +8,7 @@
   </p>
 
   <p>
-    Track your collection, compare knives side by side, export clean PDFs, and keep full control of your data with local SQLite storage and optional cloud backup.
+    Track your collection, compare knives side by side, export comparison tables, and keep full control of your data with local SQLite storage and optional cloud backup.
   </p>
 
   <p>
@@ -63,22 +63,19 @@ If you only want to try the app, Docker is the quickest setup. If you want to de
 
 ## ✨ Features
 
-- **Dashboard** — Get a quick overview of your recently added knives.
-- **Collection Library** — Browse your complete inventory with searchable multi-select filters across brand, model number, blade material, blade style, coating, hardness, locking mechanism, handle material, handle length, blade length, overall length, blade thickness, weight, and country.
-- **Knife Detail Page** — View specifications, descriptions, and a full image gallery with lightbox navigation.
-- **Inline Editing** — Update any knife's details directly from the detail page.
-- **Comparison Tool** — Select up to 3 knives and compare specs side-by-side.
-- **PDF Export** — Export knife details and comparison views as PDF files for sharing or archiving.
-- **Print Support** — Use print-friendly layouts to generate clean hard copies of knife records.
-- **Smart URL Scraping** — Paste a product URL and BladeVault auto-fetches title, brand, images, steel, and specs.
-  - Includes special handling for **Shopify** stores via their `.json` product endpoint.
-  - Uses **Playwright** for JavaScript-rendered pages.
-- **Manual Entry** — Add knives by hand with a clean, structured form.
-- **Image Management** — Downloaded images are stored locally; cloud backup can sync them to the BladeVault backend when you want an off-device copy.
-- **Dark & Light Mode** — Toggle themes instantly from the sidebar.
-- **Local-First Storage** — SQLite database + local image folder. Your data stays on your machine by default.
-- **Optional Cloud Backup** — Sign in to your BladeVault cloud account and sync a backup copy through the staging backend.
-- **Auto Sync To Cloud** — After cloud sign-in, BladeVault silently runs a background backup every hour and after each newly added knife, then shows a small bottom-right confirmation when sync completes.
+- **Dashboard insights** — See recently added knives alongside collection size, maker distribution, and the past year’s acquisition activity.
+- **Searchable collection library** — Search names, materials, and specifications, then narrow the results with shareable, multi-select URL filters for built-in and custom fields.
+- **Pins and shortcuts** — Pin important knives, optionally keep them first throughout the app, and access pinned items and brand groups from the sidebar.
+- **Knife records** — Create, edit, and delete detailed records with identity, construction, dimensions, pricing, provenance, notes, and source links.
+- **Flexible custom fields** — Define reusable text, number, date, or boolean fields in Settings; they appear on add/edit forms, details, collection filters, and comparison tables.
+- **Image gallery** — Add image files or URLs, choose which scraped images to keep, and browse each record’s locally stored gallery in a lightbox.
+- **Smart URL import** — Paste a product URL to import available title, brand, images, description, and specifications. Shopify product JSON and JavaScript-rendered pages are supported; an interactive browser fallback helps when a retailer presents bot protection.
+- **Manual entry** — Add a knife from scratch with the same structured form and image controls.
+- **Side-by-side comparison** — Build a comparison lineup from any number of knives, focus on differences only, and include your custom fields.
+- **Comparison export and printing** — Generate a landscape PDF or a clean print view of the current comparison table.
+- **Appearance and updates** — Choose light or dark mode, with desktop update checks and download controls in Settings.
+- **Local-first storage** — Your SQLite database and downloaded images stay on your machine by default, and the local data folder can be changed from Settings when the runtime permits it.
+- **Optional cloud backup** — Sign in with Google to back up or restore the full vault, including images. Automatic backups can run hourly and after collection changes.
 
 ---
 
@@ -221,7 +218,7 @@ if macOS blocks the unsigned app.
 If you downloaded the Windows installer:
 
 Permanent latest-release download:
-[BladeVault.exe](https://github.com/dedkola/bladevault/releases/latest/download/BladeVault.exe)
+[BladeVault-Setup.exe](https://github.com/dedkola/bladevault/releases/latest/download/BladeVault-Setup.exe)
 
 1. Open the `.exe` file.
 2. Follow the installer prompts.

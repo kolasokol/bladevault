@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import {
   Loader2,
   Link2,
-  Plus,
-  Trash2,
   AlertCircle,
   Check,
   ExternalLink,
@@ -31,10 +29,19 @@ import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useUnsavedChanges } from '@/hooks/use-unsaved-changes'
 
 const TABS = ['Scrape URL', 'Manual'] as const
 type Tab = (typeof TABS)[number]
+
+function hasKnifeFormContent(form: KnifeFormData): boolean {
+  return Object.values(form).some((value) => {
+    if (typeof value === 'string') return value.trim().length > 0
+    if (Array.isArray(value)) return value.length > 0
+    return Object.values(value).some((entry) => entry.trim().length > 0)
+  })
+}
 
 export function AddKnifeForm() {
   const router = useRouter()
@@ -90,7 +97,10 @@ export function AddKnifeForm() {
   }, [])
 
   const seededForm = useMemo(() => {
-    const seeded: KnifeFormData = { ...form }
+    const seeded: KnifeFormData = {
+      ...form,
+      customFields: { ...form.customFields },
+    }
     for (const field of customFields) {
       if (!(field.id in seeded.customFields)) {
         seeded.customFields[field.id] = ''
@@ -98,6 +108,20 @@ export function AddKnifeForm() {
     }
     return seeded
   }, [form, customFields])
+
+  const hasUnsavedChanges = useMemo(
+    () =>
+      hasKnifeFormContent(form) ||
+      url.trim().length > 0 ||
+      imageUrlInput.trim().length > 0,
+    [form, imageUrlInput, url],
+  )
+  const { allowNavigation, confirmDiscard } =
+    useUnsavedChanges(hasUnsavedChanges)
+
+  const handleCancel = () => {
+    if (confirmDiscard()) router.back()
+  }
 
   const updateField = <K extends keyof KnifeFormData>(
     field: K,
@@ -168,6 +192,7 @@ export function AddKnifeForm() {
     setIsSaving(true)
     try {
       await addKnife(formDataToKnifeDraft(form, selectedImages))
+      allowNavigation()
       router.push('/collection')
     } catch (error) {
       setSaveError(
@@ -547,7 +572,7 @@ export function AddKnifeForm() {
         description="Scrape a product page or enter details manually."
         breadcrumbs={[{ label: 'Add' }]}
         actions={
-          <Button variant="outline" size="sm" onClick={() => router.back()}>
+          <Button variant="outline" size="sm" onClick={handleCancel}>
             Cancel
           </Button>
         }
@@ -667,7 +692,7 @@ export function AddKnifeForm() {
       )}
 
       <div className="mt-6 flex items-center justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
+        <Button variant="outline" size="sm" onClick={handleCancel}>
           Cancel
         </Button>
         <Button size="sm" onClick={handleSave} disabled={!canSave || isSaving}>

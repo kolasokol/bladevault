@@ -57,8 +57,27 @@ export function getImageUrl(path: string): string {
 export function matchesKnifeSearch(knife: Knife, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
-  return (
-    knife.brand.toLowerCase().includes(q) ||
-    knife.name.toLowerCase().includes(q)
+
+  const searchableValues = [
+    knife.brand,
+    knife.name,
+    knife.bladeStyle,
+    knife.handleMaterial,
+    knife.description,
+    ...Object.values(knife.specs),
+    ...Object.values(knife.customFields),
+  ]
+
+  return searchableValues.some((value) => value?.toLowerCase().includes(q))
+}
+
+export function prioritizePinnedKnives(
+  knives: Knife[],
+  pinnedItemsFirst: boolean,
+): Knife[] {
+  if (!pinnedItemsFirst) return [...knives]
+
+  return [...knives].sort(
+    (left, right) => Number(right.pinned) - Number(left.pinned),
   )
 }
