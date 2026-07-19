@@ -540,10 +540,10 @@ export default function ComparePage() {
                 </div>
 
                 <div className="max-h-[72vh] overflow-auto rounded-xl border border-[var(--bladevault-line)]/80 bg-[color:var(--bladevault-surface-soft)]/30">
-                  <Table className="min-w-full">
+                  <Table className="min-w-full" containerClassName="contents">
                     <TableHeader>
                       <TableRow className="bg-[color:var(--bladevault-surface-soft)]/70 hover:bg-[color:var(--bladevault-surface-soft)]/70">
-                        <TableHead className="sticky left-0 top-0 z-30 w-44 border-r border-[var(--bladevault-line)] bg-[color:var(--bladevault-surface-soft)] text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)]">
+                        <TableHead className="sticky left-0 top-0 z-30 w-44 border-r border-[var(--bladevault-line)] bg-[var(--bladevault-surface-soft)] text-[10px] uppercase tracking-wider text-[var(--bladevault-title)] shadow-[1px_0_0_0_var(--bladevault-line)]">
                           Feature
                         </TableHead>
                         {comparedKnives.map((knife) => (
@@ -610,12 +610,12 @@ export default function ComparePage() {
                         >
                           <TableCell
                             className={cn(
-                              'sticky left-0 z-10 border-r border-[var(--bladevault-line)] text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)] shadow-[2px_0_0_0_var(--border),6px_0_8px_-4px_rgba(0,0,0,0.12)] transition-colors',
+                              'sticky left-0 z-10 border-r border-[var(--bladevault-line)] text-[11px] font-medium uppercase tracking-wider text-[var(--bladevault-title)] shadow-[1px_0_0_0_var(--bladevault-line)] transition-colors',
                               idx % 2 === 0
                                 ? 'bg-background'
-                                : 'bg-[color:var(--bladevault-surface-soft)]/45',
+                                : 'bg-[var(--bladevault-surface-soft)]',
                               hoveredCell?.rowKey === row.key &&
-                                'bg-[color:var(--bladevault-surface-hover)]/60',
+                                'bg-[var(--bladevault-surface-hover)]',
                             )}
                           >
                             {row.label}
