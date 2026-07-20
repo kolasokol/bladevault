@@ -1,10 +1,13 @@
 import { getLocalDb } from './local-db'
 import {
   APP_THEMES,
+  DEFAULT_CARD_FIELDS,
   CUSTOM_FIELD_TYPES,
   DEFAULT_SETTINGS,
+  normalizeCardFields,
   type AppSettings,
   type AppTheme,
+  type CardField,
   type CustomField,
   type CustomFieldType,
 } from './settings-shared'
@@ -12,6 +15,7 @@ export { DEFAULT_SETTINGS, SETTINGS_UPDATED_EVENT } from './settings-shared'
 export type {
   AppSettings,
   AppTheme,
+  CardField,
   CustomField,
   CustomFieldType,
 } from './settings-shared'
@@ -19,9 +23,20 @@ export type {
 const SETTINGS_KEYS: Record<keyof AppSettings, string> = {
   theme: 'theme',
   pinnedItemsFirst: 'pinned_items_first',
+  cardFields: 'card_fields',
   cloudBackupLastSyncedAt: 'cloud_backup_last_synced_at',
   cloudAutoBackupEnabled: 'cloud_auto_backup_enabled',
   customFields: 'custom_fields',
+}
+
+function parseCardFields(value: string | undefined): CardField[] {
+  if (!value) return [...DEFAULT_CARD_FIELDS]
+
+  try {
+    return normalizeCardFields(JSON.parse(value))
+  } catch {
+    return [...DEFAULT_CARD_FIELDS]
+  }
 }
 
 function getDb() {
@@ -91,6 +106,7 @@ export function getSettings(): AppSettings {
       map.get(SETTINGS_KEYS.pinnedItemsFirst),
       DEFAULT_SETTINGS.pinnedItemsFirst,
     ),
+    cardFields: parseCardFields(map.get(SETTINGS_KEYS.cardFields)),
     cloudBackupLastSyncedAt:
       map.get(SETTINGS_KEYS.cloudBackupLastSyncedAt) ||
       DEFAULT_SETTINGS.cloudBackupLastSyncedAt,
@@ -104,7 +120,14 @@ export function getSettings(): AppSettings {
 
 export function saveSettings(settings: Partial<AppSettings>): AppSettings {
   const current = getSettings()
-  const next = { ...current, ...settings }
+  const next = {
+    ...current,
+    ...settings,
+    cardFields:
+      settings.cardFields === undefined
+        ? current.cardFields
+        : normalizeCardFields(settings.cardFields, current.cardFields),
+  }
 
   const insert = getDb().prepare(
     'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
@@ -113,6 +136,7 @@ export function saveSettings(settings: Partial<AppSettings>): AppSettings {
   const entries: Array<[keyof AppSettings, string]> = [
     ['theme', next.theme],
     ['pinnedItemsFirst', next.pinnedItemsFirst ? '1' : '0'],
+    ['cardFields', JSON.stringify(next.cardFields)],
     ['cloudBackupLastSyncedAt', next.cloudBackupLastSyncedAt],
     ['cloudAutoBackupEnabled', next.cloudAutoBackupEnabled ? '1' : '0'],
     ['customFields', JSON.stringify(next.customFields)],

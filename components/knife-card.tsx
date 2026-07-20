@@ -13,6 +13,7 @@ import {
   activeKnifeActionStyle,
   activeKnifeFloatingClassName,
 } from '@/lib/knife-action-styles'
+import { getCardFieldDisplayValue } from '@/lib/card-fields'
 
 export const KnifeCard = memo(function KnifeCard({
   knife,
@@ -33,12 +34,19 @@ export const KnifeCard = memo(function KnifeCard({
     addToCompare,
     removeFromCompare,
     pinnedItemsFirst,
+    cardFields,
+    customFieldDefinitions,
     showFeedback,
   } = useKnives()
   const pinned = knife.pinned
   const inCompare = compareIds.includes(knife.id)
   const [isTogglingPin, setIsTogglingPin] = useState(false)
   const [isTogglingCompare, setIsTogglingCompare] = useState(false)
+  const visibleCardFields = cardFields
+    .map((field) =>
+      getCardFieldDisplayValue(knife, field, customFieldDefinitions),
+    )
+    .filter(Boolean)
 
   const handlePinClick = useCallback(
     async (e: React.MouseEvent) => {
@@ -180,9 +188,22 @@ export const KnifeCard = memo(function KnifeCard({
         <h3 className="text-sm font-medium text-foreground transition-colors group-hover:text-primary">
           {knife.name}
         </h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {knife.bladeStyle} · {knife.handleMaterial}
-        </p>
+        {visibleCardFields.length > 0 ? (
+          <p className="mt-0.5 flex flex-wrap items-center text-xs text-muted-foreground">
+            {visibleCardFields.map((value, index) => (
+              <span
+                key={`${index}-${value}`}
+                className={cn(
+                  'flex min-w-0 items-center',
+                  index > 0 &&
+                    "before:mx-1.5 before:h-2 before:w-px before:shrink-0 before:bg-[var(--bladevault-olive)] before:content-['']",
+                )}
+              >
+                <span className="min-w-0">{value}</span>
+              </span>
+            ))}
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   )

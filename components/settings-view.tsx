@@ -10,6 +10,7 @@ import {
   FolderOpen,
   Info,
   Loader2,
+  Lock,
   LogOut,
   Palette,
   RefreshCw,
@@ -26,9 +27,11 @@ import {
   SETTINGS_UPDATED_EVENT,
   type AppSettings,
   type AppTheme,
+  type CardField,
   type CustomField,
   type CustomFieldType,
 } from '@/lib/settings-shared'
+import { getCardFieldGroups, getCardFieldLabel } from '@/lib/card-fields'
 import {
   clearCloudAuthState,
   CloudAuthErrorMessage,
@@ -140,6 +143,51 @@ function applyThemePreference(theme: AppSettings['theme']) {
   document.documentElement.classList.toggle('dark', theme === 'dark')
 }
 
+function CardFieldsPreview({
+  fields,
+  customFields,
+}: {
+  fields: CardField[]
+  customFields: CustomField[]
+}) {
+  const selectedLabels = fields.map((field) =>
+    getCardFieldLabel(field, customFields),
+  )
+  const hiddenCount = Math.max(0, selectedLabels.length - 3)
+  const optionalDetails = [
+    ...selectedLabels.slice(0, 3),
+    hiddenCount > 0 ? `+${hiddenCount} more` : '',
+  ].filter(Boolean)
+
+  return (
+    <div className="mx-auto w-full max-w-[15rem]">
+      <div className="overflow-hidden rounded-xl border border-[var(--bladevault-line)] bg-card shadow-sm">
+        <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-white dark:bg-[#f4f1e8]">
+          <div className="relative h-7 w-32 -rotate-[24deg]" aria-hidden="true">
+            <div className="absolute right-0 top-0 h-7 w-14 rounded-r-md bg-[var(--bladevault-olive)] shadow-sm" />
+            <div className="absolute left-0 top-1 h-5 w-[4.75rem] rounded-l-full border border-[#aaa59b] bg-gradient-to-b from-[#f0f0ed] to-[#c9c9c4] shadow-sm [clip-path:polygon(0_50%,18%_0,100%_0,100%_100%,18%_100%)]" />
+          </div>
+        </div>
+        <div className="min-h-[6.6rem] border-t border-[var(--bladevault-line)]/50 bg-card px-3.5 py-3">
+          <div className="mb-2 inline-flex rounded-full bg-secondary px-2.5 py-1 text-[9px] font-medium uppercase tracking-wide text-secondary-foreground">
+            Brand
+          </div>
+          <div className="text-sm font-medium text-foreground">Model</div>
+          {optionalDetails.length > 0 ? (
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
+              {optionalDetails.join(' · ')}
+            </div>
+          ) : null}
+        </div>
+      </div>
+      <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+        <Lock className="size-3" />
+        Brand and model are always shown
+      </div>
+    </div>
+  )
+}
+
 export default function SettingsView() {
   const { update, checkForUpdates, downloadUpdate, installUpdate } =
     useDesktopUpdates()
@@ -174,6 +222,7 @@ export default function SettingsView() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
   const [newFieldName, setNewFieldName] = useState('')
   const [newFieldType, setNewFieldType] = useState<CustomFieldType>('text')
+  const [isSavingCardFields, setIsSavingCardFields] = useState(false)
 
   const updateMessage =
     update.status === 'checking'
@@ -725,6 +774,25 @@ export default function SettingsView() {
     }
   }
 
+  const handleCardFieldToggle = async (field: CardField, checked: boolean) => {
+    if (!settings) return
+
+    const nextFields = checked
+      ? [...settings.cardFields.filter((item) => item !== field), field]
+      : settings.cardFields.filter((item) => item !== field)
+
+    try {
+      setIsSavingCardFields(true)
+      await saveSettings({ cardFields: nextFields })
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : 'Failed to save settings',
+      )
+    } finally {
+      setIsSavingCardFields(false)
+    }
+  }
+
   const handleAddField = () => {
     const name = newFieldName.trim()
     if (!name) return
@@ -753,8 +821,18 @@ export default function SettingsView() {
       return
     }
 
+    const customFieldIds = new Set(nextCustomFields.map((field) => field.id))
+    const nextCardFields = settings.cardFields.filter(
+      (field) =>
+        !field.startsWith('custom:') ||
+        customFieldIds.has(field.slice('custom:'.length)),
+    )
+
     try {
-      await saveSettings({ customFields: nextCustomFields })
+      await saveSettings({
+        customFields: nextCustomFields,
+        cardFields: nextCardFields,
+      })
     } catch (error) {
       setLoadError(
         error instanceof Error ? error.message : 'Failed to save settings',
@@ -1163,6 +1241,76 @@ export default function SettingsView() {
                         }
                       />
                     </SettingsRow>
+                  </SettingsSection>
+                  <SettingsSection
+                    title="Card fields"
+                    description="Choose any structured or custom details to show on knife cards."
+                  >
+                    <div className="grid gap-5 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start">
+                      <CardFieldsPreview
+                        fields={settings.cardFields}
+                        customFields={settings.customFields}
+                      />
+                      <div
+                        className="max-h-[28rem] overflow-y-auto rounded-lg border border-[var(--bladevault-line)]/70 bg-background"
+                        aria-busy={isSavingCardFields}
+                      >
+                        <div className="flex items-center justify-between gap-3 border-b border-[var(--bladevault-line)]/60 px-3 py-2.5">
+                          <div>
+                            <div className="text-sm font-medium text-foreground">
+                              Brand
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Always shown
+                            </div>
+                          </div>
+                          <Lock className="size-3.5 text-muted-foreground" />
+                        </div>
+                        <div className="flex items-center justify-between gap-3 border-b border-[var(--bladevault-line)]/60 px-3 py-2.5">
+                          <div>
+                            <div className="text-sm font-medium text-foreground">
+                              Model
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Always shown
+                            </div>
+                          </div>
+                          <Lock className="size-3.5 text-muted-foreground" />
+                        </div>
+                        {getCardFieldGroups(settings.customFields).map(
+                          (group) => (
+                            <div key={group.label}>
+                              <div className="sticky top-0 z-10 border-b border-[var(--bladevault-line)]/60 bg-[var(--bladevault-surface-soft)] px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                {group.label}
+                              </div>
+                              {group.fields.map((field) => (
+                                <label
+                                  key={field.key}
+                                  className="flex cursor-pointer items-center justify-between gap-3 border-b border-[var(--bladevault-line)]/60 px-3 py-3 last:border-b-0"
+                                >
+                                  <span className="text-sm font-medium text-foreground">
+                                    {field.label}
+                                  </span>
+                                  <Checkbox
+                                    checked={settings.cardFields.includes(
+                                      field.key,
+                                    )}
+                                    disabled={isSavingCardFields}
+                                    onCheckedChange={(checked) =>
+                                      handleCardFieldToggle(
+                                        field.key,
+                                        checked === true,
+                                      )
+                                    }
+                                    aria-label={`Show ${field.label} on cards`}
+                                  />
+                                </label>
+                              ))}
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
                   </SettingsSection>
                 </div>
               )}

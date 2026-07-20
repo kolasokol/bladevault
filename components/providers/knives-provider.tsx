@@ -15,7 +15,13 @@ import { Knife, KnifeDraft, KnifeUpdates } from '@/lib/data'
 import type { BulkEditFieldKey } from '@/lib/bulk-edit'
 import { CLOUD_AUTH_STATE_EVENT, getCloudAuthState } from '@/lib/cloud-backup'
 import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
-import { DEFAULT_SETTINGS, SETTINGS_UPDATED_EVENT } from '@/lib/settings-shared'
+import {
+  DEFAULT_SETTINGS,
+  normalizeCardFields,
+  SETTINGS_UPDATED_EVENT,
+  type CardField,
+  type CustomField,
+} from '@/lib/settings-shared'
 import {
   canAttemptSilentCloudBackup,
   uploadCloudBackupArchive,
@@ -41,6 +47,8 @@ type KnivesContextValue = {
   isAutoBackupEnabled: boolean
   isAutoBackupActive: boolean
   pinnedItemsFirst: boolean
+  cardFields: CardField[]
+  customFieldDefinitions: CustomField[]
   showFeedback: (message: string, tone?: FeedbackTone) => void
 }
 
@@ -80,6 +88,12 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
   const [pinnedItemsFirst, setPinnedItemsFirst] = useState(
     DEFAULT_SETTINGS.pinnedItemsFirst,
   )
+  const [cardFields, setCardFields] = useState<CardField[]>(
+    DEFAULT_SETTINGS.cardFields,
+  )
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState<
+    CustomField[]
+  >(DEFAULT_SETTINGS.customFields)
   const backupInFlightRef = useRef(false)
   const pendingBackupRef = useRef(false)
   const runAutoBackupRef = useRef<
@@ -97,6 +111,8 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
           settings?: {
             cloudAutoBackupEnabled?: boolean
             pinnedItemsFirst?: boolean
+            cardFields?: CardField[]
+            customFields?: CustomField[]
           }
         }>(response)
         if (!response.ok) {
@@ -106,11 +122,19 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) {
           setIsAutoBackupEnabled(Boolean(data.settings?.cloudAutoBackupEnabled))
           setPinnedItemsFirst(Boolean(data.settings?.pinnedItemsFirst))
+          setCardFields(normalizeCardFields(data.settings?.cardFields))
+          setCustomFieldDefinitions(
+            Array.isArray(data.settings?.customFields)
+              ? data.settings.customFields
+              : DEFAULT_SETTINGS.customFields,
+          )
         }
       } catch {
         if (!cancelled) {
           setIsAutoBackupEnabled(DEFAULT_SETTINGS.cloudAutoBackupEnabled)
           setPinnedItemsFirst(DEFAULT_SETTINGS.pinnedItemsFirst)
+          setCardFields(DEFAULT_SETTINGS.cardFields)
+          setCustomFieldDefinitions(DEFAULT_SETTINGS.customFields)
         }
       }
     }
@@ -120,6 +144,8 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
         event as CustomEvent<{
           cloudAutoBackupEnabled?: boolean
           pinnedItemsFirst?: boolean
+          cardFields?: CardField[]
+          customFields?: CustomField[]
         }>
       ).detail
       let didUpdate = false
@@ -131,6 +157,16 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
 
       if (typeof detail?.pinnedItemsFirst === 'boolean') {
         setPinnedItemsFirst(detail.pinnedItemsFirst)
+        didUpdate = true
+      }
+
+      if (Array.isArray(detail?.cardFields)) {
+        setCardFields(normalizeCardFields(detail.cardFields))
+        didUpdate = true
+      }
+
+      if (Array.isArray(detail?.customFields)) {
+        setCustomFieldDefinitions(detail.customFields)
         didUpdate = true
       }
 
@@ -508,6 +544,8 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       isAutoBackupEnabled,
       isAutoBackupActive: isCloudSyncEnabled && isAutoBackupEnabled,
       pinnedItemsFirst,
+      cardFields,
+      customFieldDefinitions,
       showFeedback,
     }),
     [
@@ -525,6 +563,8 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       isCloudSyncEnabled,
       isAutoBackupEnabled,
       pinnedItemsFirst,
+      cardFields,
+      customFieldDefinitions,
       showFeedback,
     ],
   )
