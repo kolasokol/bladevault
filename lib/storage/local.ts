@@ -3,7 +3,7 @@ import path from 'path'
 import { Knife, KnifeUpdates } from '@/lib/data'
 import { normalizeKnifeTextFields } from '@/lib/knife-text'
 import { getLocalDb, getLocalImagesDirPath } from '@/lib/local-db'
-import { validateExternalUrl } from '@/lib/url-validation'
+import { fetchExternalUrl, validateExternalUrl } from '@/lib/url-validation'
 import { CreateKnifeInput, ImageData, Storage } from './types'
 
 function extensionFromMimeType(contentType: string): string {
@@ -135,12 +135,12 @@ export class LocalStorage implements Storage {
     knifeId: string,
     index: number,
   ): Promise<string> {
-    const validation = validateExternalUrl(url)
+    const validation = await validateExternalUrl(url)
     if (!validation.ok) {
       throw new Error(validation.reason)
     }
 
-    const response = await fetch(validation.url.href, {
+    const response = await fetchExternalUrl(validation.url, {
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
@@ -159,7 +159,9 @@ export class LocalStorage implements Storage {
     const arrayBuffer = await response.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    let ext = extensionFromUrl(validation.url.href) || extensionFromMimeType(contentType)
+    let ext =
+      extensionFromUrl(validation.url.href) ||
+      extensionFromMimeType(contentType)
     if (ext === 'svg' && contentType && !contentType.includes('svg')) {
       ext = extensionFromMimeType(contentType)
     }

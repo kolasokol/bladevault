@@ -89,6 +89,10 @@ export function isLocalDataDirManagedByEnv(): boolean {
   return Boolean(process.env.BLADEVAULT_DATA_DIR?.trim())
 }
 
+export function isDesktopRuntime(): boolean {
+  return process.env.BLADEVAULT_DESKTOP_RUNTIME === '1'
+}
+
 export function getDefaultLocalDataDirPath(): string {
   return getDefaultHomeDataDir()
 }

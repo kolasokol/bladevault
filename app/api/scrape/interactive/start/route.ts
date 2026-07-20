@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 })
     }
 
-    const validation = validateExternalUrl(url)
+    const validation = await validateExternalUrl(url)
     if (!validation.ok) {
       return NextResponse.json({ error: validation.reason }, { status: 400 })
     }

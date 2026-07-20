@@ -813,6 +813,7 @@ async function startEmbeddedServer() {
   const env = {
     ...process.env,
     ELECTRON_RUN_AS_NODE: '1',
+    BLADEVAULT_DESKTOP_RUNTIME: '1',
     HOSTNAME: '127.0.0.1',
     NEXT_TELEMETRY_DISABLED: '1',
     NODE_ENV: 'production',

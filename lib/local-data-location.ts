@@ -6,6 +6,7 @@ import {
   getConfiguredLocalDataDirPath,
   getDefaultLocalDataDirPath,
   getLocalDataDirPath,
+  isDesktopRuntime,
   isLocalDataDirManagedByEnv,
   setPersistedLocalDataDirPath,
 } from '@/lib/local-db'
@@ -113,6 +114,12 @@ export async function updateLocalDataDirectory({
   nextDataDir,
   moveExistingData,
 }: UpdateLocalDataDirectoryInput): Promise<UpdateLocalDataDirectoryResult> {
+  if (!isDesktopRuntime()) {
+    throw new Error(
+      'Changing the local data folder is only available in the desktop app.',
+    )
+  }
+
   if (isLocalDataDirManagedByEnv()) {
     throw new Error(
       'This runtime is managed by BLADEVAULT_DATA_DIR and cannot be changed from the app.',

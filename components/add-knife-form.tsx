@@ -23,6 +23,7 @@ import {
   formDataToKnifeDraft,
 } from '@/components/knife-form'
 import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
+import { escapeHtmlAttribute, getSafeExternalUrl } from '@/lib/external-url'
 import { ScrapedProduct } from '@/lib/scrape'
 import { CustomField } from '@/lib/settings-shared'
 import { PageHeader } from '@/components/page-header'
@@ -435,8 +436,11 @@ export function AddKnifeForm() {
 
   const canSave = form.name.trim().length > 0
 
+  const safeSourceUrl = getSafeExternalUrl(form.sourceUrl)
+  const safePreviewBaseUrl =
+    getSafeExternalUrl(scrapedFinalUrl) ?? safeSourceUrl
   const previewHtml = scrapedHtml
-    ? `<base href="${scrapedFinalUrl || form.sourceUrl}">\n${scrapedHtml}`
+    ? `${safePreviewBaseUrl ? `<base href="${escapeHtmlAttribute(safePreviewBaseUrl)}">\n` : ''}${scrapedHtml}`
     : ''
 
   const scrapeInput = (
@@ -637,15 +641,17 @@ export function AddKnifeForm() {
                       <Eye className="h-3.5 w-3.5" />
                     )}
                   </Button>
-                  <a
-                    href={form.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Open
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+                  {safeSourceUrl ? (
+                    <a
+                      href={safeSourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Open
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  ) : null}
                 </div>
               </CardHeader>
               <CardContent className="relative flex-1 min-h-0 p-0">

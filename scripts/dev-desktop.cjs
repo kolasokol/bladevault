@@ -55,6 +55,7 @@ async function main() {
     env: {
       ...process.env,
       BLADEVAULT_DATA_DIR: dataDir,
+      BLADEVAULT_DESKTOP_RUNTIME: '1',
     },
     stdio: 'inherit',
   })

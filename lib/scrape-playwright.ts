@@ -1,5 +1,6 @@
 import { chromium } from 'playwright'
 import type { Browser, BrowserContext } from 'playwright'
+import { validateExternalUrl } from '@/lib/url-validation'
 
 export type RenderedPage = {
   html: string
@@ -100,12 +101,20 @@ export async function fetchRenderedHtml(url: string): Promise<RenderedPage> {
     // Shopify stores and modern product pages keep analytics/tracking sockets open,
     // so waiting for "networkidle" frequently times out in Docker. Use
     // "domcontentloaded" and wait for the primary product heading instead.
-    await page.route('**/*', (route) => {
+    await page.route('**/*', async (route) => {
       const type = route.request().resourceType()
       if (['image', 'font', 'media', 'stylesheet'].includes(type)) {
-        return route.abort()
+        await route.abort()
+        return
       }
-      return route.continue()
+
+      const validation = await validateExternalUrl(route.request().url())
+      if (!validation.ok) {
+        await route.abort()
+        return
+      }
+
+      await route.continue()
     })
 
     await page.goto(url, {

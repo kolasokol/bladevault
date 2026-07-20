@@ -1,14 +1,14 @@
+import { lookup } from 'dns/promises'
 import { isIP } from 'net'
 
-const BLOCKED_HOST_PATTERNS = [
-  /^localhost$/i,
-  /^\s*$/,
-]
+const BLOCKED_HOST_PATTERNS = [/^localhost\.?$/i, /^\s*$/]
+const MAX_EXTERNAL_REDIRECTS = 5
 
 function isPrivateIp(host: string): boolean {
-  const ipVersion = isIP(host)
+  const normalizedHost = host.replace(/^\[|\]$/g, '').toLowerCase()
+  const ipVersion = isIP(normalizedHost)
   if (ipVersion === 4) {
-    const parts = host.split('.').map(Number)
+    const parts = normalizedHost.split('.').map(Number)
     const [a, b, c] = parts
     // 0.0.0.0/8, 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12,
     // 192.168.0.0/16, 192.0.0.0/24, 192.0.2.0/24, 198.18.0.0/15,
@@ -28,35 +28,61 @@ function isPrivateIp(host: string): boolean {
   }
 
   if (ipVersion === 6) {
-    const normalized = host.toLowerCase()
-    // Loopback ::1/128
-    if (normalized === '::1' || normalized === '0:0:0:0:0:0:0:1') return true
-    // Link-local fe80::/10
-    if (/^fe[89ab][0-9a-f]:/i.test(normalized)) return true
-    // Unique local fc00::/7
-    if (/^fc[0-9a-f][0-9a-f]:/i.test(normalized) || /^fd[0-9a-f][0-9a-f]:/i.test(normalized)) return true
+    const ipv4Mapped = normalizedHost.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)
+    if (ipv4Mapped) return isPrivateIp(ipv4Mapped[1])
+
+    // Unspecified/loopback, link-local, unique-local, site-local, multicast,
+    // and documentation-only ranges are never valid external destinations.
+    if (
+      normalizedHost === '::' ||
+      normalizedHost === '::1' ||
+      normalizedHost === '0:0:0:0:0:0:0:1' ||
+      /^fe[89ab][0-9a-f]:/i.test(normalizedHost) ||
+      /^f[cd][0-9a-f]{2}:/i.test(normalizedHost) ||
+      /^fe[c-f][0-9a-f]:/i.test(normalizedHost) ||
+      /^ff/i.test(normalizedHost) ||
+      /^2001:db8:/i.test(normalizedHost)
+    ) {
+      return true
+    }
     return false
   }
 
   return false
 }
 
-function isBlockedHost(host: string): boolean {
-  const withoutPort = host.split(':')[0]
-  if (BLOCKED_HOST_PATTERNS.some((pattern) => pattern.test(withoutPort))) {
+async function isBlockedHost(host: string): Promise<boolean> {
+  const normalizedHost = host.replace(/^\[|\]$/g, '')
+  if (BLOCKED_HOST_PATTERNS.some((pattern) => pattern.test(normalizedHost))) {
     return true
   }
-  return isPrivateIp(withoutPort)
+
+  if (isPrivateIp(normalizedHost)) {
+    return true
+  }
+
+  try {
+    const addresses = await lookup(normalizedHost, {
+      all: true,
+      verbatim: true,
+    })
+    return (
+      addresses.length === 0 ||
+      addresses.some(({ address }) => isPrivateIp(address))
+    )
+  } catch {
+    // A hostname we cannot resolve safely must not be fetched.
+    return true
+  }
 }
 
 export type UrlValidationResult =
-  | { ok: true; url: URL }
-  | { ok: false; reason: string }
+  { ok: true; url: URL } | { ok: false; reason: string }
 
-export function validateExternalUrl(
+export async function validateExternalUrl(
   value: string,
   options?: { allowDataUrl?: boolean },
-): UrlValidationResult {
+): Promise<UrlValidationResult> {
   if (!value) {
     return { ok: false, reason: 'URL is empty' }
   }
@@ -76,9 +102,39 @@ export function validateExternalUrl(
     return { ok: false, reason: 'Only HTTP and HTTPS URLs are allowed' }
   }
 
-  if (isBlockedHost(parsed.hostname)) {
+  if (await isBlockedHost(parsed.hostname)) {
     return { ok: false, reason: 'Private or internal URLs are not allowed' }
   }
 
   return { ok: true, url: parsed }
+}
+
+export async function fetchExternalUrl(
+  initialUrl: URL,
+  init: RequestInit,
+): Promise<Response> {
+  let url = initialUrl
+
+  for (let redirects = 0; redirects <= MAX_EXTERNAL_REDIRECTS; redirects += 1) {
+    const response = await fetch(url, { ...init, redirect: 'manual' })
+    const location = response.headers.get('location')
+    const isRedirect = response.status >= 300 && response.status < 400
+
+    if (!isRedirect || !location) {
+      return response
+    }
+
+    if (redirects === MAX_EXTERNAL_REDIRECTS) {
+      throw new Error('Too many redirects while fetching an external URL')
+    }
+
+    const validation = await validateExternalUrl(new URL(location, url).href)
+    if (!validation.ok) {
+      throw new Error(validation.reason)
+    }
+
+    url = validation.url
+  }
+
+  throw new Error('Too many redirects while fetching an external URL')
 }

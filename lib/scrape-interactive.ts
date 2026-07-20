@@ -1,5 +1,6 @@
 import { chromium, Browser, BrowserContext, Page } from 'playwright'
 import { isSecurityChallengePage } from '@/lib/scrape'
+import { validateExternalUrl } from '@/lib/url-validation'
 
 export type InteractiveSessionStatus =
   | 'waiting'
@@ -144,6 +145,16 @@ export async function startInteractiveSession(url: string): Promise<string> {
     w.chrome = (w.chrome as Record<string, unknown>) || { runtime: {} }
     delete w.__playwright
     delete w.__pw_manual
+  })
+
+  await context.route('**/*', async (route) => {
+    const validation = await validateExternalUrl(route.request().url())
+    if (!validation.ok) {
+      await route.abort()
+      return
+    }
+
+    await route.continue()
   })
 
   const page = await context.newPage()

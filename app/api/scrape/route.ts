@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { scrapeAndEnrichProduct } from '@/lib/scrape'
-import { validateExternalUrl } from '@/lib/url-validation'
+import { fetchExternalUrl, validateExternalUrl } from '@/lib/url-validation'
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 })
     }
 
-    const validation = validateExternalUrl(url)
+    const validation = await validateExternalUrl(url)
     if (!validation.ok) {
       return NextResponse.json({ error: validation.reason }, { status: 400 })
     }
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       // Playwright can time out on pages with heavy/never-ending network activity.
       // Many Shopify stores still render the product HTML server-side, so fall
       // back to a plain HTTP fetch before giving up.
-      const response = await fetch(normalizedUrl, {
+      const response = await fetchExternalUrl(validation.url, {
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { getImageUrl, Knife, KnifeDraft } from '@/lib/data'
 import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
+import { escapeHtmlAttribute, getSafeExternalUrl } from '@/lib/external-url'
 import { ScrapedProduct } from '@/lib/scrape'
 import { CustomField, CustomFieldType } from '@/lib/settings-shared'
 import { PageHeader, BreadcrumbItemData } from '@/components/page-header'
@@ -792,8 +793,11 @@ export function KnifeScrapeEditor({
 
   const canSave = form.name.trim().length > 0
   const showForm = mode === 'edit' || hasScraped
+  const safeSourceUrl = getSafeExternalUrl(form.sourceUrl)
+  const safePreviewBaseUrl =
+    getSafeExternalUrl(scrapedFinalUrl) ?? safeSourceUrl
   const previewHtml = scrapedHtml
-    ? `<base href="${scrapedFinalUrl || form.sourceUrl}">\n${scrapedHtml}`
+    ? `${safePreviewBaseUrl ? `<base href="${escapeHtmlAttribute(safePreviewBaseUrl)}">\n` : ''}${scrapedHtml}`
     : ''
 
   return (
@@ -948,9 +952,9 @@ export function KnifeScrapeEditor({
                       <Eye className="h-3.5 w-3.5" />
                     )}
                   </Button>
-                  {form.sourceUrl && (
+                  {safeSourceUrl && (
                     <a
-                      href={form.sourceUrl}
+                      href={safeSourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import {
   getDockerHostDataMountPath,
+  isDesktopRuntime,
   isContainerizedRuntime,
 } from '@/lib/local-db'
 import { updateLocalDataDirectory } from '@/lib/local-data-location'
@@ -12,6 +13,16 @@ type UpdateLocalDataPathRequest = {
 }
 
 export async function POST(request: Request) {
+  if (!isDesktopRuntime()) {
+    return NextResponse.json(
+      {
+        error:
+          'Changing the local data folder is only available in the desktop app.',
+      },
+      { status: 403 },
+    )
+  }
+
   try {
     const body = (await request.json()) as UpdateLocalDataPathRequest
     const result = await updateLocalDataDirectory({

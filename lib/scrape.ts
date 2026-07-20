@@ -300,26 +300,17 @@ function cleanProductName(name: string, sourceUrl: string): string {
 
 function htmlToPlainText(html: string): string {
   if (!html) return ''
+
+  const $ = cheerio.load(html)
+  $('script, style, noscript, template').remove()
+  $('br').replaceWith('\n')
+  $('p, div, li, h1, h2, h3, h4, h5, h6').each((_, element) => {
+    $(element).append('\n')
+  })
+
   return (
-    html
-      // Remove scripts and styles before parsing text.
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
-      // Preserve line breaks from block-level tags and line breaks.
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
-      .replace(/<\/div>\s*<div[^>]*>/gi, '\n')
-      .replace(/<\/li>\s*<li[^>]*>/gi, '\n')
-      .replace(/<\/h([1-6])>/gi, '\n\n')
-      // Strip any remaining tags.
-      .replace(/<[^>]+>/g, ' ')
-      // Decode common HTML entities.
-      .replace(/&nbsp;/gi, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
+    $.root()
+      .text()
       // Normalize whitespace while preserving paragraph breaks.
       .replace(/\r\n/g, '\n')
       .replace(/\n[ \t]+/g, '\n')

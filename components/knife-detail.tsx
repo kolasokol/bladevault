@@ -17,6 +17,7 @@ import { Knife, KnifeUpdates } from '@/lib/data'
 import { knifeToFormData, KnifeScrapeEditor } from '@/components/knife-form'
 import { CustomField } from '@/lib/settings-shared'
 import { readJsonResponse } from '@/lib/api-response'
+import { getSafeExternalUrl } from '@/lib/external-url'
 import { PageHeader } from '@/components/page-header'
 import { Gallery } from '@/components/gallery'
 import { Button } from '@/components/ui/button'
@@ -88,6 +89,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
   } = useKnives()
 
   const knife = knives.find((k) => k.id === initialKnife.id) ?? initialKnife
+  const safeSourceUrl = getSafeExternalUrl(knife.sourceUrl)
   const pinned = knife.pinned
   const inCompare = compareIds.includes(knife.id)
   const knifeBreadcrumbs = [
@@ -449,13 +451,13 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {knife.sourceUrl ? (
+              {safeSourceUrl ? (
                 <div className="rounded-lg border border-[var(--bladevault-line)]/70 bg-[color:var(--bladevault-surface-soft)]/45 px-3 py-3">
                   <h3 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                     Source
                   </h3>
                   <Link
-                    href={knife.sourceUrl}
+                    href={safeSourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-1 inline-flex items-center gap-1 break-all text-xs text-muted-foreground hover:text-foreground"
