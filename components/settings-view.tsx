@@ -69,7 +69,12 @@ import { useDesktopUpdates } from '@/hooks/use-desktop-updates'
 
 type StatusTone = 'idle' | 'loading' | 'success' | 'error'
 type SettingsTab =
-  'general' | 'cloud-backup' | 'appearance' | 'fields' | 'about'
+  | 'general'
+  | 'cloud-backup'
+  | 'restore-database'
+  | 'appearance'
+  | 'fields'
+  | 'about'
 
 const settingsTabTriggerClassName =
   'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors'
@@ -226,6 +231,11 @@ export default function SettingsView() {
     () => [
       { id: 'general' as const, label: 'Local storage', icon: Database },
       { id: 'cloud-backup' as const, label: 'Cloud Backup', icon: Cloud },
+      {
+        id: 'restore-database' as const,
+        label: 'Restore database',
+        icon: Download,
+      },
       { id: 'appearance' as const, label: 'Appearance', icon: Palette },
       {
         id: 'fields' as const,
@@ -627,7 +637,7 @@ export default function SettingsView() {
     if (!settings) return
     if (
       !window.confirm(
-        'Restore from cloud and replace your current local vault on this device?',
+        'Restore the latest cloud backup and replace the local database on this device?',
       )
     ) {
       return
@@ -951,123 +961,13 @@ export default function SettingsView() {
               )}
 
               {activeTab === 'cloud-backup' && (
-                <div className="mx-auto max-w-3xl space-y-3">
-                  <SettingsSection>
-                    <SettingsRow
-                      label="Session"
-                      description={
-                        cloudSession
-                          ? `Signed in as ${cloudSession.user.email}`
-                          : 'Not signed in'
-                      }
-                    >
-                      {cloudSession ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--bladevault-local)] dark:text-[var(--bladevault-gold)]">
-                          <ShieldCheck className="h-3.5 w-3.5" />
-                          Connected
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </SettingsRow>
-
-                    <SettingsRow
-                      label="Account"
-                      description={cloudSession?.user.email || '—'}
-                    />
-
-                    <SettingsRow
-                      label="Last sync"
-                      description={formatSyncTime(
-                        settings.cloudBackupLastSyncedAt,
-                      )}
-                    >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`${settingsSecondaryButtonClassName} h-8 rounded-lg`}
-                        onClick={() => refreshCloudSession()}
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                        Refresh
-                      </Button>
-                    </SettingsRow>
-
-                    <SettingsRow
-                      label="Auto backup"
-                      description="Upload changes automatically after edits."
-                    >
-                      <Checkbox
-                        checked={settings.cloudAutoBackupEnabled}
-                        onCheckedChange={(checked) =>
-                          handleAutoBackupToggle(checked === true)
-                        }
-                        disabled={!cloudSession}
-                        aria-label="Enable auto backup"
-                      />
-                    </SettingsRow>
-                  </SettingsSection>
-
-                  {cloudSession ? (
-                    <SettingsSection title="Sync Actions">
-                      <SettingsRow
-                        label="Backup now"
-                        description="Upload local vault to the cloud."
-                      >
-                        <Button
-                          size="sm"
-                          className={`${settingsPrimaryButtonClassName} h-8 rounded-lg`}
-                          onClick={handleBackup}
-                          disabled={backupStatus === 'loading'}
-                        >
-                          {backupStatus === 'loading' ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Upload className="h-3.5 w-3.5" />
-                          )}
-                          Backup Local → Cloud
-                        </Button>
-                      </SettingsRow>
-
-                      <SettingsRow
-                        label="Restore from cloud"
-                        description="Replace local vault with the latest cloud backup."
-                      >
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={`${settingsSecondaryButtonClassName} h-8 rounded-lg`}
-                          onClick={handleRestore}
-                          disabled={restoreStatus === 'loading'}
-                        >
-                          {restoreStatus === 'loading' ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Download className="h-3.5 w-3.5" />
-                          )}
-                          Restore Cloud → Local
-                        </Button>
-                      </SettingsRow>
-
-                      {(backupStatus !== 'idle' ||
-                        restoreStatus !== 'idle') && (
-                        <div className="space-y-2 py-3">
-                          <StatusPill
-                            status={backupStatus}
-                            message={backupMessage}
-                          />
-                          <StatusPill
-                            status={restoreStatus}
-                            message={restoreMessage}
-                          />
-                        </div>
-                      )}
-                    </SettingsSection>
-                  ) : null}
-
+                <div className="mx-auto max-w-2xl space-y-3">
                   <SettingsSection title="Account">
                     {cloudSession ? (
-                      <SettingsRow label="Sign out">
+                      <SettingsRow
+                        label={cloudSession.user.email}
+                        description="Cloud backup account"
+                      >
                         <Button
                           variant="outline"
                           size="sm"
@@ -1088,7 +988,10 @@ export default function SettingsView() {
                           </div>
                         ) : null}
 
-                        <SettingsRow label="Sign in">
+                        <SettingsRow
+                          label="No account connected"
+                          description="Sign in to back up this vault to the cloud."
+                        >
                           <Button
                             size="sm"
                             className={`${settingsPrimaryButtonClassName} h-8 rounded-lg`}
@@ -1110,6 +1013,109 @@ export default function SettingsView() {
                         ) : null}
                       </>
                     )}
+                  </SettingsSection>
+
+                  <SettingsSection title="Backup">
+                    <SettingsRow
+                      label="Back up now"
+                      description="Upload this device's local vault to the cloud."
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`${settingsSecondaryButtonClassName} h-8 rounded-lg`}
+                        onClick={handleBackup}
+                        disabled={!cloudSession || backupStatus === 'loading'}
+                      >
+                        {backupStatus === 'loading' ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                        Backup
+                      </Button>
+                    </SettingsRow>
+
+                    <SettingsRow
+                      label="Automatic backup"
+                      description="Upload changes automatically after edits."
+                    >
+                      <Checkbox
+                        checked={settings.cloudAutoBackupEnabled}
+                        onCheckedChange={(checked) =>
+                          handleAutoBackupToggle(checked === true)
+                        }
+                        disabled={!cloudSession}
+                        aria-label="Enable automatic backup"
+                      />
+                    </SettingsRow>
+                  </SettingsSection>
+
+                  <SettingsSection title="Status">
+                    <SettingsRow
+                      label="Cloud connection"
+                      description={`Last backup: ${formatSyncTime(
+                        settings.cloudBackupLastSyncedAt,
+                      )}`}
+                    >
+                      {cloudSession ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--bladevault-local)] dark:text-[var(--bladevault-gold)]">
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          Connected
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Not connected
+                        </span>
+                      )}
+                    </SettingsRow>
+
+                    {backupStatus !== 'idle' ? (
+                      <div className="py-3">
+                        <StatusPill
+                          status={backupStatus}
+                          message={backupMessage}
+                        />
+                      </div>
+                    ) : null}
+                  </SettingsSection>
+                </div>
+              )}
+
+              {activeTab === 'restore-database' && (
+                <div className="mx-auto max-w-3xl space-y-3">
+                  <SettingsSection title="Restore database">
+                    {!cloudSession ? (
+                      <div className="py-3 text-sm text-muted-foreground">
+                        Sign in under Cloud Backup before restoring a database.
+                      </div>
+                    ) : null}
+                    <SettingsRow
+                      label="Restore from cloud"
+                      description="Restore the latest cloud backup to this device. This replaces the local database."
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`${settingsSecondaryButtonClassName} h-8 rounded-lg`}
+                        onClick={handleRestore}
+                        disabled={!cloudSession || restoreStatus === 'loading'}
+                      >
+                        {restoreStatus === 'loading' ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        Restore
+                      </Button>
+                    </SettingsRow>
+
+                    <div className="py-3">
+                      <StatusPill
+                        status={restoreStatus}
+                        message={restoreMessage}
+                      />
+                    </div>
                   </SettingsSection>
                 </div>
               )}
