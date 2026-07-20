@@ -382,6 +382,98 @@ export class LocalStorage implements Storage {
     return updated
   }
 
+  async bulkUpdateKnives(
+    ids: string[],
+    updates: KnifeUpdates,
+  ): Promise<Knife[]> {
+    const uniqueIds = Array.from(new Set(ids))
+    if (uniqueIds.length === 0) return []
+
+    const database = getDb()
+    const selectStatement = database.prepare(
+      'SELECT * FROM knives WHERE id = ?',
+    )
+    const rows = uniqueIds
+      .map(
+        (id) => selectStatement.get(id) as Record<string, unknown> | undefined,
+      )
+      .filter((row): row is Record<string, unknown> => Boolean(row))
+
+    if (rows.length !== uniqueIds.length) {
+      throw new Error('One or more selected knives could not be found')
+    }
+
+    const normalizedUpdates = normalizeKnifeTextFields(updates)
+    const rowsById = new Map(
+      rows.map((row) => {
+        const knife = rowToKnife(row)
+        return [knife.id, knife]
+      }),
+    )
+    const updatedAt = new Date().toISOString()
+    const updateStatement = database.prepare(
+      `UPDATE knives
+       SET name = ?, brand = ?, steel = ?, blade_style = ?, handle_material = ?, images = ?, specs = ?, custom_fields = ?, description = ?, updated_at = ?, source_url = ?, pinned = ?
+       WHERE id = ?`,
+    )
+
+    const updateAll = database.transaction(() =>
+      uniqueIds.map((id) => {
+        const existing = rowsById.get(id)
+        if (!existing) {
+          throw new Error(`Knife with id "${id}" not found`)
+        }
+
+        const updated: Knife = {
+          ...existing,
+          name: normalizedUpdates.name ?? existing.name,
+          brand: normalizedUpdates.brand ?? existing.brand,
+          bladeStyle: normalizedUpdates.bladeStyle ?? existing.bladeStyle,
+          handleMaterial:
+            normalizedUpdates.handleMaterial ?? existing.handleMaterial,
+          description: normalizedUpdates.description ?? existing.description,
+          sourceUrl: normalizedUpdates.sourceUrl ?? existing.sourceUrl,
+          images: normalizedUpdates.images ?? existing.images,
+          pinned: normalizedUpdates.pinned ?? existing.pinned,
+          updatedAt,
+          specs: {
+            ...existing.specs,
+            ...(normalizedUpdates.specs ?? {}),
+          },
+          customFields: Object.fromEntries(
+            Object.entries({
+              ...existing.customFields,
+              ...normalizedUpdates.customFields,
+            }).filter(
+              (entry): entry is [string, string] =>
+                typeof entry[1] === 'string',
+            ),
+          ),
+        }
+
+        updateStatement.run(
+          updated.name,
+          updated.brand,
+          '',
+          updated.bladeStyle,
+          updated.handleMaterial,
+          JSON.stringify(updated.images),
+          JSON.stringify(updated.specs),
+          JSON.stringify(updated.customFields),
+          updated.description,
+          updated.updatedAt,
+          updated.sourceUrl,
+          updated.pinned ? 1 : 0,
+          id,
+        )
+
+        return updated
+      }),
+    )
+
+    return updateAll()
+  }
+
   async deleteKnife(id: string): Promise<void> {
     const knife = await this.getKnifeById(id)
     if (!knife) return

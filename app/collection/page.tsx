@@ -10,8 +10,9 @@ import {
 } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { CheckSquare2, PencilLine, SlidersHorizontal, X } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
+import { BulkEditDialog } from '@/components/bulk-edit-dialog'
 import { KnifeCard } from '@/components/knife-card'
 import { EmptyState } from '@/components/empty-state'
 import { FilterMultiSelect } from '@/components/filter-multi-select'
@@ -23,8 +24,18 @@ import { readJsonResponse } from '@/lib/api-response'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  type BulkEditFieldDefinition,
+  type BulkEditFieldKey,
+  builtInBulkEditFields,
+} from '@/lib/bulk-edit'
 
 const PAGE_SIZE = 24
+const NOT_SET_FILTER_VALUE = '__not_set__'
+
+function getFilterOptionLabel(value: string): string {
+  return value === NOT_SET_FILTER_VALUE ? 'Not set' : value
+}
 
 const builtInFilterDefinitions = [
   { key: 'brand', label: 'Brand', getValue: (knife: Knife) => knife.brand },
@@ -138,7 +149,8 @@ function sortFilterOptions(options: string[], type: CustomFieldType): string[] {
 }
 
 function CollectionContent() {
-  const { knives, pinnedItemsFirst } = useKnives()
+  const { knives, pinnedItemsFirst, bulkUpdateKnives, showFeedback } =
+    useKnives()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -146,6 +158,9 @@ function CollectionContent() {
   const query = searchParams.get('q') ?? ''
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
   const debouncedQuery = useDebouncedValue(query, 200)
 
   const replaceParams = useCallback(
@@ -249,6 +264,18 @@ function CollectionContent() {
     [customFields],
   )
 
+  const bulkEditFields = useMemo<BulkEditFieldDefinition[]>(
+    () => [
+      ...builtInBulkEditFields.map((field) => ({ ...field })),
+      ...customFields.map((field) => ({
+        key: `customFields.${field.id}` as BulkEditFieldKey,
+        label: field.name,
+        type: field.type,
+      })),
+    ],
+    [customFields],
+  )
+
   const selectedFilters = useMemo(
     () =>
       Object.fromEntries(
@@ -270,20 +297,26 @@ function CollectionContent() {
               )
             : undefined
           const type = field?.type ?? 'text'
-          return [
-            definition.key,
-            sortFilterOptions(
-              Array.from(
-                new Set(
-                  knives
-                    .map((knife) => definition.getValue(knife))
-                    .filter((value): value is string =>
-                      Boolean(value && value.trim().length > 0),
-                    ),
+          const rawValues = knives.map((knife) => definition.getValue(knife))
+          const hasMissingValue = rawValues.some(
+            (value) => !value || value.trim().length === 0,
+          )
+          const populatedValues = sortFilterOptions(
+            Array.from(
+              new Set(
+                rawValues.filter((value): value is string =>
+                  Boolean(value && value.trim().length > 0),
                 ),
               ),
-              type,
             ),
+            type,
+          )
+
+          return [
+            definition.key,
+            hasMissingValue
+              ? [NOT_SET_FILTER_VALUE, ...populatedValues]
+              : populatedValues,
           ]
         }),
       ) as Record<FilterKey, string[]>,
@@ -302,7 +335,11 @@ function CollectionContent() {
         }
 
         const value = definition.getValue(knife)
-        return Boolean(value && selectedValues.includes(value))
+        return selectedValues.some((selectedValue) =>
+          selectedValue === NOT_SET_FILTER_VALUE
+            ? !value || value.trim().length === 0
+            : value === selectedValue,
+        )
       })
     })
 
@@ -346,22 +383,76 @@ function CollectionContent() {
     selectedFilters[definition.key].map((value) => ({
       key: definition.key,
       label: definition.label,
-      value: isCustomFilterKey(definition.key)
-        ? formatCustomFilterValue(
-            value,
-            customFields.find(
-              (item) => item.id === customFilterKeyToFieldId(definition.key),
-            )?.type ?? 'text',
-          )
-        : value,
+      value:
+        value === NOT_SET_FILTER_VALUE
+          ? getFilterOptionLabel(value)
+          : isCustomFilterKey(definition.key)
+            ? formatCustomFilterValue(
+                value,
+                customFields.find(
+                  (item) =>
+                    item.id === customFilterKeyToFieldId(definition.key),
+                )?.type ?? 'text',
+              )
+            : value,
       rawValue: value,
     })),
   )
 
   const hasActiveFilters = activeFilters.length > 0 || query.trim().length > 0
 
+  const selectedKnives = useMemo(
+    () => knives.filter((knife) => selectedIds.has(knife.id)),
+    [knives, selectedIds],
+  )
+  const allFilteredSelected =
+    filteredKnives.length > 0 &&
+    filteredKnives.every((knife) => selectedIds.has(knife.id))
+
+  const toggleKnifeSelection = useCallback((id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }, [])
+
+  const toggleAllFiltered = () => {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (allFilteredSelected) {
+        filteredKnives.forEach((knife) => next.delete(knife.id))
+      } else {
+        filteredKnives.forEach((knife) => next.add(knife.id))
+      }
+      return next
+    })
+  }
+
+  const exitSelectionMode = () => {
+    setIsBulkEditOpen(false)
+    setIsSelectionMode(false)
+    setSelectedIds(new Set())
+  }
+
+  const handleBulkEdit = async (field: BulkEditFieldKey, value: string) => {
+    const fieldLabel = bulkEditFields.find((item) => item.key === field)?.label
+    const selectedCount = selectedIds.size
+    await bulkUpdateKnives(Array.from(selectedIds), field, value)
+    showFeedback(
+      `${fieldLabel ?? 'Field'} updated for ${selectedCount} ${selectedCount === 1 ? 'knife' : 'knives'}`,
+    )
+    exitSelectionMode()
+  }
+
   return (
-    <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
+    <div
+      className={`flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto ${isSelectionMode ? 'pb-28 lg:pb-28' : ''}`}
+    >
       <PageHeader title="Collection" />
 
       {knives.length > 0 && (
@@ -376,10 +467,30 @@ function CollectionContent() {
           />
           <div className="flex flex-wrap items-center gap-2 sm:ml-auto sm:justify-end">
             <span className="mr-1 text-xs tabular-nums text-muted-foreground">
-              {filteredKnives.length === knives.length
-                ? `${knives.length} ${knives.length === 1 ? 'knife' : 'knives'}`
-                : `${filteredKnives.length} of ${knives.length} knives`}
+              {isSelectionMode
+                ? `${selectedIds.size} selected · ${filteredKnives.length} ${filteredKnives.length === 1 ? 'match' : 'matches'}`
+                : filteredKnives.length === knives.length
+                  ? `${knives.length} ${knives.length === 1 ? 'knife' : 'knives'}`
+                  : `${filteredKnives.length} of ${knives.length} knives`}
             </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (isSelectionMode) {
+                  exitSelectionMode()
+                } else {
+                  setIsSelectionMode(true)
+                }
+              }}
+            >
+              {isSelectionMode ? (
+                <X className="mr-1.5 size-3.5" />
+              ) : (
+                <CheckSquare2 className="mr-1.5 size-3.5" />
+              )}
+              {isSelectionMode ? 'Cancel selection' : 'Select'}
+            </Button>
           </div>
         </div>
       )}
@@ -407,6 +518,7 @@ function CollectionContent() {
                   )
                 }
                 onClear={() => setFilterValues(definition.key, [])}
+                getOptionLabel={getFilterOptionLabel}
               />
             ))}
           </div>
@@ -488,7 +600,14 @@ function CollectionContent() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-6 [overflow-anchor:none] sm:grid-cols-2 lg:grid-cols-3">
             {filteredKnives.slice(0, visibleCount).map((knife, index) => (
-              <KnifeCard key={knife.id} knife={knife} eager={index === 0} />
+              <KnifeCard
+                key={knife.id}
+                knife={knife}
+                eager={index === 0}
+                selectionMode={isSelectionMode}
+                selected={selectedIds.has(knife.id)}
+                onSelect={toggleKnifeSelection}
+              />
             ))}
           </div>
           {visibleCount < filteredKnives.length && (
@@ -508,6 +627,64 @@ function CollectionContent() {
           )}
         </div>
       )}
+
+      {isSelectionMode && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+          <div className="pointer-events-auto flex w-full max-w-2xl flex-col gap-3 rounded-xl border border-[var(--bladevault-line)] bg-background/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1" aria-live="polite">
+              <div className="text-sm font-medium text-foreground">
+                {selectedIds.size === 0
+                  ? 'Select knives to edit'
+                  : `${selectedIds.size} ${selectedIds.size === 1 ? 'knife' : 'knives'} selected`}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                One field will be replaced for every selected knife.
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={toggleAllFiltered}
+                disabled={filteredKnives.length === 0}
+              >
+                {allFilteredSelected
+                  ? 'Deselect matches'
+                  : `Select all ${filteredKnives.length}`}
+              </Button>
+              {selectedIds.size > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsBulkEditOpen(true)}
+                disabled={selectedIds.size === 0}
+              >
+                <PencilLine className="mr-1.5 size-3.5" />
+                Bulk edit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <BulkEditDialog
+        open={isBulkEditOpen}
+        selectedKnives={selectedKnives}
+        allKnives={knives}
+        fields={bulkEditFields}
+        onOpenChange={setIsBulkEditOpen}
+        onApply={handleBulkEdit}
+      />
     </div>
   )
 }

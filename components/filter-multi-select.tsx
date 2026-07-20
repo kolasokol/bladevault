@@ -13,6 +13,7 @@ type FilterMultiSelectProps = {
   onToggleValue: (value: string) => void
   onSelectAll: () => void
   onClear: () => void
+  getOptionLabel?: (value: string) => string
   className?: string
 }
 
@@ -23,6 +24,7 @@ export function FilterMultiSelect({
   onToggleValue,
   onSelectAll,
   onClear,
+  getOptionLabel = (value) => value,
   className,
 }: FilterMultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -73,9 +75,9 @@ export function FilterMultiSelect({
     }
 
     return options.filter((option) =>
-      option.toLowerCase().includes(normalizedQuery),
+      getOptionLabel(option).toLowerCase().includes(normalizedQuery),
     )
-  }, [options, query])
+  }, [getOptionLabel, options, query])
 
   const triggerLabel = useMemo(() => {
     if (selectedValues.length === 0) {
@@ -83,11 +85,11 @@ export function FilterMultiSelect({
     }
 
     if (selectedValues.length <= 2) {
-      return `${label}: ${selectedValues.join(', ')}`
+      return `${label}: ${selectedValues.map(getOptionLabel).join(', ')}`
     }
 
     return `${label}: ${selectedValues.length} selected`
-  }, [label, selectedValues])
+  }, [getOptionLabel, label, selectedValues])
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
@@ -202,7 +204,7 @@ export function FilterMultiSelect({
                           className={cn('h-3 w-3', !isSelected && 'opacity-0')}
                         />
                       </span>
-                      <span className="truncate">{option}</span>
+                      <span className="truncate">{getOptionLabel(option)}</span>
                     </button>
                   )
                 })}
