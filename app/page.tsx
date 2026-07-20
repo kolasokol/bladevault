@@ -104,6 +104,13 @@ export default function Dashboard() {
         <EmptyState
           title="No knives yet"
           description="Your collection is empty. Use Quick Add to add your first knife."
+          action={
+            <Button
+              size="sm"
+              render={<Link href="/add">Add your first knife</Link>}
+              nativeButton={false}
+            />
+          }
         />
       ) : visibleKnives.length === 0 ? (
         <EmptyState
