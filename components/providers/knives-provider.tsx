@@ -12,6 +12,7 @@ import {
   useState,
 } from 'react'
 import { Knife, KnifeDraft, KnifeUpdates } from '@/lib/data'
+import type { BulkEditFieldKey } from '@/lib/bulk-edit'
 import { CLOUD_AUTH_STATE_EVENT, getCloudAuthState } from '@/lib/cloud-backup'
 import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import { DEFAULT_SETTINGS, SETTINGS_UPDATED_EVENT } from '@/lib/settings-shared'
@@ -24,6 +25,11 @@ type KnivesContextValue = {
   knives: Knife[]
   addKnife: (draft: KnifeDraft) => Promise<Knife>
   updateKnife: (id: string, updates: KnifeUpdates) => Promise<Knife>
+  bulkUpdateKnives: (
+    ids: string[],
+    field: BulkEditFieldKey,
+    value: string,
+  ) => Promise<Knife[]>
   deleteKnife: (id: string) => Promise<void>
   isLoading: boolean
   compareIds: string[]
@@ -357,6 +363,39 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     [isAutoBackupEnabled, isCloudSyncEnabled, scheduleAutoBackup],
   )
 
+  const bulkUpdateKnives = useCallback(
+    async (
+      ids: string[],
+      field: BulkEditFieldKey,
+      value: string,
+    ): Promise<Knife[]> => {
+      const response = await fetch('/api/knives/bulk', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, field, value }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error ?? 'Failed to update selected knives')
+      }
+
+      const data = await response.json()
+      const updatedKnives = data.knives as Knife[]
+      const updatedById = new Map(
+        updatedKnives.map((knife) => [knife.id, knife]),
+      )
+      setKnives((prev) =>
+        prev.map((knife) => updatedById.get(knife.id) ?? knife),
+      )
+      if (isCloudSyncEnabled && isAutoBackupEnabled) {
+        scheduleAutoBackup('mutation')
+      }
+      return updatedKnives
+    },
+    [isAutoBackupEnabled, isCloudSyncEnabled, scheduleAutoBackup],
+  )
+
   const deleteKnife = useCallback(
     async (id: string): Promise<void> => {
       const response = await fetch(`/api/knives/${id}`, {
@@ -435,6 +474,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       knives,
       addKnife,
       updateKnife,
+      bulkUpdateKnives,
       deleteKnife,
       isLoading,
       compareIds,
@@ -451,6 +491,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
       knives,
       addKnife,
       updateKnife,
+      bulkUpdateKnives,
       deleteKnife,
       isLoading,
       compareIds,

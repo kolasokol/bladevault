@@ -18,6 +18,7 @@ export interface Storage {
   getKnifeById(id: string): Promise<Knife | undefined>
   createKnife(input: CreateKnifeInput): Promise<Knife>
   updateKnife(id: string, updates: KnifeUpdates): Promise<Knife>
+  bulkUpdateKnives(ids: string[], updates: KnifeUpdates): Promise<Knife[]>
   deleteKnife(id: string): Promise<void>
   getImage(path: string): Promise<ImageData>
   init?(): Promise<void>
