@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import type { ECharts, EChartsOption } from 'echarts'
+import Link from 'next/link'
 import type { Knife } from '@/lib/data'
 
 const CHART_COLORS = ['#2e3417', '#79824a', '#c89c3d', '#dfc78f', '#eae1cf']
@@ -364,9 +365,18 @@ export const CollectionPulse = memo(function CollectionPulse({
           <span className="block text-[11px] text-muted-foreground">
             Most recent entry
           </span>
-          <strong className="mt-1 block truncate text-sm font-medium text-foreground">
-            {latestName}
-          </strong>
+          {summary.latest ? (
+            <Link
+              href={`/collection/${summary.latest.knife.id}`}
+              className="mt-1 block truncate text-sm font-medium text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              {latestName}
+            </Link>
+          ) : (
+            <strong className="mt-1 block truncate text-sm font-medium text-foreground">
+              {latestName}
+            </strong>
+          )}
         </div>
         <div
           ref={rhythmRef}
