@@ -23,6 +23,7 @@ import {
 
 type KnivesContextValue = {
   knives: Knife[]
+  refreshVault: () => Promise<void>
   addKnife: (draft: KnifeDraft) => Promise<Knife>
   updateKnife: (id: string, updates: KnifeUpdates) => Promise<Knife>
   bulkUpdateKnives: (
@@ -267,6 +268,27 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const refreshVault = useCallback(async () => {
+    const [knivesResponse, compareResponse] = await Promise.all([
+      fetch('/api/knives', { cache: 'no-store' }),
+      fetch('/api/compare', { cache: 'no-store' }),
+    ])
+    const knivesData = await knivesResponse.json()
+    const compareData = await compareResponse.json()
+
+    if (!knivesResponse.ok) {
+      throw new Error(knivesData.error ?? 'Failed to refresh knives')
+    }
+    if (!compareResponse.ok) {
+      throw new Error(compareData.error ?? 'Failed to refresh compare list')
+    }
+
+    setKnives(Array.isArray(knivesData.knives) ? knivesData.knives : [])
+    setCompareIds(
+      Array.isArray(compareData.compareIds) ? compareData.compareIds : [],
+    )
+  }, [])
+
   useEffect(() => {
     if (!backupNotice) return
 
@@ -472,6 +494,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
   const contextValue = useMemo(
     () => ({
       knives,
+      refreshVault,
       addKnife,
       updateKnife,
       bulkUpdateKnives,
@@ -489,6 +512,7 @@ export function KnivesProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       knives,
+      refreshVault,
       addKnife,
       updateKnife,
       bulkUpdateKnives,

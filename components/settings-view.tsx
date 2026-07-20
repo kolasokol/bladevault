@@ -66,6 +66,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import pkg from '@/package.json'
 import { useDesktopUpdates } from '@/hooks/use-desktop-updates'
+import { useKnives } from '@/components/providers/knives-provider'
 
 type StatusTone = 'idle' | 'loading' | 'success' | 'error'
 type SettingsTab =
@@ -142,6 +143,7 @@ function applyThemePreference(theme: AppSettings['theme']) {
 export default function SettingsView() {
   const { update, checkForUpdates, downloadUpdate, installUpdate } =
     useDesktopUpdates()
+  const { refreshVault } = useKnives()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [localDataPath, setLocalDataPath] = useState('')
   const [configuredLocalDataPath, setConfiguredLocalDataPath] = useState('')
@@ -675,11 +677,9 @@ export default function SettingsView() {
         )
       }
 
+      await refreshVault()
       setRestoreStatus('success')
-      setRestoreMessage(
-        'Cloud backup restored locally. Reloading your vault...',
-      )
-      window.setTimeout(() => window.location.reload(), 600)
+      setRestoreMessage('Cloud backup restored successfully.')
     } catch (error) {
       setRestoreStatus('error')
       setRestoreMessage(
