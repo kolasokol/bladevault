@@ -65,9 +65,10 @@ If you only want to try the app, Docker is the quickest setup. If you want to de
 
 - **Dashboard insights** — See recently added knives alongside collection size, maker distribution, and the past year’s acquisition activity.
 - **Searchable collection library** — Search names, materials, and specifications, then narrow the results with shareable, multi-select URL filters for built-in and custom fields.
+- **Bulk collection editing** — Filter for missing or incorrect values, select individual knives or every matching result, preview their current values, and replace one built-in or custom field across the selection.
 - **Pins and shortcuts** — Pin important knives, optionally keep them first throughout the app, and access pinned items and brand groups from the sidebar.
 - **Knife records** — Create, edit, and delete detailed records with identity, construction, dimensions, pricing, provenance, notes, and source links.
-- **Flexible custom fields** — Define reusable text, number, date, or boolean fields in Settings; they appear on add/edit forms, details, collection filters, and comparison tables.
+- **Flexible custom fields** — Define reusable text, number, or date fields in Settings; they appear on add/edit forms, details, collection filters, bulk editing, and comparison tables.
 - **Image gallery** — Add image files or URLs, choose which scraped images to keep, and browse each record’s locally stored gallery in a lightbox.
 - **Smart URL import** — Paste a product URL to import available title, brand, images, description, and specifications. Shopify product JSON and JavaScript-rendered pages are supported; an interactive browser fallback helps when a retailer presents bot protection.
 - **Manual entry** — Add a knife from scratch with the same structured form and image controls.
