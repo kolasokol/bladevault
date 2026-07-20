@@ -399,7 +399,7 @@ export class LocalStorage implements Storage {
 
   async getCompareList(): Promise<string[]> {
     const rows = getDb()
-      .prepare('SELECT knife_id FROM compare_list ORDER BY added_at ASC')
+      .prepare('SELECT knife_id FROM compare_list ORDER BY added_at DESC')
       .all() as Array<{ knife_id: string }>
     return rows.map((r) => r.knife_id)
   }
