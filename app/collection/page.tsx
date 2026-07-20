@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { SlidersHorizontal, X } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { KnifeCard } from '@/components/knife-card'
@@ -474,7 +475,13 @@ function CollectionContent() {
               <Button variant="outline" size="sm" onClick={clearAllFilters}>
                 Clear all
               </Button>
-            ) : undefined
+            ) : (
+              <Button
+                size="sm"
+                render={<Link href="/add">Add your first knife</Link>}
+                nativeButton={false}
+              />
+            )
           }
         />
       ) : (
