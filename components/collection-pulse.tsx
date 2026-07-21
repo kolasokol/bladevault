@@ -310,9 +310,6 @@ export const CollectionPulse = memo(function CollectionPulse({
         <h2 className="text-[11px] font-medium tracking-wide text-[var(--bladevault-title)] uppercase">
           Library
         </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          A living count, not just a number.
-        </p>
         <div
           ref={totalRef}
           aria-label={`${knives.length} knives catalogued`}
@@ -332,9 +329,6 @@ export const CollectionPulse = memo(function CollectionPulse({
         <h2 className="text-[11px] font-medium tracking-wide text-[var(--bladevault-title)] uppercase">
           Maker mix
         </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          See at a glance where the collection leans.
-        </p>
         <div
           ref={makersRef}
           aria-label={`${summary.makerCount} makers represented`}
@@ -352,7 +346,6 @@ export const CollectionPulse = memo(function CollectionPulse({
         <h2 className="text-[11px] font-medium tracking-wide text-[var(--bladevault-title)] uppercase">
           Intake rhythm
         </h2>
-        <p className="mt-1 text-xs text-muted-foreground">Last twelve months</p>
         <div className="mt-6 flex items-baseline justify-between gap-3">
           <span className="text-3xl font-medium tracking-tight text-foreground">
             {summary.latest ? formatShortDate(summary.latest.date) : '—'}

@@ -410,7 +410,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
 
           <DetailSection
             title="Notes"
-            description="Reference copy and product context captured for this item."
           >
             <div className="max-w-3xl space-y-3">
               {knife.description ? (
@@ -470,7 +469,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
 
               <DetailSection
                 title="Identity"
-                description="Core catalog data used to identify this knife in the collection."
                 className="rounded-lg"
               >
                 <div>
@@ -482,7 +480,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
 
               <DetailSection
                 title="Construction"
-                description="Materials, finish, and mechanism details for the build."
                 className="rounded-lg"
               >
                 <div>
@@ -494,7 +491,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
 
               <DetailSection
                 title="Dimensions"
-                description="Size and carry measurements in the same grouping as the editor."
                 className="rounded-lg"
               >
                 <div>
