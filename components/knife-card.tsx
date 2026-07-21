@@ -104,7 +104,7 @@ export const KnifeCard = memo(function KnifeCard({
   const card = (
     <Card
       className={cn(
-        'overflow-hidden p-0 transition-[box-shadow,transform] hover:shadow-sm',
+        'gap-1 overflow-hidden p-0 transition-[box-shadow,transform] hover:shadow-sm',
         selectionMode &&
           'group-hover/card:ring-[var(--bladevault-line)] group-focus-visible/card:ring-2 group-focus-visible/card:ring-[var(--bladevault-gold)]',
         selected &&
@@ -176,27 +176,27 @@ export const KnifeCard = memo(function KnifeCard({
           </>
         )}
       </div>
-      <CardContent className="pt-0">
-        <div className="mb-2">
-          <Badge
-            variant="secondary"
-            className="text-[10px] font-medium uppercase tracking-wide"
-          >
-            {knife.brand}
-          </Badge>
-        </div>
-        <h3 className="text-sm font-medium text-foreground transition-colors group-hover:text-primary">
-          {knife.name}
-        </h3>
+      <CardContent className="px-1 pb-1 pt-0">
+        <Badge
+          variant="secondary"
+          className="max-w-full text-[10px] font-medium uppercase tracking-wide"
+          title={`${knife.brand} ${knife.name}`}
+        >
+          <span className="truncate">
+            <span className="text-muted-foreground">{knife.brand}</span>
+            <span className="mx-1 text-muted-foreground/50">·</span>
+            <span className="font-medium text-foreground">{knife.name}</span>
+          </span>
+        </Badge>
         {visibleCardFields.length > 0 ? (
-          <p className="mt-0.5 flex flex-wrap items-center text-xs text-muted-foreground">
+          <p className="mt-1 flex min-h-5 flex-wrap items-center text-xs leading-5 text-muted-foreground before:ml-2 before:mr-2 before:h-3 before:w-px before:shrink-0 before:bg-border before:content-[''] after:ml-2 after:h-3 after:w-px after:shrink-0 after:bg-border after:content-['']">
             {visibleCardFields.map((value, index) => (
               <span
                 key={`${index}-${value}`}
                 className={cn(
-                  'flex min-w-0 items-center',
+                  'flex min-w-0 items-center leading-5',
                   index > 0 &&
-                    "before:mx-1.5 before:h-2 before:w-px before:shrink-0 before:bg-[var(--bladevault-olive)] before:content-['']",
+                    "before:mx-2 before:h-3 before:w-px before:shrink-0 before:bg-border before:content-['']",
                 )}
               >
                 <span className="min-w-0">{value}</span>
