@@ -173,7 +173,7 @@ export function Sidebar() {
         </div>
 
         {hasUpdate || isUpdateBusy ? (
-          <div className="px-4 pb-2">
+          <div className="flex justify-center px-4 pb-2">
             <button
               type="button"
               onClick={handleUpdateClick}
