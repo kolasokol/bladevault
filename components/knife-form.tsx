@@ -270,15 +270,14 @@ export function KnifeFormFields({
   return (
     <div className="space-y-5">
       <FormSection
-        title="Identity"
+        title="Dimensions"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {inputField('Brand / Maker', 'brand', 'e.g. Chris Reeve Knives', 2)}
-          {inputField('Model Name', 'name', 'e.g. Sebenza 31', 2)}
-          {inputField('Model Number', 'modelNumber', 'e.g. 1122A4')}
-          {inputField('Designer', 'designer', 'e.g. Chris Reeve')}
-          {inputField('Country', 'country', 'e.g. USA')}
-          {inputField('Price', 'price', 'e.g. $525')}
+          {inputField('Overall Length', 'overallLength', 'e.g. 8.33 in')}
+          {inputField('Blade Length', 'bladeLength', 'e.g. 3.61 in')}
+          {inputField('Blade Thickness', 'bladeThickness', 'e.g. 3.7 mm')}
+          {inputField('Handle Length', 'handleLength', 'e.g. 3.77 in')}
+          {inputField('Weight', 'weight', 'e.g. 4.7 oz')}
         </div>
       </FormSection>
 
@@ -300,14 +299,15 @@ export function KnifeFormFields({
       </FormSection>
 
       <FormSection
-        title="Dimensions"
+        title="Identity"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {inputField('Overall Length', 'overallLength', 'e.g. 8.33 in')}
-          {inputField('Blade Length', 'bladeLength', 'e.g. 3.61 in')}
-          {inputField('Blade Thickness', 'bladeThickness', 'e.g. 3.7 mm')}
-          {inputField('Handle Length', 'handleLength', 'e.g. 3.77 in')}
-          {inputField('Weight', 'weight', 'e.g. 4.7 oz')}
+          {inputField('Brand / Maker', 'brand', 'e.g. Chris Reeve Knives', 2)}
+          {inputField('Model Name', 'name', 'e.g. Sebenza 31', 2)}
+          {inputField('Model Number', 'modelNumber', 'e.g. 1122A4')}
+          {inputField('Designer', 'designer', 'e.g. Chris Reeve')}
+          {inputField('Country', 'country', 'e.g. USA')}
+          {inputField('Price', 'price', 'e.g. $525')}
         </div>
       </FormSection>
 

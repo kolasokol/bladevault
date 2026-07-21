@@ -454,11 +454,11 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               ) : null}
 
               <DetailSection
-                title="Identity"
+                title="Dimensions"
                 className="rounded-lg"
               >
                 <div>
-                  {identityRows.map(({ label, value }) => (
+                  {dimensionRows.map(({ label, value }) => (
                     <DetailRow key={label} label={label} value={value} />
                   ))}
                 </div>
@@ -476,11 +476,11 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               </DetailSection>
 
               <DetailSection
-                title="Dimensions"
+                title="Identity"
                 className="rounded-lg"
               >
                 <div>
-                  {dimensionRows.map(({ label, value }) => (
+                  {identityRows.map(({ label, value }) => (
                     <DetailRow key={label} label={label} value={value} />
                   ))}
                 </div>

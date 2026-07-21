@@ -31,18 +31,18 @@ import {
 } from '@/components/ui/table'
 
 const builtInCompareRows = [
-  { label: 'Model Number', key: 'specs.modelNumber' },
+  { label: 'Overall Length', key: 'specs.overallLength' },
+  { label: 'Blade Length', key: 'specs.bladeLength' },
+  { label: 'Blade Thickness', key: 'specs.bladeThickness' },
+  { label: 'Handle Length', key: 'specs.handleLength' },
+  { label: 'Weight', key: 'specs.weight' },
   { label: 'Blade Material', key: 'specs.bladeMaterial' },
   { label: 'Blade Style', key: 'bladeStyle' },
   { label: 'Blade Coating / Finish', key: 'specs.bladeCoating' },
   { label: 'Hardness', key: 'specs.hardness' },
   { label: 'Locking Mechanism', key: 'specs.lockingMechanism' },
   { label: 'Handle Material', key: 'handleMaterial' },
-  { label: 'Handle Length', key: 'specs.handleLength' },
-  { label: 'Blade Length', key: 'specs.bladeLength' },
-  { label: 'Overall Length', key: 'specs.overallLength' },
-  { label: 'Blade Thickness', key: 'specs.bladeThickness' },
-  { label: 'Weight', key: 'specs.weight' },
+  { label: 'Model Number', key: 'specs.modelNumber' },
   { label: 'Price', key: 'specs.price' },
   { label: 'Country', key: 'specs.country' },
 ] as const
