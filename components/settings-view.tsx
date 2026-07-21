@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   AlertCircle,
   CheckCircle2,
@@ -189,6 +190,9 @@ function CardFieldsPreview({
 }
 
 export default function SettingsView() {
+  const searchParams = useSearchParams()
+  const requestedTab =
+    searchParams.get('tab') === 'cloud-backup' ? 'cloud-backup' : null
   const { update, checkForUpdates, downloadUpdate, installUpdate } =
     useDesktopUpdates()
   const { refreshVault } = useKnives()
@@ -219,7 +223,9 @@ export default function SettingsView() {
   const [localDataStatus, setLocalDataStatus] = useState<StatusTone>('idle')
   const [localDataMessage, setLocalDataMessage] = useState('')
   const [loadAttemptKey, setLoadAttemptKey] = useState(0)
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general')
+  const [activeTab, setActiveTab] = useState<SettingsTab>(
+    () => requestedTab ?? 'general',
+  )
   const [newFieldName, setNewFieldName] = useState('')
   const [newFieldType, setNewFieldType] = useState<CustomFieldType>('text')
   const [isSavingCardFields, setIsSavingCardFields] = useState(false)
@@ -277,6 +283,17 @@ export default function SettingsView() {
   const isLocalDataFolderDirty =
     normalizedPendingLocalDataPath !== '' &&
     normalizedPendingLocalDataPath !== localDataPath
+
+  useEffect(() => {
+    const openCloudBackup = () => setActiveTab('cloud-backup')
+
+    window.addEventListener('bladevault:open-cloud-backup-settings', openCloudBackup)
+    return () =>
+      window.removeEventListener(
+        'bladevault:open-cloud-backup-settings',
+        openCloudBackup,
+      )
+  }, [])
 
   const tabs = useMemo(
     () => [
