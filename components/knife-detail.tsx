@@ -489,7 +489,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
               {customFieldRows.length > 0 && (
                 <DetailSection
                   title="Custom Fields"
-                  description="Additional metadata configured from settings."
                   className="rounded-lg"
                 >
                   <div>
