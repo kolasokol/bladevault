@@ -570,7 +570,11 @@ export function AddKnifeForm() {
   )
 
   return (
-    <div className="flex flex-col min-h-0 flex-1 p-6 lg:p-8 w-full max-w-7xl mx-auto">
+    <div
+      className={`flex flex-col w-full max-w-7xl mx-auto p-6 lg:p-8 ${
+        hasScraped ? 'min-h-0 flex-1' : ''
+      }`}
+    >
       <PageHeader
         title="Add Knife"
         description="Scrape a product page or enter details manually."
@@ -589,7 +593,9 @@ export function AddKnifeForm() {
           setScrapeError(null)
           setSaveError(null)
         }}
-        className="flex flex-col flex-1 min-h-0 gap-6"
+        className={`flex flex-col gap-6 ${
+          hasScraped ? 'flex-1 min-h-0' : ''
+        }`}
       >
         <TabsList>
           {TABS.map((tab) => (
