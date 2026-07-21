@@ -179,7 +179,7 @@ export const KnifeCard = memo(function KnifeCard({
       <CardContent className="px-1 pb-1 pt-0">
         <Badge
           variant="secondary"
-          className="max-w-full text-[10px] font-medium uppercase tracking-wide"
+          className="ml-2 max-w-full text-[10px] font-medium uppercase tracking-wide"
           title={`${knife.brand} ${knife.name}`}
         >
           <span className="truncate">
