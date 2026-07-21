@@ -21,8 +21,7 @@ import { getSafeExternalUrl } from '@/lib/external-url'
 import { PageHeader } from '@/components/page-header'
 import { Gallery } from '@/components/gallery'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import {
   activeKnifeActionStyle,
@@ -330,8 +329,7 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
   return (
     <div className="flex-1 p-6 lg:p-8 w-full max-w-7xl 2xl:max-w-[100rem] mx-auto">
       <PageHeader
-        title={knife.name}
-        description={knife.brand}
+        title={[knife.brand, knife.name].filter(Boolean).join(' ')}
         breadcrumbs={knifeBreadcrumbs}
         actions={
           <>
@@ -437,18 +435,6 @@ export default function KnifeDetail({ knife: initialKnife }: { knife: Knife }) {
 
         <div className="flex flex-col gap-6">
           <Card size="sm">
-            <CardHeader>
-              <>
-                <Badge
-                  variant="secondary"
-                  className="mb-2 w-fit text-[10px] uppercase tracking-wide"
-                >
-                  {knife.brand}
-                </Badge>
-                <CardTitle>{knife.name}</CardTitle>
-              </>
-            </CardHeader>
-
             <CardContent className="space-y-4">
               {safeSourceUrl ? (
                 <div className="rounded-lg border border-[var(--bladevault-line)]/70 bg-[color:var(--bladevault-surface-soft)]/45 px-3 py-3">
