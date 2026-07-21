@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { PageHeader } from '@/components/page-header'
 import SettingsView from '@/components/settings-view'
 
@@ -15,7 +16,9 @@ export default function SettingsPage() {
         description="Manage your vault preferences and cloud backup."
       />
       <div className="min-h-0 flex-1">
-        <SettingsView />
+        <Suspense fallback={null}>
+          <SettingsView />
+        </Suspense>
       </div>
     </div>
   )
