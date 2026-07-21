@@ -447,6 +447,13 @@ export default function ComparePage() {
           title="Nothing to compare"
           description="Add at least one knife to use the comparison tool."
           icon={<ArchiveX className="h-8 w-8" />}
+          action={
+            <Button
+              size="sm"
+              render={<Link href="/add">Add your first knife</Link>}
+              nativeButton={false}
+            />
+          }
         />
       ) : (
         <>
@@ -514,6 +521,14 @@ export default function ComparePage() {
               title="Select knives to compare"
               description="Choose one or more knives from the selector above or add them from your collection."
               icon={<ArchiveX className="h-8 w-8" />}
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<Link href="/collection">Browse collection</Link>}
+                  nativeButton={false}
+                />
+              }
             />
           ) : (
             <Card className="border-[var(--bladevault-line)]/80 bg-background shadow-none">
