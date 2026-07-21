@@ -271,7 +271,6 @@ export function KnifeFormFields({
     <div className="space-y-5">
       <FormSection
         title="Identity"
-        description="Core naming and catalog details used across the collection."
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {inputField('Brand / Maker', 'brand', 'e.g. Chris Reeve Knives', 2)}
@@ -285,7 +284,6 @@ export function KnifeFormFields({
 
       <FormSection
         title="Construction"
-        description="Materials, finish, and locking details that define the build."
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {inputField('Blade Material', 'bladeMaterial', 'e.g. AEB-L')}
@@ -303,7 +301,6 @@ export function KnifeFormFields({
 
       <FormSection
         title="Dimensions"
-        description="Capture size and carry characteristics in the same format used on detail pages."
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {inputField('Overall Length', 'overallLength', 'e.g. 8.33 in')}
@@ -346,7 +343,6 @@ export function KnifeFormFields({
 
       <FormSection
         title="Notes"
-        description="Add the context that does not fit into a structured spec field."
       >
         <div className="space-y-2">
           <label className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
@@ -364,7 +360,6 @@ export function KnifeFormFields({
 
       <FormSection
         title="Images"
-        description="Choose which images stay with the item and which one leads as the cover."
       >
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
