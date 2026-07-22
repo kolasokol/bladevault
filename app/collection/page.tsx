@@ -10,7 +10,13 @@ import {
 } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { CheckSquare2, PencilLine, SlidersHorizontal, X } from 'lucide-react'
+import {
+  CheckSquare2,
+  ChevronDown,
+  PencilLine,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { BulkEditDialog } from '@/components/bulk-edit-dialog'
 import { KnifeCard } from '@/components/knife-card'
@@ -22,6 +28,7 @@ import { Knife, matchesKnifeSearch, prioritizePinnedKnives } from '@/lib/data'
 import { CustomField, CustomFieldType } from '@/lib/settings-shared'
 import { readJsonResponse } from '@/lib/api-response'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -158,6 +165,7 @@ function CollectionContent() {
   const query = searchParams.get('q') ?? ''
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -497,11 +505,39 @@ function CollectionContent() {
 
       {knives.length > 0 && (
         <div className="mb-6 border border-border/80 bg-muted/20 p-3 sm:p-4">
-          <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <button
+            type="button"
+            onClick={() => setIsFiltersOpen((current) => !current)}
+            aria-expanded={isFiltersOpen}
+            aria-controls="collection-filters"
+            className="flex min-h-8 w-full items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+            Filters
+            {activeFilters.length > 0 ? (
+              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold leading-none text-foreground tabular-nums">
+                {activeFilters.length}
+              </span>
+            ) : null}
+            <ChevronDown
+              className={cn(
+                'ml-auto h-3.5 w-3.5 transition-transform',
+                isFiltersOpen && 'rotate-180',
+              )}
+              aria-hidden="true"
+            />
+          </button>
+          <div className="mb-3 hidden items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground sm:flex">
             <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
             Filters
           </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:gap-2.5 xl:grid-cols-4">
+          <div
+            id="collection-filters"
+            className={cn(
+              'mt-3 gap-2 sm:mt-0 sm:grid sm:grid-cols-2 lg:gap-2.5 xl:grid-cols-4',
+              isFiltersOpen ? 'grid' : 'hidden',
+            )}
+          >
             {filterDefinitions.map((definition) => (
               <FilterMultiSelect
                 key={definition.key}

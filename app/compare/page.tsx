@@ -1,6 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArchiveX, FileDown, ImageIcon, Printer, X } from 'lucide-react'
@@ -29,6 +36,92 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+
+function HorizontalScrollArea({
+  children,
+  label,
+  className,
+  viewportClassName,
+}: {
+  children: ReactNode
+  label: string
+  className?: string
+  viewportClassName?: string
+}) {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const [overflow, setOverflow] = useState({ left: false, right: false })
+
+  const updateOverflow = useCallback(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    const next = {
+      left: viewport.scrollLeft > 1,
+      right:
+        viewport.scrollLeft + viewport.clientWidth < viewport.scrollWidth - 1,
+    }
+
+    setOverflow((current) =>
+      current.left === next.left && current.right === next.right
+        ? current
+        : next,
+    )
+  }, [])
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    const frame = window.requestAnimationFrame(updateOverflow)
+    const resizeObserver = new ResizeObserver(updateOverflow)
+    const mutationObserver = new MutationObserver(updateOverflow)
+
+    resizeObserver.observe(viewport)
+    if (viewport.firstElementChild instanceof HTMLElement) {
+      resizeObserver.observe(viewport.firstElementChild)
+    }
+    mutationObserver.observe(viewport, { childList: true, subtree: true })
+    viewport.addEventListener('scroll', updateOverflow, { passive: true })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      resizeObserver.disconnect()
+      mutationObserver.disconnect()
+      viewport.removeEventListener('scroll', updateOverflow)
+    }
+  }, [updateOverflow])
+
+  return (
+    <div className={cn('relative min-w-0', className)}>
+      <div
+        ref={viewportRef}
+        className={cn(
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          viewportClassName,
+        )}
+        role="region"
+        aria-label={label}
+        tabIndex={0}
+      >
+        {children}
+      </div>
+      <div
+        aria-hidden="true"
+        className={cn(
+          'pointer-events-none absolute inset-y-0 left-0 z-40 w-8 bg-gradient-to-r from-background to-transparent opacity-0 transition-opacity',
+          overflow.left && 'opacity-100',
+        )}
+      />
+      <div
+        aria-hidden="true"
+        className={cn(
+          'pointer-events-none absolute inset-y-0 right-0 z-40 w-8 bg-gradient-to-l from-background to-transparent opacity-0 transition-opacity',
+          overflow.right && 'opacity-100',
+        )}
+      />
+    </div>
+  )
+}
 
 const builtInCompareRows = [
   { label: 'Overall Length', key: 'specs.overallLength' },
@@ -465,7 +558,10 @@ export default function ComparePage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <HorizontalScrollArea
+                label="Compare lineup"
+                viewportClassName="overflow-x-auto rounded-lg"
+              >
                 <div className="flex min-w-max items-center rounded-lg border border-[var(--bladevault-line)]/70 bg-[color:var(--bladevault-surface-soft)]/45 px-3 py-2">
                   {showAddSlot && (
                     <div className="flex items-center">
@@ -512,7 +608,7 @@ export default function ComparePage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </HorizontalScrollArea>
             </CardContent>
           </Card>
 
@@ -554,7 +650,11 @@ export default function ComparePage() {
                   </label>
                 </div>
 
-                <div className="max-h-[72vh] overflow-auto rounded-xl border border-[var(--bladevault-line)]/80 bg-[color:var(--bladevault-surface-soft)]/30">
+                <HorizontalScrollArea
+                  label="Comparison matrix"
+                  className="rounded-xl"
+                  viewportClassName="max-h-[72vh] overflow-auto rounded-xl border border-[var(--bladevault-line)]/80 bg-[color:var(--bladevault-surface-soft)]/30"
+                >
                   <Table className="min-w-full" containerClassName="contents">
                     <TableHeader>
                       <TableRow className="bg-[color:var(--bladevault-surface-soft)]/70 hover:bg-[color:var(--bladevault-surface-soft)]/70">
@@ -674,7 +774,7 @@ export default function ComparePage() {
                       )}
                     </TableBody>
                   </Table>
-                </div>
+                </HorizontalScrollArea>
               </CardContent>
             </Card>
           )}

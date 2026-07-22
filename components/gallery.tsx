@@ -54,7 +54,7 @@ export function Gallery({
   return (
     <>
       <div className="space-y-4">
-        <Card className="overflow-hidden p-0">
+        <Card className="group/gallery overflow-hidden p-0">
           <div className="relative aspect-video lg:aspect-[4/3] w-full bg-white">
             {images.length > 0 ? (
               <>
@@ -70,7 +70,7 @@ export function Gallery({
                 {!editable && (
                   <button
                     onClick={() => setIsFullScreen(true)}
-                    className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-md bg-black/50 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover/card:opacity-100"
+                    className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-md bg-black/50 text-white opacity-100 transition-opacity hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 lg:opacity-0 lg:group-hover/gallery:opacity-100 lg:focus-visible:opacity-100"
                     aria-label="View fullscreen"
                   >
                     <Maximize2 className="h-3.5 w-3.5" />
@@ -86,12 +86,12 @@ export function Gallery({
         </Card>
 
         {images.length > 1 && (
-          <div className="flex flex-wrap gap-3">
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
             {images.map((img, idx) => (
               <Card
                 key={idx}
                 className={cn(
-                  'group relative h-20 w-20 shrink-0 overflow-hidden p-0 bg-white transition-all',
+                  'group relative h-20 w-20 shrink-0 snap-start overflow-hidden p-0 bg-white transition-all',
                   activeIdx === idx
                     ? 'ring-2 ring-[var(--bladevault-title)] ring-offset-1'
                     : 'opacity-70 hover:opacity-100',
