@@ -21,6 +21,7 @@ import {
   EMPTY_KNIFE_FORM,
   KnifeFormFields,
   formDataToKnifeDraft,
+  readImageFiles,
 } from '@/components/knife-form'
 import { getApiErrorMessage, readJsonResponse } from '@/lib/api-response'
 import { escapeHtmlAttribute, getSafeExternalUrl } from '@/lib/external-url'
@@ -143,16 +144,22 @@ export function AddKnifeForm() {
     setImageUrlInput('')
   }
 
-  const handleImageFileSelect = (file: File) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string
-      if (dataUrl && !form.images.includes(dataUrl)) {
-        updateField('images', [...form.images, dataUrl])
-        setSelectedImages((prev) => new Set(prev).add(dataUrl))
-      }
-    }
-    reader.readAsDataURL(file)
+  const handleImageFilesSelect = async (files: File[]) => {
+    const dataUrls = await readImageFiles(files)
+    if (dataUrls.length === 0) return
+
+    setForm((prev) => ({
+      ...prev,
+      images: [
+        ...prev.images,
+        ...dataUrls.filter((dataUrl) => !prev.images.includes(dataUrl)),
+      ],
+    }))
+    setSelectedImages((prev) => {
+      const next = new Set(prev)
+      dataUrls.forEach((dataUrl) => next.add(dataUrl))
+      return next
+    })
   }
 
   const removeImage = (index: number) => {
@@ -617,7 +624,7 @@ export function AddKnifeForm() {
                 imageUrlInput={imageUrlInput}
                 setImageUrlInput={setImageUrlInput}
                 addImageUrl={addImageUrl}
-                onImageFileSelect={handleImageFileSelect}
+                onImageFilesSelect={handleImageFilesSelect}
                 selectedImages={selectedImages}
                 toggleImageSelection={toggleImageSelection}
                 selectAllImages={selectAllImages}
@@ -686,6 +693,7 @@ export function AddKnifeForm() {
               imageUrlInput={imageUrlInput}
               setImageUrlInput={setImageUrlInput}
               addImageUrl={addImageUrl}
+              onImageFilesSelect={handleImageFilesSelect}
               selectedImages={selectedImages}
               toggleImageSelection={toggleImageSelection}
               selectAllImages={selectAllImages}
