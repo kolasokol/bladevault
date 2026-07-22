@@ -121,7 +121,7 @@ export function Sidebar() {
         className={cn(
           'flex min-h-0 flex-col bg-sidebar text-sidebar-foreground',
           isMobile
-            ? 'h-full w-[min(20rem,calc(100vw-2.5rem))] max-w-full border-r border-sidebar-border shadow-2xl'
+            ? 'h-dvh max-h-dvh w-[min(20rem,calc(100vw-2.5rem))] max-w-full border-r border-sidebar-border shadow-2xl'
             : 'hidden h-full w-60 shrink-0 border-r border-sidebar-border md:flex',
         )}
       >
@@ -491,7 +491,7 @@ export function Sidebar() {
           className="fixed inset-0 z-50 bg-black/45 md:hidden"
           onClick={closeMobileNav}
         >
-          <div onClick={(event) => event.stopPropagation()}>
+          <div className="h-full" onClick={(event) => event.stopPropagation()}>
             {renderSidebarContent(true)}
           </div>
         </div>
