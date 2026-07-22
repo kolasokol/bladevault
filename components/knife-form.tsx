@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Image from 'next/image'
 import {
   Loader2,
@@ -153,6 +153,33 @@ export function formDataToKnifeDraft(
   }
 }
 
+function readImageFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () =>
+      typeof reader.result === 'string'
+        ? resolve(reader.result)
+        : reject(new Error(`Could not read ${file.name}`))
+    reader.onerror = () =>
+      reject(reader.error ?? new Error(`Could not read ${file.name}`))
+    reader.readAsDataURL(file)
+  })
+}
+
+export async function readImageFiles(files: File[]): Promise<string[]> {
+  const results = await Promise.allSettled(
+    files.filter((file) => file.type.startsWith('image/')).map(readImageFile),
+  )
+
+  return Array.from(
+    new Set(
+      results.flatMap((result) =>
+        result.status === 'fulfilled' ? [result.value] : [],
+      ),
+    ),
+  )
+}
+
 type KnifeFormFieldsProps = {
   form: KnifeFormData
   updateField: <K extends keyof KnifeFormData>(
@@ -163,7 +190,7 @@ type KnifeFormFieldsProps = {
   imageUrlInput: string
   setImageUrlInput: (value: string) => void
   addImageUrl: () => void
-  onImageFileSelect?: (file: File) => void
+  onImageFilesSelect: (files: File[]) => void
   selectedImages: Set<string>
   toggleImageSelection: (src: string) => void
   selectAllImages: () => void
@@ -220,13 +247,21 @@ export function KnifeFormFields({
   imageUrlInput,
   setImageUrlInput,
   addImageUrl,
-  onImageFileSelect,
+  onImageFilesSelect,
   selectedImages,
   toggleImageSelection,
   selectAllImages,
   deselectAllImages,
   removeImage,
 }: KnifeFormFieldsProps) {
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const [isDraggingImages, setIsDraggingImages] = useState(false)
+
+  const importImageFiles = (files: File[]) => {
+    const imageFiles = files.filter((file) => file.type.startsWith('image/'))
+    if (imageFiles.length > 0) onImageFilesSelect(imageFiles)
+  }
+
   const reorderImage = (index: number, direction: -1 | 1) => {
     const newIndex = index + direction
     if (newIndex < 0 || newIndex >= form.images.length) return
@@ -410,30 +445,74 @@ export function KnifeFormFields({
               >
                 <Plus className="h-4 w-4" />
               </Button>
-              <input
-                id="image-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file && onImageFileSelect) {
-                    onImageFileSelect(file)
-                  }
-                  e.target.value = ''
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                onClick={() => document.getElementById('image-upload')?.click()}
-                title="Upload image from computer"
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
             </div>
           </div>
+
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(event) => {
+              importImageFiles(Array.from(event.target.files ?? []))
+              event.target.value = ''
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            onDragEnter={(event) => {
+              event.preventDefault()
+              setIsDraggingImages(true)
+            }}
+            onDragOver={(event) => {
+              event.preventDefault()
+              event.dataTransfer.dropEffect = 'copy'
+              setIsDraggingImages(true)
+            }}
+            onDragLeave={(event) => {
+              if (
+                !event.relatedTarget ||
+                !event.currentTarget.contains(event.relatedTarget as Node)
+              ) {
+                setIsDraggingImages(false)
+              }
+            }}
+            onDrop={(event) => {
+              event.preventDefault()
+              setIsDraggingImages(false)
+              importImageFiles(Array.from(event.dataTransfer.files))
+            }}
+            onPaste={(event) => {
+              const files = Array.from(event.clipboardData.items).flatMap(
+                (item) => {
+                  const file = item.kind === 'file' ? item.getAsFile() : null
+                  return file?.type.startsWith('image/') ? [file] : []
+                },
+              )
+              if (files.length === 0) return
+              event.preventDefault()
+              importImageFiles(files)
+            }}
+            className={cn(
+              'group flex min-h-24 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--bladevault-line)] bg-background/65 px-4 py-5 text-center transition-colors outline-none hover:bg-[color:var(--bladevault-surface-soft)]/70 focus-visible:ring-2 focus-visible:ring-[var(--bladevault-gold)] focus-visible:ring-offset-2',
+              isDraggingImages &&
+                'border-[var(--bladevault-gold)] bg-[color:var(--bladevault-surface-soft)] ring-2 ring-[var(--bladevault-gold)]/30',
+            )}
+          >
+            <span className="flex size-9 items-center justify-center rounded-full border border-[var(--bladevault-line)] bg-[color:var(--bladevault-surface-soft)] text-[var(--bladevault-olive)] transition-transform group-hover:-translate-y-0.5 dark:text-[var(--bladevault-gold)]">
+              <Upload className="size-4" aria-hidden="true" />
+            </span>
+            <span className="text-sm font-medium text-foreground">
+              {isDraggingImages
+                ? 'Drop images to add them'
+                : 'Drop images here or choose files'}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Select multiple images, or paste from the clipboard
+            </span>
+          </button>
 
           {form.images.length > 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -629,16 +708,22 @@ export function KnifeScrapeEditor({
     setImageUrlInput('')
   }
 
-  const handleImageFileSelect = (file: File) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string
-      if (dataUrl && !form.images.includes(dataUrl)) {
-        updateField('images', [...form.images, dataUrl])
-        setSelectedImages((prev) => new Set(prev).add(dataUrl))
-      }
-    }
-    reader.readAsDataURL(file)
+  const handleImageFilesSelect = async (files: File[]) => {
+    const dataUrls = await readImageFiles(files)
+    if (dataUrls.length === 0) return
+
+    setForm((prev) => ({
+      ...prev,
+      images: [
+        ...prev.images,
+        ...dataUrls.filter((dataUrl) => !prev.images.includes(dataUrl)),
+      ],
+    }))
+    setSelectedImages((prev) => {
+      const next = new Set(prev)
+      dataUrls.forEach((dataUrl) => next.add(dataUrl))
+      return next
+    })
   }
 
   const removeImage = (index: number) => {
@@ -917,7 +1002,7 @@ export function KnifeScrapeEditor({
                 imageUrlInput={imageUrlInput}
                 setImageUrlInput={setImageUrlInput}
                 addImageUrl={addImageUrl}
-                onImageFileSelect={handleImageFileSelect}
+                onImageFilesSelect={handleImageFilesSelect}
                 selectedImages={selectedImages}
                 toggleImageSelection={toggleImageSelection}
                 selectAllImages={selectAllImages}
