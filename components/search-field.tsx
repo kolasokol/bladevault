@@ -1,6 +1,6 @@
 'use client'
 
-import type { RefObject } from 'react'
+import { useRef, type RefObject } from 'react'
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -22,12 +22,20 @@ export function SearchField({
   inputRef,
   shortcutHint,
 }: SearchFieldProps) {
+  const fallbackInputRef = useRef<HTMLInputElement>(null)
+  const resolvedInputRef = inputRef ?? fallbackInputRef
+
+  const clearSearch = () => {
+    onChange('')
+    resolvedInputRef.current?.focus()
+  }
+
   return (
     <div className={cn('mx-auto w-full max-w-xs', className)}>
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
-          ref={inputRef}
+          ref={resolvedInputRef}
           type="search"
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -37,7 +45,7 @@ export function SearchField({
         {value ? (
           <button
             type="button"
-            onClick={() => onChange('')}
+            onClick={clearSearch}
             className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Clear search"
           >
