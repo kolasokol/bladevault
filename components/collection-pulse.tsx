@@ -304,9 +304,9 @@ export const CollectionPulse = memo(function CollectionPulse({
   return (
     <section
       aria-label="Collection summary"
-      className="flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden rounded-xl bg-card ring-1 ring-foreground/10 lg:grid lg:snap-none lg:grid-cols-[0.95fr_1.2fr_0.95fr] lg:overflow-hidden"
+      className="grid overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 sm:grid-cols-2 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)_minmax(0,0.95fr)]"
     >
-      <article className="min-h-72 w-80 shrink-0 snap-start border-r border-border p-5 lg:w-auto lg:shrink">
+      <article className="min-h-72 min-w-0 border-b border-border p-5 sm:border-r lg:border-b-0">
         <h2 className="text-[11px] font-medium tracking-wide text-[var(--bladevault-title)] uppercase">
           Library
         </h2>
@@ -325,7 +325,7 @@ export const CollectionPulse = memo(function CollectionPulse({
         </div>
       </article>
 
-      <article className="min-h-72 w-80 shrink-0 snap-start border-r border-border p-5 lg:w-auto lg:shrink">
+      <article className="min-h-72 min-w-0 border-b border-border p-5 lg:border-r lg:border-b-0">
         <h2 className="text-[11px] font-medium tracking-wide text-[var(--bladevault-title)] uppercase">
           Maker mix
         </h2>
@@ -342,7 +342,7 @@ export const CollectionPulse = memo(function CollectionPulse({
         </div>
       </article>
 
-      <article className="min-h-72 w-80 shrink-0 snap-start p-5 lg:w-auto lg:shrink">
+      <article className="min-h-72 min-w-0 p-5 sm:col-span-2 lg:col-span-1">
         <h2 className="text-[11px] font-medium tracking-wide text-[var(--bladevault-title)] uppercase">
           Intake rhythm
         </h2>
