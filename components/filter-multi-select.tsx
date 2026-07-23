@@ -30,6 +30,7 @@ export function FilterMultiSelect({
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const closeMenu = useCallback(() => {
@@ -49,6 +50,7 @@ export function FilterMultiSelect({
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         closeMenu()
+        triggerRef.current?.focus()
       }
     }
 
@@ -94,6 +96,7 @@ export function FilterMultiSelect({
   return (
     <div ref={rootRef} className={cn('relative', className)}>
       <Button
+        ref={triggerRef}
         type="button"
         variant="outline"
         size="sm"
